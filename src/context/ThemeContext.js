@@ -1,29 +1,30 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { StyleSheet, Appearance, Dimensions } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { StyleSheet, Appearance, Dimensions } from "react-native";
 
-const width = Dimensions.get('window').width;
-const height = Dimensions.get('window').height;
+const width = Dimensions.get("window").width;
+const height = Dimensions.get("window").height;
 
 const mainTheme = {
-  primary: '#fe0002',
-  accent: '#ffff01'
-}
+  primary: "#fe0002",
+  accent: "#ffff01",
+};
 const lightTheme = {
-  backgroundColor: '#ffffff',
-  foregroundColor: '#343434',
-  borderColor: '#DDDDDD',
-  headerColor: '#DDDDDD',
-  labelColor: '#333333',
-  infoColor: '#777777',
+  backgroundColor: "#ffffff",
+  foregroundColor: "#343434",
+  borderColor: "#DDDDDD",
+  headerColor: "#DDDDDD",
+  labelColor: "#333333",
+  infoColor: "#777777",
 };
 
 const darkTheme = {
-  backgroundColor: '#343434',
-  foregroundColor: '#ffffff',
-  borderColor: '#444444',
-  headerColor: '333333',
-  labelColor: '#F5F5F5',
-  infoColor: '#888888',
+  backgroundColor: "#343434",
+  foregroundColor: "#ffffff",
+  borderColor: "#444444",
+  headerColor: "333333",
+  labelColor: "#F5F5F5",
+  infoColor: "#888888",
 };
 
 const ThemeContext = createContext();
@@ -33,31 +34,35 @@ export const useTheme = () => useContext(ThemeContext);
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(Appearance.getColorScheme());
 
-  useEffect(() => {const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      console.log('Color Scheme Changed:', colorScheme);
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      console.log("Color Scheme Changed:", colorScheme);
       setTheme(colorScheme);
     });
-  
+
     return () => {
       subscription.remove();
     };
   }, []);
-  
+
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
-  
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      flexDirection: 'column',
+      flexDirection: "column",
       backgroundColor: currentTheme.backgroundColor,
       height: height,
       width: width,
-      alignItems: 'center'
+      alignItems: "center",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
     },
     welcome_content: {
       flex: 1,
       marginBottom: 100,
-      width: width
+      width: width,
     },
     auth_content: {
       flex: 1,
@@ -67,75 +72,75 @@ export const ThemeProvider = ({ children }) => {
       backgroundColor: currentTheme.backgroundColor,
     },
     footer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       height: 100,
       width: width,
       bottom: 0,
-      position: 'absolute'
+      position: "absolute",
     },
     footer_button_container: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center'
+      justifyContent: "center",
     },
     text: {
-      fontFamily: 'Roboto',
+      fontFamily: "Roboto",
       color: currentTheme.foregroundColor,
     },
     text_sm: {
-      fontSize: 18
+      fontSize: 18,
     },
     text_md: {
-      fontSize: 24
+      fontSize: 24,
     },
     text_lg: {
-      fontSize: 35
+      fontSize: 35,
     },
     text_primary: {
-      color: mainTheme.primary
+      color: mainTheme.primary,
     },
     text_bold: {
-      fontWeight: 'bold'
+      fontWeight: "bold",
     },
     text_semibold: {
-      fontWeight: 'semibold'
+      fontWeight: "semibold",
     },
     text_gray: {
-      color: "#a8a8a8"
+      color: "#a8a8a8",
     },
     header: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: currentTheme.foregroundColor,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     secondaryButton: {
       // backgroundColor: currentTheme.backgroundColor,
-      width: '100%',
+      width: "100%",
       paddingVertical: 15,
-      justifyContent: 'center',
+      justifyContent: "center",
       borderRadius: 5,
-      alignItems: 'center',
+      alignItems: "center",
       borderWidth: 1,
-      borderColor: currentTheme.foregroundColor
+      borderColor: currentTheme.foregroundColor,
     },
     secondaryButtonText: {
       color: currentTheme.foregroundColor,
     },
     primaryButton: {
       backgroundColor: mainTheme.primary,
-      width: '100%',
+      width: "100%",
       paddingVertical: 15,
-      justifyContent: 'center',
+      justifyContent: "center",
       borderRadius: 5,
-      alignItems: 'center'
+      alignItems: "center",
     },
     primaryButtonText: {
-      color: '#fff',
+      color: "#fff",
     },
     authButtonText: {
-      color: '#fff',
+      color: "#fff",
     },
     slideButton: {
       height: 12,
@@ -143,67 +148,67 @@ export const ThemeProvider = ({ children }) => {
       borderRadius: 12,
       marginHorizontal: 10,
       borderWidth: 2,
-      borderColor: mainTheme.primary
+      borderColor: mainTheme.primary,
     },
     slideButtonActive: {
       width: 36,
-      backgroundColor: mainTheme.primary
+      backgroundColor: mainTheme.primary,
     },
     top_bar: {
       height: 150,
-      width: '100%',
-      position: 'relative',
+      width: "100%",
+      position: "relative",
       //backgroundColor: currentTheme.headerColor
     },
     top_bar_button: {
       width: 32,
       height: 32,
-      tintColor: mainTheme.primary
+      tintColor: mainTheme.primary,
     },
     logo_container: {
-      width: '100%',
+      width: "100%",
       paddingVertical: 50,
-      alignItems: 'center',
-      justifyContent: 'center'
+      alignItems: "center",
+      justifyContent: "center",
     },
     logo: {
       width: 175,
       height: undefined,
-      aspectRatio: 1/1
+      aspectRatio: 1 / 1,
     },
     form_container: {
-      width: '100%',
-      display: 'flex',
+      width: "100%",
+      display: "flex",
       flex: 1,
       paddingHorizontal: 20,
     },
     form_section: {
-      width: '100%',
-      marginBottom: 15
+      width: "100%",
+      marginBottom: 15,
     },
     form_label: {
       fontSize: 16,
       color: currentTheme.labelColor,
-      marginBottom: 5
+      marginBottom: 5,
     },
     form_input: {
       borderWidth: 1,
       fontSize: 16,
       borderRadius: 5,
-      width: '100%',
+      width: "100%",
       borderColor: currentTheme.borderColor,
       color: currentTheme.foregroundColor,
-      padding: 20
+      padding: 20,
     },
     form_input_info: {
-      textAlign: 'right',
+      textAlign: "right",
       fontSize: 12,
       marginTop: 5,
-      color: currentTheme.infoColor
+      color: currentTheme.infoColor,
     },
     codeContainer: {
       flexDirection: "row",
-      justifyContent: 'space-around'
+      justifyContent: "space-around",
     },
     code_input: {
       width: 45,
@@ -213,13 +218,13 @@ export const ThemeProvider = ({ children }) => {
       color: currentTheme.foregroundColor,
       textAlign: "center",
       fontSize: 32,
-      borderRadius: 8
+      borderRadius: 8,
     },
     tabScreen: {
       flex: 1,
       width: width,
       alignItems: "center",
-      borderWidth: 1
+      borderWidth: 1,
     },
     tabBar: {
       flexDirection: "row",
@@ -253,16 +258,31 @@ export const ThemeProvider = ({ children }) => {
       shadowOpacity: 0.3,
       shadowRadius: 4,
       position: "absolute",
-      bottom: 30
+      bottom: 30,
     },
     greetingsContainer: {
       flex: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
       paddingHorizontal: 20,
       paddingTop: 40,
-      alignItems: 'center'
+      alignItems: "center",
+    },
+    mygas_logo: {
+      height: 60,
+      width: 150,
+      resizeMode: "contain"
+    },
+    pointsText:{
+      color: "#f39c12",
+      fontWeight: "bold",
+      fontSize: 23,
+    },
+    warning:{
+      color: "#e61109",
+      fontSize: 13
     }
+
   });
 
   return (
