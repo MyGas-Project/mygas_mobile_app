@@ -45,8 +45,7 @@ export const ThemeProvider = ({ children }) => {
     };
   }, []);
 
-  const currentTheme = theme === "light" ? lightTheme : darkTheme;
-
+  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
   const styles = StyleSheet.create({
     container: {
       flex: 1,

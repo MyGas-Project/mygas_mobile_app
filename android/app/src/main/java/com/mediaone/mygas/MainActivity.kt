@@ -1,4 +1,4 @@
-package com.mygas
+package com.mediaone.mygas
 
 import android.os.Build
 import android.os.Bundle

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Dimensions,
+  Animated
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,36 +59,64 @@ const offersData = [
   },
 ];
 
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
 export default function RewardsScreen() {
   const navigation = useNavigation();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const cardContainerTranslateY = scrollY.interpolate({
+    inputRange: [-50, 0, 50],
+    outputRange: [20, 0, -20],
+    extrapolate: "clamp"
+  });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <ImageBackground
-        source={require("../../../assets/mygas-header.jpeg")}
         resizeMode="stretch"
-        style={styles.headerImage}
+        source={require("../../../assets/mygas-header.jpeg")}
+        style={styles.top_bar}
       >
+        <LinearGradient
+          colors={["rgb(249, 250, 141)", "transparent"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1.4 }}
+          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+        />
+        <Image
+          source={require("../../../assets/mygas_logo.png")}
+          style={styles.logo}
+        />
         <Navbar
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />
-        <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
       </ImageBackground>
 
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
-        showsVerticalScrollIndicator={false}
+      <Animated.View
+        style={[
+          styles.cardContainer,
+          {
+            transform: [{ translateY: cardContainerTranslateY }]
+          }
+        ]}
       >
-        <View style={styles.cardContainer}>
-          <Text style={styles.title}>Rewards</Text>
-          <Text style={styles.subtitle}>
-            Fuel Your Savings: Earn Points, Unlock Perks, and Enjoy Exclusive
-            Rewards with Every Visit!
-          </Text>
+        <AnimatedScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+        >
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Rewards</Text>
+            <Text style={styles.subtitle}>
+              Fuel Your Savings: Earn Points, Unlock Perks, and Enjoy Exclusive
+              Rewards with Every Visit!
+            </Text>
+          </View>
 
           <View style={styles.pointsBox}>
             <Text style={styles.pointsLabel}>Total MyGas Points</Text>
@@ -135,81 +165,87 @@ export default function RewardsScreen() {
             contentContainerStyle={styles.gridList}
             columnWrapperStyle={styles.gridRow}
             renderItem={({ item }) => (
-              <View style={styles.rewardCard}>
-                <Image source={item.image} style={styles.cardImage} />
-                <View style={styles.titlePointsRow}>
-                  <Text style={styles.cardText} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <View style={styles.pointsRow}>
-                    <Image
-                      source={require("../../../assets/my.png")}
-                      style={styles.miniIcon}
-                    />
-                    <Text style={styles.cardPoints}>{item.points} PTS</Text>
+              <View style={styles.rewardCardNew}>
+                <Image source={item.image} style={styles.cardImageNew} />
+                <View style={styles.contentNew}>
+                  <View style={styles.titlePointsRowNew}>
+                    <Text style={styles.cardTextNew} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    <View style={styles.pointsRowNew}>
+                      <Image
+                        source={require("../../../assets/my.png")}
+                        style={styles.miniIconNew}
+                      />
+                      <Text style={styles.cardPointsNew}>{item.points} PTS</Text>
+                    </View>
                   </View>
+                  <TouchableOpacity style={styles.redeemBtnNew}>
+                    <Text style={styles.redeemTextNew}>Redeem Now</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.redeemBtn}>
-                  <Text style={styles.redeemText}>Redeem Now</Text>
-                </TouchableOpacity>
               </View>
             )}
           />
-        </View>
-      </ScrollView>
+        </AnimatedScrollView>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    height: 180,
-    width: "100%",
-  },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 10,
-  },
-  backCircle: {
-    backgroundColor: "white",
-    padding: 8,
-    borderRadius: 25,
-    elevation: 5,
+  top_bar: {
+    height: 150,
+    width: '100%',
+    position: 'relative',
   },
   scrollContent: {
-    paddingBottom: 30,
+    paddingHorizontal: 0,
+    paddingBottom: 20,
+    flexGrow: 1
   },
   cardContainer: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 20,
-    marginTop: -30, // overlap the image
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: -20,
+    backgroundColor: "#F5F5F5",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: 'relative',
+    zIndex: 1
+  },
+  headerContainer: {
+    alignItems: "center",
+    width: "100%",
+    paddingTop: 20
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 5,
-    marginTop: 20,
+    color: "#333",
+    marginBottom: 8
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     textAlign: "center",
-    color: "#333",
-    marginBottom: 20,
+    color: "#777",
+    marginBottom: 20
   },
   pointsBox: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    elevation: 3,
-    marginBottom: 16,
+    elevation: 6,
+    marginVertical: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    width: Dimensions.get("window").width - 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   pointsLabel: {
     fontWeight: "bold",
@@ -231,31 +267,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sectionTitle: {
+    fontSize: 18,
     fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 8,
-    marginTop: 12,
+    color: "#333",
+    marginVertical: 10
   },
   cardList: {
     paddingBottom: 10,
+    paddingTop: 20,
   },
   card: {
     backgroundColor: "#fff",
+    width: Dimensions.get("window").width - 32,
     borderRadius: 12,
-    width: 230,
-    marginRight: 12,
-    overflow: "hidden",
-    elevation: 3,
+    marginVertical: 10,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    overflow: "hidden"
   },
   cardImage: {
     width: "100%",
-    height: 100,
+    height: 180,
     resizeMode: "cover",
   },
+  content: {
+    padding: 16
+  },
   cardText: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    fontWeight: "600",
+    fontSize: 14,
+    color: "#555",
+    lineHeight: 20,
+    marginBottom: 16
   },
   cardPoints: {
     fontWeight: "bold",
@@ -269,47 +314,113 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   redeemBtn: {
-    backgroundColor: "red",
-    paddingVertical: 8,
-    margin: 10,
+    backgroundColor: "#FF0000",
     borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
+    justifyContent: "center"
   },
   redeemText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold"
   },
   rewardsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 16,
-    marginBottom: 8,
+    marginVertical: 10,
   },
   viewAll: {
     color: "#666",
     fontSize: 13,
   },
   gridList: {
-    paddingVertical: 5,
+    paddingVertical: 20,
   },
   gridRow: {
     justifyContent: "space-between",
     marginBottom: 16,
   },
-  rewardCard: {
+  rewardCardNew: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 16,
     width: "48%",
     overflow: "hidden",
-    elevation: 2,
+    marginBottom: 16,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  titlePointsRow: {
+  cardImageNew: {
+    width: "100%",
+    height: 110,
+    resizeMode: "cover",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  contentNew: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  titlePointsRowNew: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    gap: 4,
+    marginBottom: 12,
+  },
+  cardTextNew: {
+    fontSize: 15,
+    color: "#222",
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 6,
+  },
+  pointsRowNew: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  miniIconNew: {
+    width: 16,
+    height: 16,
+    resizeMode: "contain",
+    marginRight: 2,
+  },
+  cardPointsNew: {
+    fontWeight: "bold",
+    fontSize: 13,
+    color: "#f39c12",
+  },
+  redeemBtnNew: {
+    backgroundColor: "#FF0000",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    width: '100%',
+  },
+  redeemTextNew: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "bold",
+    letterSpacing: 0.2,
+  },
+  logo: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    width: 65,
+    height: 65,
+    resizeMode: "contain",
+    zIndex: 2,
   },
 });
