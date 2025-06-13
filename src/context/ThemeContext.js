@@ -37,14 +37,14 @@ export const ThemeProvider = ({ children }) => {
       console.log('Color Scheme Changed:', colorScheme);
       setTheme(colorScheme);
     });
-  
+
     return () => {
       subscription.remove();
     };
   }, []);
-  
+
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
-  
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,

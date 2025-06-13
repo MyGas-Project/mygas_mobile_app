@@ -1,4 +1,4 @@
-package com.mygas
+package com.mediaone.mygas
 
 import android.app.Application
 import android.content.res.Configuration
