@@ -114,7 +114,8 @@ export default function RewardsScreen() {
                 <Text style={styles.cardText} numberOfLines={2}>
                   {item.title}
                 </Text>
-                <TouchableOpacity style={styles.redeemBtn}>
+                <TouchableOpacity style={styles.redeemBtn} 
+                onPress={() => navigation.navigate('RewardDetails')}>
                   <Text style={styles.redeemText}>{item.buttonText}</Text>
                 </TouchableOpacity>
               </View>
