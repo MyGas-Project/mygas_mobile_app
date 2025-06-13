@@ -87,11 +87,14 @@ export const ThemeProvider = ({ children }) => {
       fontFamily: "Roboto",
       color: currentTheme.foregroundColor,
     },
+    text_align: {
+      textAlign: "center"
+    },
     text_sm: {
       fontSize: 18,
     },
     text_md: {
-      fontSize: 24,
+      fontSize: 28
     },
     text_lg: {
       fontSize: 35,
@@ -155,9 +158,14 @@ export const ThemeProvider = ({ children }) => {
       backgroundColor: mainTheme.primary,
     },
     top_bar: {
-      height: 150,
-      width: "100%",
-      position: "relative",
+      height: 200,
+      width: '100%',
+      position: 'relative',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 8,
       //backgroundColor: currentTheme.headerColor
     },
     top_bar_button: {

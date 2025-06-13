@@ -13,6 +13,7 @@ import React from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Navbar from "../../components/Navbar";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;

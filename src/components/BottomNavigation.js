@@ -14,6 +14,7 @@ import StationsScreeen from "../screens/dashboard/StationsScreeen";
 import ActivityScreen from "../screens/dashboard/ActivityScreen";
 import RewardsScreen from "../screens/dashboard/RewardsScreen";
 import ServicesScreen from "../screens/dashboard/ServicesScreen";
+import ProfileScreen from "../screens/dashboard/ProfileScreen";
 
 const icons = {
   services: require("../../assets/car.png"),
