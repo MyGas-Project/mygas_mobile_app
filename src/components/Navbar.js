@@ -6,14 +6,6 @@ import { useNavigation } from "@react-navigation/native";
 export default function Navbar({ onProfilePress, onNotifPress }) {
   const navigation = useNavigation();
 
-  const handleProfilePress = () => {
-    navigation.navigate('Profile');
-  };
-
-  const handleNotifPress = () => {
-    navigation.navigate('Notifications');
-  };
-
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -25,14 +17,14 @@ export default function Navbar({ onProfilePress, onNotifPress }) {
 
       <View style={styles.rightIcons}>
         <TouchableOpacity
-          onPress={handleProfilePress}
+          onPress={onProfilePress}
           style={styles.singleIconWrapper}
         >
           <Ionicons name="person-circle-outline" size={26} color="black" />
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={handleNotifPress}
+          onPress={onNotifPress}
           style={styles.singleIconWrapper}
         >
           <Ionicons name="notifications-outline" size={24} color="black" />
