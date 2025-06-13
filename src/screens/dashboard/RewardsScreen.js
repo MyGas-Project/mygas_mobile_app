@@ -67,14 +67,15 @@ export default function RewardsScreen() {
         resizeMode="stretch"
         style={styles.headerImage}
       >
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
+        <Navbar
+          onProfilePress={() => console.log("Profile tapped")}
+          onNotifPress={() => console.log("Notifications tapped")}
+        />
+        
       </ImageBackground>
 
       <ScrollView

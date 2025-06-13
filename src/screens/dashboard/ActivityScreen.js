@@ -2,6 +2,7 @@ import { View, ImageBackground, StyleSheet, FlatList, Text } from 'react-native'
 import React from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
+import Navbar from '../../components/Navbar';
 
 export default function ActivityScreen() {
     const {styles} = useTheme();
@@ -30,6 +31,10 @@ export default function ActivityScreen() {
                     colors={['transparent', 'rgba(255,255,255,0.5)']}
                     style={{position: 'absolute', top: 0, bottom: 0, right: 0, left: 0}}
                 />
+                <Navbar
+          onProfilePress={() => console.log("Profile tapped")}
+          onNotifPress={() => console.log("Notifications tapped")}
+        />
             </ImageBackground>
             <View style={{flex: 1, width: '100%'}}>
                 <View style={{width: '100%', paddingTop: 16, paddingHorizontal: 16}}>
