@@ -141,13 +141,15 @@ export default function RewardsScreen() {
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <Image source={item.image} style={styles.cardImage} />
-                <Text style={styles.cardText} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <TouchableOpacity style={styles.redeemBtn} 
+                <View style={styles.content}>
+                  <Text style={styles.cardText} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <TouchableOpacity style={styles.redeemBtn}
                 onPress={() => navigation.navigate('RewardDetails')}>
                   <Text style={styles.redeemText}>{item.buttonText}</Text>
                 </TouchableOpacity>
+                </View>
               </View>
             )}
           />
@@ -275,6 +277,7 @@ const styles = StyleSheet.create({
   cardList: {
     paddingBottom: 10,
     paddingTop: 20,
+    gap: 16,
   },
   card: {
     backgroundColor: "#fff",
