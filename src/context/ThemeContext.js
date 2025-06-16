@@ -87,11 +87,14 @@ export const ThemeProvider = ({ children }) => {
       fontFamily: "Roboto",
       color: currentTheme.foregroundColor,
     },
+    text_align: {
+      textAlign: "center"
+    },
     text_sm: {
       fontSize: 18,
     },
     text_md: {
-      fontSize: 24,
+      fontSize: 28
     },
     text_lg: {
       fontSize: 35,
@@ -155,9 +158,14 @@ export const ThemeProvider = ({ children }) => {
       backgroundColor: mainTheme.primary,
     },
     top_bar: {
-      height: 150,
-      width: "100%",
-      position: "relative",
+      height: 200,
+      width: '100%',
+      position: 'relative',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 8,
       //backgroundColor: currentTheme.headerColor
     },
     top_bar_button: {
@@ -266,23 +274,28 @@ export const ThemeProvider = ({ children }) => {
       justifyContent: "space-between",
       paddingHorizontal: 20,
       paddingTop: 40,
-      alignItems: "center",
+      alignItems: 'center'
     },
-    mygas_logo: {
-      height: 60,
-      width: 150,
-      resizeMode: "contain"
+    cardContainer: {
+      flex: 1,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      marginTop: -70,
+      backgroundColor: "#F5F5F5",
+      paddingTop: 20,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     },
-    pointsText:{
-      color: "#f39c12",
-      fontWeight: "bold",
-      fontSize: 23,
-    },
-    warning:{
-      color: "#e61109",
-      fontSize: 13
-    }
-
+    // cardContainer: {
+    //   flex: 1,
+    //   paddingHorizontal: 16,
+    //   alignItems: 'center',
+    //   marginTop: -70,
+    //   backgroundColor: "#F5F5F5",
+    //   paddingTop: 20,
+    //   borderTopLeftRadius: 20,
+    //   borderTopRightRadius: 20,
+    // },
   });
 
   return (

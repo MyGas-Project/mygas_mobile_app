@@ -113,9 +113,7 @@ export default function ServicesScreen() {
                 </Text>
                 <TouchableOpacity
                   style={custom_styles.button}
-                  onPress={() =>
-                    console.log(`Learn More about ${item.title} tapped`)
-                  }
+                  onPress={() => console.log(`Learn More about ${item.title} tapped`)}
                   activeOpacity={0.8}
                 >
                   <Text style={custom_styles.buttonText}>Learn More</Text>
@@ -141,9 +139,9 @@ const custom_styles = StyleSheet.create({
     elevation: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    overflow: "hidden"
+    overflow: "hidden",
   },
   cardImage: {
     width: "100%",
@@ -163,7 +161,44 @@ const custom_styles = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     lineHeight: 20,
-    marginBottom: 16
+    marginBottom: 16,
+  },
+  button: {
+    backgroundColor: "#FF0000",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 12,
+    textAlign: "center",
+    color: "#777",
+    marginBottom: 20,
+  },
+  cardContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginTop: -70,
+    backgroundColor: "#F5F5F5",
+    paddingTop: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  flatListContainer: {
+    marginTop: 10,
+    width: '100%',
+  },
+  flatListContentContainer: {
+    paddingHorizontal: 0,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   button: {
     backgroundColor: "#FF0000",

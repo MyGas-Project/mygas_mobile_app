@@ -2,7 +2,7 @@ import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, A
 import React, { useRef } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
-import Navbar from '../../components/Navbar'
+import Navbar from '../../components/Navbar';
 
 export default function ActivityScreen() {
     const {styles} = useTheme();
@@ -63,6 +63,10 @@ export default function ActivityScreen() {
                     onProfilePress={() => console.log("Profile tapped")}
                     onNotifPress={() => console.log("Notifications tapped")}
                 />
+                <Navbar
+          onProfilePress={() => console.log("Profile tapped")}
+          onNotifPress={() => console.log("Notifications tapped")}
+        />
             </ImageBackground>
             <Animated.View
                 style={[
