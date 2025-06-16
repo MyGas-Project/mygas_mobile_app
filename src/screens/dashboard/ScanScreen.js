@@ -72,10 +72,10 @@ export default function ScanScreen() {
           style={custom_styles.code}
         />
         <Text style={custom_styles.barcodeText}>1234 ******</Text>
-        <Image
+        {/* <Image
           source={require("../../../assets/barcode.png")}
           style={custom_styles.barcode}
-        />
+        /> */}
       </View>
     </View>
   );
