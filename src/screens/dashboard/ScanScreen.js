@@ -47,7 +47,7 @@ export default function ScanScreen() {
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={custom_styles.top_bar}
       >
         <LinearGradient
           colors={["rgb(249, 250, 141)", "transparent"]}
@@ -55,33 +55,77 @@ export default function ScanScreen() {
           end={{ x: 0.5, y: 1.4 }}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
-      </ImageBackground>
-
-      <View style={custom_styles.container}>
-        <Text style={custom_styles.title}>Scan & Earn</Text>
-        <Text style={custom_styles.subtitle}>
-          Simply scan the barcode or QR code to start collecting points and
-          unlock exclusive rewards!
-        </Text>
         <Image
-          source={require("../../../assets/code.png")}
-          style={custom_styles.code}
+          source={require("../../../assets/mygas_logo.png")}
+          style={custom_styles.logo}
         />
-        <Text style={custom_styles.barcodeText}>1234 ******</Text>
-        {/* <Image
-          source={require("../../../assets/barcode.png")}
-          style={custom_styles.barcode}
-        /> */}
-      </View>
+        <Navbar />
+      </ImageBackground>
+      <Animated.View
+        style={[
+          custom_styles.cardContainer,
+          { transform: [{ translateY: cardContainerTranslateY }] }
+        ]}
+      >
+        <Animated.ScrollView
+          style={{ flex: 1, width: "100%" }}
+          contentContainerStyle={{ paddingTop: 10 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+        >
+          <View style={custom_styles.container}>
+            <Text style={custom_styles.title}>Scan & Earn</Text>
+            <Text style={custom_styles.subtitle}>
+              Simply scan the barcode or QR code to start collecting points and
+              unlock exclusive rewards!
+            </Text>
+            <Image
+              source={require("../../../assets/code.png")}
+              style={custom_styles.code}
+            />
+            <Text style={custom_styles.barcodeText}>1234 ******</Text>
+            {/* <Image
+              source={require("../../../assets/barcode.png")}
+              style={custom_styles.barcode}
+            /> */}
+          </View>
+        </Animated.ScrollView>
+      </Animated.View>
     </View>
   );
 }
 
 const custom_styles = StyleSheet.create({
+  top_bar: {
+    height: 150,
+    width: '100%',
+    position: 'relative',
+  },
+  logo: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    width: 65,
+    height: 65,
+    resizeMode: "contain",
+    zIndex: 2,
+  },
+  cardContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: -20,
+    backgroundColor: "#F5F5F5",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: 'relative',
+    zIndex: 1
+  },
   container: {
     flex: 1,
     alignItems: "center",
@@ -109,10 +153,10 @@ const custom_styles = StyleSheet.create({
   barcodeText: {
     fontSize: 16,
     color: "#333",
-  },  
+  },
   barcode: {
     width: 300,
     height: 200,
     resizeMode: "contain",
-  },  
+  },
 });
