@@ -8,9 +8,10 @@ import {
   Text,
   Dimensions,
   FlatList,
-  TouchableOpacity
+  TouchableOpacity,
+  RefreshControl
 } from "react-native";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Navbar from "../../components/Navbar";
@@ -21,6 +22,7 @@ const height = Dimensions.get("window").height;
 
 export default function HomeScreen({ navigation }) {
   const { styles } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
   const DATA = [
     {
       id: "1",
@@ -95,6 +97,28 @@ export default function HomeScreen({ navigation }) {
     extrapolate: "clamp"
   });
 
+  const pullAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Animated.timing(pullAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Simulate data refresh
+      setTimeout(() => {
+        setRefreshing(false);
+        Animated.timing(pullAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 1200);
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <ImageBackground
@@ -131,6 +155,15 @@ export default function HomeScreen({ navigation }) {
             { useNativeDriver: true }
           )}
           scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={["transparent"]}
+              progressViewOffset={60}
+            />
+          }
         >
           <View style={{ marginTop: 10 }}>
             <View style={styles.greetingsContainer}>

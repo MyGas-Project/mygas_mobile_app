@@ -1,5 +1,5 @@
-import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, Animated, ScrollView } from 'react-native'
-import React, { useRef } from 'react'
+import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, Animated, ScrollView, RefreshControl } from 'react-native'
+import React, { useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
 import Navbar from '../../components/Navbar';
@@ -7,6 +7,9 @@ import Navbar from '../../components/Navbar';
 export default function ActivityScreen() {
     const {styles} = useTheme();
     const scrollY = useRef(new Animated.Value(0)).current;
+    const [refreshing, setRefreshing] = useState(false);
+    const pullAnim = useRef(new Animated.Value(0)).current;
+    const spinAnim = useRef(new Animated.Value(0)).current;
     const cardContainerTranslateY = scrollY.interpolate({
         inputRange: [-50, 0, 50],
         outputRange: [20, 0, -20],
@@ -46,6 +49,25 @@ export default function ActivityScreen() {
     ];
     const groups = ['Today', 'Last 7 Days'];
 
+    const onRefresh = () => {
+        setRefreshing(true);
+        Animated.timing(pullAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+        }).start(() => {
+            // Simulate data refresh
+            setTimeout(() => {
+                setRefreshing(false);
+                Animated.timing(pullAnim, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }).start();
+            }, 1200);
+        });
+    };
+
     return (
         <View style={{ flex: 1, backgroundColor: '#E5E5E5' }}>
             <ImageBackground resizeMode='stretch' source={require('../../../assets/mygas-header.jpeg')} style={custom_styles.top_bar}>
@@ -63,10 +85,6 @@ export default function ActivityScreen() {
                     onProfilePress={() => console.log("Profile tapped")}
                     onNotifPress={() => console.log("Notifications tapped")}
                 />
-                <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
             </ImageBackground>
             <Animated.View
                 style={[
@@ -81,6 +99,15 @@ export default function ActivityScreen() {
                     )}
                     scrollEventThrottle={16}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor="transparent"
+                            colors={["transparent"]}
+                            progressViewOffset={60}
+                        />
+                    }
                 >
                     <View style={custom_styles.headerContainer}>
                         <Text style={custom_styles.title}>MyGas Points Activity</Text>

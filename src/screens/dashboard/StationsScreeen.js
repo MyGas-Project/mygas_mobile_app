@@ -1,5 +1,5 @@
-import { View, ImageBackground, Text, TouchableOpacity, FlatList, StyleSheet, Image, Linking, Dimensions, Animated, ScrollView, TextInput } from 'react-native'
-import React, {useState, useRef} from 'react'
+import { View, ImageBackground, Text, TouchableOpacity, FlatList, StyleSheet, Image, Linking, Dimensions, Animated, ScrollView, TextInput, RefreshControl } from 'react-native'
+import React, {useState, useRef, useEffect} from 'react'
 import MapView, { Marker } from 'react-native-maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
@@ -52,8 +52,110 @@ export default function StationsScreeen() {
         extrapolate: "clamp"
     });
 
+    const [mapLoading, setMapLoading] = useState(true);
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const opacityAnim = useRef(new Animated.Value(1)).current;
+    const [refreshing, setRefreshing] = useState(false);
+    const pullAnim = useRef(new Animated.Value(0)).current;
+    const spinAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        let animation;
+        if (mapLoading) {
+            animation = Animated.loop(
+                Animated.sequence([
+                    Animated.parallel([
+                        Animated.timing(scaleAnim, {
+                            toValue: 0.8,
+                            duration: 400,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(opacityAnim, {
+                            toValue: 0.5,
+                            duration: 400,
+                            useNativeDriver: true,
+                        }),
+                    ]),
+                    Animated.parallel([
+                        Animated.timing(scaleAnim, {
+                            toValue: 1,
+                            duration: 400,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(opacityAnim, {
+                            toValue: 1,
+                            duration: 400,
+                            useNativeDriver: true,
+                        }),
+                    ]),
+                ])
+            );
+            animation.start();
+        } else {
+            scaleAnim.setValue(1);
+            opacityAnim.setValue(1);
+        }
+        return () => {
+            if (animation) animation.stop();
+        };
+    }, [mapLoading]);
+
+    useEffect(() => {
+        let spinLoop;
+        if (refreshing) {
+            spinAnim.setValue(0);
+            spinLoop = Animated.loop(
+                Animated.timing(spinAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                })
+            );
+            spinLoop.start();
+        } else {
+            spinAnim.stopAnimation();
+            spinAnim.setValue(0);
+        }
+        return () => {
+            if (spinLoop) spinLoop.stop();
+        };
+    }, [refreshing]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        Animated.timing(pullAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+        }).start(() => {
+            setTimeout(() => {
+                setRefreshing(false);
+                Animated.timing(pullAnim, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }).start();
+            }, 1200); // simulate loading
+        });
+    };
+
     return (
         <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
+            {/* Loader Overlay */}
+            {mapLoading && (
+                <View style={custom_styles.loaderOverlay} pointerEvents="auto">
+                    <Animated.Image
+                        source={require('../../../assets/mygas_logo.png')}
+                        style={[
+                            custom_styles.loaderLogo,
+                            {
+                                transform: [{ scale: scaleAnim }],
+                                opacity: opacityAnim,
+                            },
+                        ]}
+                    />
+                </View>
+            )}
             <ImageBackground
                 resizeMode="stretch"
                 source={require('../../../assets/mygas-header.jpeg')}
@@ -92,6 +194,15 @@ export default function StationsScreeen() {
                     )}
                     scrollEventThrottle={16}
                     style={custom_styles.scrollableContentArea}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor="transparent"
+                            colors={["transparent"]}
+                            progressViewOffset={60}
+                        />
+                    }
                 >
                     <View style={custom_styles.headerContainer}>
                         <Text style={custom_styles.title}>Locate Stations</Text>
@@ -119,6 +230,17 @@ export default function StationsScreeen() {
                                 latitudeDelta: 0.05,
                                 longitudeDelta: 0.05,
                             }}
+                            onMapReady={() => setMapLoading(false)}
+                            onRegionChangeComplete={() => setMapLoading(false)}
+                            onPanDrag={() => {
+                                // Prevent scroll view from receiving the drag event
+                                scrollY.setValue(0);
+                            }}
+                            moveOnMarkerPress={false}
+                            scrollEnabled={true}
+                            zoomEnabled={true}
+                            rotateEnabled={true}
+                            pitchEnabled={true}
                         >
                             {stationsData.map(station => (
                                 <Marker
@@ -293,5 +415,34 @@ const custom_styles = StyleSheet.create({
         marginLeft: 10,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    loaderOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.7)', // optional dim background
+        zIndex: 10,
+    },
+    loaderLogo: {
+        width: 90,
+        height: 90,
+        resizeMode: 'contain',
+    },
+    refreshLogoContainer: {
+        position: 'absolute',
+        top: 10,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 20,
+    },
+    refreshLogo: {
+        width: 48,
+        height: 48,
+        resizeMode: 'contain',
     },
 });
