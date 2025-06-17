@@ -235,14 +235,17 @@ export default function HomeScreen({ navigation }) {
             }}
           >
             <Text>We provide best offer services</Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('ServicesScreen')}
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
               <Text style={{ fontSize: 12 }}>View Services</Text>
               <Ionicons
                 name="chevron-forward"
                 size={14}
                 style={{ marginLeft: 1 }}
               />
-            </View>
+            </TouchableOpacity>
           </View>
           <FlatList
             style={{ marginTop: 10, padding: 10 }}

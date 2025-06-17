@@ -72,10 +72,10 @@ export default function ScanScreen() {
           style={custom_styles.code}
         />
         <Text style={custom_styles.barcodeText}>1234 ******</Text>
-        {/* <Image
+        <Image
           source={require("../../../assets/barcode.png")}
           style={custom_styles.barcode}
-        /> */}
+        />
       </View>
     </View>
   );
@@ -92,14 +92,12 @@ const custom_styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
     color: "#555",
     textAlign: "center",
-    marginBottom: 10,
-    // paddingHorizontal: 20,
+    marginBottom: 5,
   },
   code: {
     width: "150%",
@@ -111,8 +109,8 @@ const custom_styles = StyleSheet.create({
     color: "#333",
   },  
   barcode: {
-    width: 300,
-    height: 200,
+    width: 350,
+    height: "50%",
     resizeMode: "contain",
   },  
 });

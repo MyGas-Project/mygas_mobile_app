@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -7,18 +7,20 @@ import {
   TouchableOpacity,
   ImageBackground,
   Image,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
-import { useTheme } from '../../context/ThemeContext'
+import { useTheme } from "../../context/ThemeContext";
+import { AuthContext } from "../../context/AuthContext";
 import BottomTabNavigator from "../../components/BottomNavigation";
 
-
 const ProfileScreen = () => {
-  const {styles} = useTheme();
+  const { styles } = useTheme();
   const navigation = useNavigation();
+  const { logout } = useContext(AuthContext);
   const [userProfile, setUserProfile] = useState({
     name: "Juan Dela Cruz",
     email: "juandelacruz@gmail.com",
@@ -46,15 +48,19 @@ const ProfileScreen = () => {
     // Navigate to Settings screen
   };
 
-  const handleLogout = () => {
-    console.log("Logout pressed");
-    // Implement logout logic
+  const handleLogout = (navigate) => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", onPress: () => logout(navigate) },
+    ]);
   };
 
   return (
-    
     <View style={profile_styles.container}>
-      <ImageBackground source={require("../../../assets/mygas-header.jpeg")} style={styles.top_bar}>
+      <ImageBackground
+        source={require("../../../assets/mygas-header.jpeg")}
+        style={styles.top_bar}
+      >
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
@@ -86,7 +92,7 @@ const ProfileScreen = () => {
           onPress={handleLoyaltyProgramPress}
         >
           <View style={profile_styles.profile_info}>
-          <Text style={profile_styles.profileName}>Loyalty Program</Text>
+            <Text style={profile_styles.profileName}>Loyalty Program</Text>
             <View style={profile_styles.loyaltyProgramContent}>
               <Image
                 source={require("../../../assets/mygas_logo.png")}
@@ -98,21 +104,25 @@ const ProfileScreen = () => {
               onPress={handleEditProfile}
               style={profile_styles.editIcon}
             >
-            <Ionicons name="chevron-forward" size={24} color="#333" />
-
+              <Ionicons name="chevron-forward" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
         </TouchableOpacity>
 
-        <TouchableOpacity style={profile_styles.card} onPress={handleSettingsPress}>
-        <View style={profile_styles.loyaltyProgramContent}>
-        <Ionicons name="settings-outline" size={24} color="#333" />
-              <Text style={profile_styles.settingsText}>Settings</Text>
-            </View>
+        <TouchableOpacity
+          style={profile_styles.card}
+          onPress={handleSettingsPress}
+        >
+          <View style={profile_styles.loyaltyProgramContent}>
+            <Ionicons name="settings-outline" size={24} color="#333" />
+            <Text style={profile_styles.settingsText}>Settings</Text>
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={profile_styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity
+          style={profile_styles.logoutButton}
+          onPress={() => handleLogout(navigation)}
+        >
           <Text style={profile_styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -148,7 +158,7 @@ const profile_styles = StyleSheet.create({
     elevation: 5,
   },
 
-  profile_info:{
+  profile_info: {
     fontSize: 16,
     color: "#666",
     marginBottom: 2,
@@ -213,7 +223,7 @@ const profile_styles = StyleSheet.create({
   loyaltyWrapper: {
     flex: 1,
   },
-  
+
   loyaltyLogo: {
     width: 30,
     height: 30,
@@ -254,7 +264,7 @@ const profile_styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ccc",
     backgroundColor: "#fff",
-    marginTop:300,
+    marginTop: 300,
   },
 });
 
