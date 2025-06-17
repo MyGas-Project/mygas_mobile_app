@@ -6,10 +6,10 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  ImageBackground,
+  ImageBackground
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
@@ -19,30 +19,27 @@ const NotificationScreen = () => {
   const { styles } = useTheme();
 
   const navigation = useNavigation();
+  const route = useRoute();
   const [notifications, setNotifications] = useState([
     {
       id: "1",
       description: "You have purchased PHP 1000 fuel diesel",
       station: "MyGas Toril 1",
-      points_earned: "1.00 points earned",
+      points_earned: "1.00 points earned"
     },
     {
       id: "2",
       description: "You have purchased PHP 500 fuel diesel",
       station: "MyGas Buhangin",
-      points_earned: "0.50 points earned",
+      points_earned: "0.50 points earned"
     },
     {
       id: "3",
       description: "You have purchased PHP 1000 engine oil",
       station: "MyGas Cabantian",
-      points_earned: "0.25 points earned",
-    },
+      points_earned: "0.25 points earned"
+    }
   ]);
-
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
 
   const renderNotification = ({ item }) => (
     <TouchableOpacity
@@ -65,33 +62,36 @@ const NotificationScreen = () => {
   );
 
   return (
-    <View style={notif_styles.cardContainer}>
+    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={notif_styles.top_bar}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
+          colors={["rgb(249, 250, 141)", "transparent"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1.4 }}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
+        <Image
+          source={require("../../../assets/mygas_logo.png")}
+          style={notif_styles.logo}
         />
+        <Navbar />
       </ImageBackground>
-
-      <Text style={notif_styles.pageTitle}>Notifications</Text>
-
-      <FlatList
-        data={notifications}
-        renderItem={renderNotification}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={notif_styles.notificationList}
-      />
-      {/* <View style={notif_styles.bottomNavContainer}>
+      <View style={notif_styles.cardContainer}>
+        <Text style={notif_styles.pageTitle}>Notifications</Text>
+        <FlatList
+          data={notifications}
+          renderItem={renderNotification}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[notif_styles.notificationList, { paddingBottom: 80 }]}
+        />
+      </View>
+      <View style={notif_styles.bottomNavContainer}>
         <BottomTabNavigator />
-      </View> */}
+      </View>
     </View>
   );
 };
@@ -99,20 +99,20 @@ const NotificationScreen = () => {
 const notif_styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f5f5f5"
   },
   headerImage: {
     width: "100%",
     height: 150, // Adjust height as needed
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   gradientOverlay: {
     position: "absolute",
     top: 0,
     bottom: 0,
     right: 0,
-    left: 0,
+    left: 0
   },
   headerContent: {
     flexDirection: "row",
@@ -120,32 +120,37 @@ const notif_styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
-    paddingTop: 30, // Adjust for status bar
+    paddingTop: 30 // Adjust for status bar
   },
   backButton: {
-    padding: 10,
+    padding: 10
   },
   logo: {
-    width: 100, // Adjust size as needed
-    height: 40, // Adjust size as needed
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    width: 65,
+    height: 65,
     resizeMode: "contain",
+    zIndex: 2
   },
   headerIcons: {
-    flexDirection: "row",
+    flexDirection: "row"
   },
   iconButton: {
     marginLeft: 15,
-    padding: 5,
+    padding: 5
   },
   pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 20,
-    color: "#333",
+    color: "#333"
   },
   notificationList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 20
   },
   notificationItem: {
     backgroundColor: "white",
@@ -156,28 +161,53 @@ const notif_styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 3,
+    elevation: 3
   },
   notificationDescription: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: 5
   },
   notificationStation: {
     fontSize: 14,
-    color: "#666",
+    color: "#666"
   },
   notificationPoints: {
     fontSize: 14,
     color: "#666",
-    marginTop: 2,
+    marginTop: 2
   },
   bottomNavContainer: {
-    borderTopWidth: 1,
-    borderColor: "#ccc",
     backgroundColor: "#fff",
-    marginTop:300,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    zIndex: 999
   },
+  top_bar: {
+    height: 150,
+    width: "100%",
+    position: "relative"
+  },
+  headerLeft: {
+    position: "absolute",
+    left: 16,
+    top: 50,
+    zIndex: 3,
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  cardContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: -20,
+    backgroundColor: "#F5F5F5",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: "relative",
+    zIndex: 1
+  }
 });
 
 export default NotificationScreen;

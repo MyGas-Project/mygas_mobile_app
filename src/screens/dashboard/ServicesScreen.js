@@ -7,9 +7,10 @@ import {
   StyleSheet,
   FlatList,
   Dimensions,
-  Animated
+  Animated,
+  RefreshControl
 } from "react-native";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import Navbar from "../../components/Navbar";
@@ -19,11 +20,34 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 export default function ServicesScreen() {
   const { styles } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [refreshing, setRefreshing] = useState(false);
+  const pullAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
     outputRange: [20, 0, -20],
     extrapolate: "clamp"
   });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Animated.timing(pullAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Simulate data refresh
+      setTimeout(() => {
+        setRefreshing(false);
+        Animated.timing(pullAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 1200);
+    });
+  };
 
   const serviceData = [
     {
@@ -81,6 +105,15 @@ export default function ServicesScreen() {
             { useNativeDriver: true }
           )}
           scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={["transparent"]}
+              progressViewOffset={60}
+            />
+          }
           ListHeaderComponent={() => (
             <View style={custom_styles.headerContainer}>
               <Text
