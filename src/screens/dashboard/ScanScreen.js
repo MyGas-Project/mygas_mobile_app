@@ -59,12 +59,6 @@ export default function ScanScreen() {
           source={require("../../../assets/mygas_logo.png")}
           style={custom_styles.logo}
         />
-        <Text style={custom_styles.barcodeText}>1234 ******</Text>
-        <Image
-          source={require("../../../assets/barcode.png")}
-          style={custom_styles.barcode}
-        />
-      </View>
         <Navbar />
       </ImageBackground>
       <Animated.View
@@ -94,10 +88,10 @@ export default function ScanScreen() {
               style={custom_styles.code}
             />
             <Text style={custom_styles.barcodeText}>1234 ******</Text>
-            {/* <Image
+            <Image
               source={require("../../../assets/barcode.png")}
               style={custom_styles.barcode}
-            /> */}
+            />
           </View>
         </Animated.ScrollView>
       </Animated.View>
@@ -160,7 +154,7 @@ const custom_styles = StyleSheet.create({
   },
   barcode: {
     width: 350,
-    height: "50%",
+    height: "150%",
     resizeMode: "contain",
   },
 });
