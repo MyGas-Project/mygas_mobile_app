@@ -177,9 +177,28 @@ export default function StationsScreeen() {
                 />
             </ImageBackground>
 
-            <Animated.View
-                style={[
-                    custom_styles.cardContainer,
+        {/* Gasoline Station List section */}
+        <View style={{ flex: 1, paddingTop: 16 }}>
+          <Text
+            style={[
+              styles.text,
+              styles.text_md,
+              styles.text_bold,
+              styles.text_primary,
+            ]}
+          >
+            Nearby Gasoline Stations
+          </Text>
+          <FlatList
+            data={stationsData}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={custom_styles.stationCard}
+                onPress={() => {
+                  setCurrLat(item.lat);
+                  setCurrLong(item.lon);
+                  mapRef.current?.animateToRegion(
                     {
                         transform: [{ translateY: cardContainerTranslateY }]
                     }
@@ -211,15 +230,18 @@ export default function StationsScreeen() {
                         </Text>
                     </View>
 
-                    <View style={custom_styles.searchBarContainer}>
-                        <Ionicons name="compass-outline" size={20} color="#777" style={custom_styles.searchIcon} />
-                        <TextInput
-                            style={custom_styles.searchInput}
-                            placeholder="Search Location"
-                            placeholderTextColor="#777"
-                        />
-                    </View>
-
+                  <TouchableOpacity
+                    style={custom_styles.directionsButton}
+                    onPress={() => {
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`;
+                      Linking.openURL(url);
+                    }}
+                  >
+                    <Text style={custom_styles.directionsButtonText}>
+                      Get Directions
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                     <View style={{ height: 500 }}>
                         <MapView
                             ref={mapRef}
@@ -284,7 +306,10 @@ export default function StationsScreeen() {
                 </Animated.ScrollView>
             </Animated.View>
         </View>
-    )
+      </View>
+      <View style={{ height: 70 }}></View>
+    </View>
+  );
 }
 
 const custom_styles = StyleSheet.create({

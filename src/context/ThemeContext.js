@@ -82,6 +82,9 @@ export const ThemeProvider = ({ children }) => {
       fontFamily: 'Roboto',
       color: currentTheme.foregroundColor,
     },
+    text_align: {
+      textAlign: "center"
+    },
     text_sm: {
       fontSize: 18
     },

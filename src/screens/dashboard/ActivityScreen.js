@@ -85,6 +85,10 @@ export default function ActivityScreen() {
                     onProfilePress={() => console.log("Profile tapped")}
                     onNotifPress={() => console.log("Notifications tapped")}
                 />
+                <Navbar
+          onProfilePress={() => console.log("Profile tapped")}
+          onNotifPress={() => console.log("Notifications tapped")}
+        />
             </ImageBackground>
             <Animated.View
                 style={[

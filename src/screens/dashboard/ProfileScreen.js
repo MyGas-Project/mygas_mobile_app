@@ -248,7 +248,7 @@ const profile_styles = StyleSheet.create({
   loyaltyWrapper: {
     flex: 1
   },
-
+  
   loyaltyLogo: {
     width: 30,
     height: 30,
@@ -263,6 +263,7 @@ const profile_styles = StyleSheet.create({
   motoristaCard: {
     fontSize: 16,
     color: "#666"
+
   },
   settingsText: {
     fontSize: 18,

@@ -15,6 +15,14 @@ export default function Navbar({ onProfilePress, onNotifPress, hideBack = false 
     navigation.navigate("Notifications");
   };
 
+  const handleProfilePress = () => {
+    navigation.navigate('Profile');
+  };
+
+  const handleNotifPress = () => {
+    navigation.navigate('Notifications');
+  };
+
   return (
     <View style={styles.container}>
       {!hideBack ? (
