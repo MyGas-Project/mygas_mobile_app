@@ -1,140 +1,121 @@
-import {
-  View,
-  ImageBackground,
-  StyleSheet,
-  FlatList,
-  Text,
-  Dimensions,
-  Image,
-  Animated,
-  ScrollView,
-} from "react-native";
-import React, { useRef } from "react";
-import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "../../context/ThemeContext";
-import Navbar from "../../components/Navbar";
+import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, Animated, ScrollView, RefreshControl } from 'react-native'
+import React, { useRef, useState } from 'react'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useTheme } from '../../context/ThemeContext'
+import Navbar from '../../components/Navbar';
 
 export default function ActivityScreen() {
-  const { styles } = useTheme();
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const cardContainerTranslateY = scrollY.interpolate({
-    inputRange: [-50, 0, 50],
-    outputRange: [20, 0, -20],
-    extrapolate: "clamp",
-  });
-  const transactions = [
-    {
-      id: "1",
-      group: "Today",
-      station: "MyGas Toril 1",
-      transactionNo: "0000000123",
-      datetime: "01/23/2025, 11:00AM",
-      service: "Fuel-Diesel",
-      amount: 1000,
-      points: 1.0,
-    },
-    {
-      id: "2",
-      group: "Last 7 Days",
-      station: "MyGas Buhangin",
-      transactionNo: "0000000456",
-      datetime: "01/15/2025, 08:00PM",
-      service: "Fuel-Diesel",
-      amount: 500,
-      points: 0.5,
-    },
-    {
-      id: "3",
-      group: "Last 7 Days",
-      station: "MyGas Cabantian",
-      transactionNo: "0000000789",
-      datetime: "01/05/2025, 09:00AM",
-      service: "Oil",
-      amount: 1000,
-      points: 0.25,
-    },
-  ];
-  const groups = ["Today", "Last 7 Days"];
+    const {styles} = useTheme();
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const [refreshing, setRefreshing] = useState(false);
+    const pullAnim = useRef(new Animated.Value(0)).current;
+    const spinAnim = useRef(new Animated.Value(0)).current;
+    const cardContainerTranslateY = scrollY.interpolate({
+        inputRange: [-50, 0, 50],
+        outputRange: [20, 0, -20],
+        extrapolate: 'clamp',
+    });
+    const transactions = [
+        {
+          id: '1',
+          group: 'Today',
+          station: 'MyGas Toril 1',
+          transactionNo: '0000000123',
+          datetime: '01/23/2025, 11:00AM',
+          service: 'Fuel-Diesel',
+          amount: 1000,
+          points: 1.00,
+        },
+        {
+          id: '2',
+          group: 'Last 7 Days',
+          station: 'MyGas Buhangin',
+          transactionNo: '0000000456',
+          datetime: '01/15/2025, 08:00PM',
+          service: 'Fuel-Diesel',
+          amount: 500,
+          points: 0.50,
+        },
+        {
+          id: '3',
+          group: 'Last 7 Days',
+          station: 'MyGas Cabantian',
+          transactionNo: '0000000789',
+          datetime: '01/05/2025, 09:00AM',
+          service: 'Oil',
+          amount: 1000,
+          points: 0.25,
+        },
+    ];
+    const groups = ['Today', 'Last 7 Days'];
 
-  return (
-    <View style={{ flex: 1, backgroundColor: "#E5E5E5" }}>
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={custom_styles.top_bar}
-      >
-        <LinearGradient
-          colors={["rgb(249, 250, 141)", "transparent"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1.4 }}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        <Image
-          source={require("../../../assets/mygas_logo.png")}
-          style={custom_styles.logo}
-        />
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
-      </ImageBackground>
-      <Animated.View
-        style={[
-          custom_styles.outerContainer,
-          { transform: [{ translateY: cardContainerTranslateY }] },
-        ]}
-      >
-        <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={custom_styles.headerContainer}>
-            <Text style={custom_styles.title}>MyGas Points Activity</Text>
-          </View>
-          <View style={custom_styles.sortRow}>
-            <Text style={custom_styles.sortLabel}>Sort Transactions By</Text>
-            <View style={custom_styles.sortBtn}>
-              <Text style={custom_styles.sortBtnText}>
-                January 2025{" "}
-                <Text style={{ fontSize: 13, color: "#888" }}>▼</Text>
-              </Text>
-            </View>
-          </View>
-          {groups.map((group) => (
-            <View key={group}>
-              <Text style={custom_styles.sectionHeader}>{group}</Text>
-              {transactions
-                .filter((t) => t.group === group)
-                .map((item) => (
-                  <View key={item.id} style={custom_styles.itemCard}>
-                    <View style={custom_styles.leftCol}>
-                      <View style={custom_styles.logoContainer}>
-                        <Image
-                          source={require("../../../assets/mygas_logo.png")}
-                          style={custom_styles.logoSmall}
+    const onRefresh = () => {
+        setRefreshing(true);
+        Animated.timing(pullAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+        }).start(() => {
+            // Simulate data refresh
+            setTimeout(() => {
+                setRefreshing(false);
+                Animated.timing(pullAnim, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }).start();
+            }, 1200);
+        });
+    };
+
+    return (
+        <View style={{ flex: 1, backgroundColor: '#E5E5E5' }}>
+            <ImageBackground resizeMode='stretch' source={require('../../../assets/mygas-header.jpeg')} style={custom_styles.top_bar}>
+                <LinearGradient
+                    colors={['rgb(249, 250, 141)', 'transparent']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1.4 }}
+                    style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: 0 }}
+                />
+                <Image
+                    source={require("../../../assets/mygas_logo.png")}
+                    style={custom_styles.logo}
+                />
+                <Navbar
+                    onProfilePress={() => console.log("Profile tapped")}
+                    onNotifPress={() => console.log("Notifications tapped")}
+                />
+            </ImageBackground>
+            <Animated.View
+                style={[
+                    custom_styles.outerContainer,
+                    { transform: [{ translateY: cardContainerTranslateY }] }
+                ]}
+            >
+                <Animated.ScrollView
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                        { useNativeDriver: true }
+                    )}
+                    scrollEventThrottle={16}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor="transparent"
+                            colors={["transparent"]}
+                            progressViewOffset={60}
                         />
-                      </View>
-                      <View style={custom_styles.textBlock}>
-                        <Text style={custom_styles.stationName}>
-                          {item.station}
-                        </Text>
-                        <Text style={custom_styles.detail}>
-                          Transaction No.: {item.transactionNo}
-                        </Text>
-                        <Text style={custom_styles.detail}>
-                          Date/Time: {item.datetime}
-                        </Text>
-                        <View style={custom_styles.serviceRow}>
-                          <Text style={custom_styles.serviceLabel}>
-                            Service:{" "}
-                          </Text>
-                          <Text style={custom_styles.serviceValue}>
-                            {item.service}
-                          </Text>
+                    }
+                >
+                    <View style={custom_styles.headerContainer}>
+                        <Text style={custom_styles.title}>MyGas Points Activity</Text>
+                    </View>
+                    <View style={custom_styles.sortRow}>
+                        <Text style={custom_styles.sortLabel}>Sort Transactions By</Text>
+                        <View style={custom_styles.sortBtn}>
+                            <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{fontSize: 13, color: '#888'}}>▼</Text></Text>
                         </View>
                       </View>
                     </View>
