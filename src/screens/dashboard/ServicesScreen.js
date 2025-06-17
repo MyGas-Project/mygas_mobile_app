@@ -7,6 +7,8 @@ import {
   StyleSheet,
   FlatList,
   Dimensions,
+  Animated,
+  RefreshControl
 } from "react-native";
 import React, { useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +19,36 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function ServicesScreen() {
   const { styles } = useTheme();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [refreshing, setRefreshing] = useState(false);
+  const pullAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  const cardContainerTranslateY = scrollY.interpolate({
+    inputRange: [-50, 0, 50],
+    outputRange: [20, 0, -20],
+    extrapolate: "clamp"
+  });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Animated.timing(pullAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Simulate data refresh
+      setTimeout(() => {
+        setRefreshing(false);
+        Animated.timing(pullAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 1200);
+    });
+  };
+
   const serviceData = [
     {
       id: "1",
@@ -71,6 +103,38 @@ export default function ServicesScreen() {
         <FlatList
           style={custom_styles.flatListContainer}
           data={serviceData}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={["transparent"]}
+              progressViewOffset={60}
+            />
+          }
+          ListHeaderComponent={() => (
+            <View style={custom_styles.headerContainer}>
+              <Text
+                style={[
+                  styles.text,
+                  styles.text_md,
+                  styles.text_bold,
+                  styles.text_align
+                ]}
+              >
+                SERVICES
+              </Text>
+              <Text style={custom_styles.subtitle}>
+                Expert Care for Your Ride: Quality Services to Keep You on the
+                Road, Smooth and Safe!
+              </Text>
+            </View>
+          )}
           renderItem={({ item }) => (
             <View style={custom_styles.card}>
               <Image
