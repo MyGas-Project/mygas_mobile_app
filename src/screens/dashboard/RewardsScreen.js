@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
-  Animated
+  Animated,
+  RefreshControl
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -64,11 +65,34 @@ const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 export default function RewardsScreen() {
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [refreshing, setRefreshing] = useState(false);
+  const pullAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
     outputRange: [20, 0, -20],
     extrapolate: "clamp"
   });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Animated.timing(pullAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Simulate data refresh
+      setTimeout(() => {
+        setRefreshing(false);
+        Animated.timing(pullAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 1200);
+    });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
@@ -109,6 +133,15 @@ export default function RewardsScreen() {
             { useNativeDriver: true }
           )}
           scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={["transparent"]}
+              progressViewOffset={60}
+            />
+          }
         >
           <View style={styles.headerContainer}>
             <Text style={styles.title}>Rewards</Text>
@@ -141,13 +174,15 @@ export default function RewardsScreen() {
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <Image source={item.image} style={styles.cardImage} />
-                <Text style={styles.cardText} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <TouchableOpacity style={styles.redeemBtn} 
+                <View style={styles.content}>
+                  <Text style={styles.cardText} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <TouchableOpacity style={styles.redeemBtn}
                 onPress={() => navigation.navigate('RewardDetails')}>
                   <Text style={styles.redeemText}>{item.buttonText}</Text>
                 </TouchableOpacity>
+                </View>
               </View>
             )}
           />
@@ -275,6 +310,7 @@ const styles = StyleSheet.create({
   cardList: {
     paddingBottom: 10,
     paddingTop: 20,
+    gap: 16,
   },
   card: {
     backgroundColor: "#fff",

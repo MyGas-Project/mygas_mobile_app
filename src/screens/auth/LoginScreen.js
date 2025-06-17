@@ -1,47 +1,109 @@
-import { View, Text, TextInput, Image, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ImageBackground } from 'react-native';
-import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ImageBackground,
+  Alert,
+} from "react-native";
+import React, { useContext, useState } from "react";
+import { useTheme } from "../../context/ThemeContext";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { AuthContext } from "../../context/AuthContext";
 
-export default function LoginScreen({navigation}) {
-    const { styles } = useTheme();
-    return (
-        <View style={styles.container}>
-            <ImageBackground resizeMode='stretch' source={require('../../../assets/mygas-header.jpeg')} style={styles.top_bar}>
-                <LinearGradient
-                    colors={['transparent', 'rgba(255,255,255,0.5)']}
-                    style={{position: 'absolute', top: 0, bottom: 0, right: 0, left: 0}}
-                />
-                {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
+export default function LoginScreen({ navigation }) {
+  const { styles } = useTheme();
+  const { login } = useContext(AuthContext);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigation.navigate("Home");
+      } else {
+        Alert.alert("Login Failed", result.error);
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <ImageBackground
+        resizeMode="stretch"
+        source={require("../../../assets/mygas-header.jpeg")}
+        style={styles.top_bar}
+      >
+        <LinearGradient
+          colors={["transparent", "rgba(255,255,255,0.5)"]}
+          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+        />
+        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
                     <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
                 </TouchableOpacity> */}
-            </ImageBackground>
-            <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                <ScrollView style={styles.auth_content}>
-                    <View style={styles.logo_container}>
-                        <Image source={require('../../../assets/mygas.jpg')} style={styles.logo}/>
-                    </View>
-                    <View style={styles.form_container}>
-                        <View style={styles.form_section}>
-                            <Text style={styles.form_label}>Mobile Number / Email Address</Text>
-                            <TextInput style={styles.form_input}/>
-                        </View>
-                        <View style={styles.form_section}>
-                            <Text style={styles.form_label}>Password</Text>
-                            <TextInput style={styles.form_input}/>
-                        </View>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-            <View style={styles.footer}>
-                <View style={styles.footer_button_container}>
-                    <TouchableOpacity style={styles.primaryButton}
-                    onPress={() => navigation.navigate('Main')}>
-                        <Text style={styles.primaryButtonText}>Login</Text>
-                    </TouchableOpacity>
-                </View>
+      </ImageBackground>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView style={styles.auth_content}>
+          <View style={styles.logo_container}>
+            <Image
+              source={require("../../../assets/mygas.jpg")}
+              style={styles.logo}
+            />
+          </View>
+          <View style={styles.form_container}>
+            <View style={styles.form_section}>
+              <Text style={styles.form_label}>
+                Mobile Number / Email Address
+              </Text>
+              <TextInput
+                style={styles.form_input}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
+              />
             </View>
+            <View style={styles.form_section}>
+              <Text style={styles.form_label}>Password</Text>
+              <TextInput
+                style={styles.form_input}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                editable={!isLoading}
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <View style={styles.footer}>
+        <View style={styles.footer_button_container}>
+          <TouchableOpacity
+            style={[styles.primaryButton, isLoading && styles.disabledButton]}
+            onPress={handleLogin}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Text>
+          </TouchableOpacity>
         </View>
-    )
+      </View>
+    </View>
+  );
 }
