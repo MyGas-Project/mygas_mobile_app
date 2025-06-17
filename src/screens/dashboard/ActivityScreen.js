@@ -117,30 +117,48 @@ export default function ActivityScreen() {
                         <View style={custom_styles.sortBtn}>
                             <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{fontSize: 13, color: '#888'}}>▼</Text></Text>
                         </View>
-                      </View>
                     </View>
-                    <View style={custom_styles.rightCol}>
-                      <Text style={custom_styles.amount}>
-                        PHP {item.amount}
-                      </Text>
-                      <View style={custom_styles.pointsBlock}>
-                        <Text style={custom_styles.points}>
-                          +{item.points.toFixed(2)}
-                        </Text>
-                        <Text style={custom_styles.pointsLabel}>
-                          points earned
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
-            </View>
-          ))}
-          <View style={{ height: 50 }} />
-        </Animated.ScrollView>
-      </Animated.View>
-    </View>
-  );
+
+                    {groups.map((group) => (
+                        <View key={group}>
+                            <Text style={custom_styles.sectionHeader}>{group}</Text>
+                            {transactions
+                                .filter(transaction => transaction.group === group)
+                                .map((item) => (
+                                    <View key={item.id} style={custom_styles.itemCard}>
+                                        <View style={custom_styles.leftCol}>
+                                            <View style={custom_styles.textBlock}>
+                                                <Text style={custom_styles.stationName}>{item.station}</Text>
+                                                <Text style={custom_styles.detail}>Transaction #{item.transactionNo}</Text>
+                                                <Text style={custom_styles.detail}>{item.datetime}</Text>
+                                                <View style={custom_styles.serviceRow}>
+                                                    <Text style={custom_styles.serviceLabel}>Service: </Text>
+                                                    <Text style={custom_styles.serviceValue}>{item.service}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                        <View style={custom_styles.rightCol}>
+                                            <Text style={custom_styles.amount}>
+                                                PHP {item.amount}
+                                            </Text>
+                                            <View style={custom_styles.pointsBlock}>
+                                                <Text style={custom_styles.points}>
+                                                    +{item.points.toFixed(2)}
+                                                </Text>
+                                                <Text style={custom_styles.pointsLabel}>
+                                                    points earned
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
+                        </View>
+                    ))}
+                    <View style={{ height: 50 }} />
+                </Animated.ScrollView>
+            </Animated.View>
+        </View>
+    );
 }
 const custom_styles = StyleSheet.create({
   top_bar: {
