@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,21 @@ import {
   Animated,
   TouchableOpacity,
   ImageBackground,
-  Image
+  Image,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { useTheme } from "../../context/ThemeContext";
+import { AuthContext } from "../../context/AuthContext";
 import BottomTabNavigator from "../../components/BottomNavigation";
 
 const ProfileScreen = () => {
   const { styles } = useTheme();
   const navigation = useNavigation();
+  const { logout } = useContext(AuthContext);
   const route = useRoute();
   const [userProfile, setUserProfile] = useState({
     name: "Juan Dela Cruz",
@@ -42,9 +45,11 @@ const ProfileScreen = () => {
     // Navigate to Settings screen
   };
 
-  const handleLogout = () => {
-    console.log("Logout pressed");
-    // Implement logout logic
+  const handleLogout = (navigate) => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", onPress: () => logout(navigate) },
+    ]);
   };
 
   // Animation for card container
@@ -135,11 +140,11 @@ const ProfileScreen = () => {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={profile_styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Text style={profile_styles.logoutButtonText}>Log Out</Text>
-          </TouchableOpacity>
+          style={profile_styles.logoutButton}
+          onPress={() => handleLogout(navigation)}
+        >
+          <Text style={profile_styles.logoutButtonText}>Log Out</Text>
+        </TouchableOpacity>
         </Animated.ScrollView>
       </Animated.View>
       <View style={profile_styles.bottomNavContainer}>
