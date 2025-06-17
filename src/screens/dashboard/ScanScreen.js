@@ -107,10 +107,10 @@ const custom_styles = StyleSheet.create({
   barcodeText: {
     fontSize: 16,
     color: "#333",
-  },  
+  },
   barcode: {
     width: 350,
     height: "50%",
     resizeMode: "contain",
-  },  
+  },
 });
