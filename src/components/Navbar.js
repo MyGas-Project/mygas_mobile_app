@@ -14,14 +14,6 @@ export default function Navbar({ onProfilePress, onNotifPress }) {
     navigation.navigate('Notifications');
   };
 
-  const handleProfilePress = () => {
-    navigation.navigate('Profile');
-  };
-
-  const handleNotifPress = () => {
-    navigation.navigate('Notifications');
-  };
-
   return (
     <View style={styles.container}>
       <TouchableOpacity
