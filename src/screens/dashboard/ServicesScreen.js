@@ -10,7 +10,7 @@ import {
   Animated,
   RefreshControl
 } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import Navbar from "../../components/Navbar";

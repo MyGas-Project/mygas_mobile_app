@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const login = (email, password) => {
     return new Promise((resolve, reject) => {
       try {
-        fetch(`${AUTH_URL}login-customer`, {
+        fetch(${AUTH_URL}login-customer, {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   };
   const register = (email, password) => {
     try {
-      fetch(`${AUTH_URL}register`, {
+      fetch(${AUTH_URL}register, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -75,12 +75,12 @@ export const AuthProvider = ({ children }) => {
   };
   const logout = (navigation) => {
     try {
-      fetch(`${AUTH_URL}logout`, {
+      fetch(${AUTH_URL}logout, {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
+          Authorization: Bearer ${userInfo.token},
         },
       })
         .then(processResponse)
