@@ -8,16 +8,32 @@ import BottomNavigation from "./BottomNavigation";
 import ScanScreen from "../screens/dashboard/ScanScreen";
 import RewardDetails from "../screens/RewardDetails";
 import { AuthContext } from "../context/AuthContext";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
   const { userInfo } = useContext(AuthContext);
+  const [initialRoute, setInitialRoute] = useState(null);
+
+  useEffect(() => {
+    const checkIfNewUser = async () => {
+      try {
+        const isNewUser = await AsyncStorage.getItem('isNewUser');
+        setInitialRoute(isNewUser === null ? 'Welcome' : 'Login');
+      } catch (e) {
+        setInitialRoute('Welcome'); // fallback
+      }
+    };
+    checkIfNewUser();
+  }, []);
+
+  if (!initialRoute && !userInfo) return null; // or a loading spinner
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={userInfo ? 'Home' : initialRoute}>
         {userInfo ? (
           <>
             <Stack.Screen
