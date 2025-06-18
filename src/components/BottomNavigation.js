@@ -15,6 +15,7 @@ import ActivityScreen from "../screens/dashboard/ActivityScreen";
 import RewardsScreen from "../screens/dashboard/RewardsScreen";
 import ServicesScreen from "../screens/dashboard/ServicesScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
+import NotificationScreen from "../screens/dashboard/NotificationScreen";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -46,6 +47,11 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
+        // Skip rendering tab bar items for Profile and Notifications
+        if (route.name === "Profile" || route.name === "Notifications") {
+          return null;
+        }
+
         const iconName =
           route.name === "Services"
             ? icons.services
@@ -111,6 +117,16 @@ const BottomTabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Stations" component={StationsScreeen} />
       <Tab.Screen name="Activity" component={ActivityScreen} />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarButton: () => null }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationScreen}
+        options={{ tabBarButton: () => null }}
+      />
     </Tab.Navigator>
   );
 };

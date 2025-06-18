@@ -10,26 +10,48 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
-import { useTheme } from '../../context/ThemeContext'
-import BottomTabNavigator from "../../components/BottomNavigation";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../context/ThemeContext";
 
-
-const ProfileScreen = () => {
-  const {styles} = useTheme();
+const NotificationScreen = () => {
+  const { styles } = useTheme();
   const navigation = useNavigation();
-  const [userProfile, setUserProfile] = useState({
-    name: "Juan Dela Cruz",
-    email: "juandelacruz@gmail.com",
-    phone: "+63 123 456 7890",
-    memberSince: "2024",
-    points: 1250,
-  });
+  const route = useRoute();
 
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
+  // Add navigation handlers for bottom tabs
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", (e) => {
+      // Prevent default behavior
+      e.preventDefault();
+      // Navigate to the tab
+      navigation.navigate(e.target.split("-")[0]);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: "1",
+      description: "You have purchased PHP 1000 fuel diesel",
+      station: "MyGas Toril 1",
+      points_earned: "1.00 points earned",
+    },
+    {
+      id: "2",
+      description: "You have purchased PHP 500 fuel diesel",
+      station: "MyGas Buhangin",
+      points_earned: "0.50 points earned",
+    },
+    {
+      id: "3",
+      description: "You have purchased PHP 1000 engine oil",
+      station: "MyGas Cabantian",
+      points_earned: "0.25 points earned",
+    },
+  ]);
 
   const handleEditProfile = () => {
     console.log("Edit profile pressed");
@@ -52,73 +74,36 @@ const ProfileScreen = () => {
   };
 
   return (
-    
-    <View style={profile_styles.container}>
-      <ImageBackground source={require("../../../assets/mygas-header.jpeg")} style={styles.top_bar}>
+    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
+      <ImageBackground
+        resizeMode="stretch"
+        source={require("../../../assets/mygas-header.jpeg")}
+        style={notif_styles.top_bar}
+      >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
+          colors={["rgb(249, 250, 141)", "transparent"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1.4 }}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
+        <Image
+          source={require("../../../assets/mygas_logo.png")}
+          style={notif_styles.logo}
         />
+        <Navbar />
       </ImageBackground>
-
-      <Text style={profile_styles.myAccountTitle}>My Account</Text>
-
-      <ScrollView style={profile_styles.scrollView}>
-        <View style={[profile_styles.card]}>
-          <View style={profile_styles.profile_info}>
-            <Text style={profile_styles.profileName}>{userProfile.name}</Text>
-            <Text>{userProfile.phone}</Text>
-            <Text>{userProfile.email}</Text>
-            <TouchableOpacity
-              onPress={handleEditProfile}
-              style={profile_styles.editIcon}
-            >
-              <Ionicons name="create-outline" size={20} color="#333" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={profile_styles.card}
-          onPress={handleLoyaltyProgramPress}
-        >
-          <View style={profile_styles.profile_info}>
-          <Text style={profile_styles.profileName}>Loyalty Program</Text>
-            <View style={profile_styles.loyaltyProgramContent}>
-              <Image
-                source={require("../../../assets/mygas_logo.png")}
-                style={profile_styles.loyaltyLogo}
-              />
-              <Text style={profile_styles.motoristaCard}>Motorista Card</Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleEditProfile}
-              style={profile_styles.editIcon}
-            >
-            <Ionicons name="chevron-forward" size={24} color="#333" />
-
-            </TouchableOpacity>
-          </View>
-          
-        </TouchableOpacity>
-
-        <TouchableOpacity style={profile_styles.card} onPress={handleSettingsPress}>
-        <View style={profile_styles.loyaltyProgramContent}>
-        <Ionicons name="settings-outline" size={24} color="#333" />
-              <Text style={profile_styles.settingsText}>Settings</Text>
-            </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={profile_styles.logoutButton} onPress={handleLogout}>
-          <Text style={profile_styles.logoutButtonText}>Log Out</Text>
-        </TouchableOpacity>
-      </ScrollView>
-      {/* <View style={profile_styles.bottomNavContainer}>
-        <BottomTabNavigator />
-      </View> */}
+      <View style={notif_styles.cardContainer}>
+        <Text style={notif_styles.pageTitle}>Notifications</Text>
+        <FlatList
+          data={notifications}
+          renderItem={renderNotification}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            notif_styles.notificationList,
+            { paddingBottom: 80 },
+          ]}
+        />
+      </View>
     </View>
   );
 };
@@ -158,9 +143,14 @@ const profile_styles = StyleSheet.create({
     padding: 5,
   },
   logo: {
-    width: 100, // Adjust size as needed
-    height: 40, // Adjust size as needed
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    width: 65,
+    height: 65,
     resizeMode: "contain",
+    zIndex: 2,
   },
   headerRight: {
     flexDirection: "row",
@@ -252,10 +242,35 @@ const profile_styles = StyleSheet.create({
     fontWeight: "bold",
   },
   bottomNavContainer: {
-    borderTopWidth: 1,
-    borderColor: "#ccc",
     backgroundColor: "#fff",
-    marginTop:300,
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    zIndex: 999,
+  },
+  top_bar: {
+    height: 150,
+    width: "100%",
+    position: "relative",
+  },
+  headerLeft: {
+    position: "absolute",
+    left: 16,
+    top: 50,
+    zIndex: 3,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cardContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: -20,
+    backgroundColor: "#F5F5F5",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: "relative",
+    zIndex: 1,
   },
 });
 
