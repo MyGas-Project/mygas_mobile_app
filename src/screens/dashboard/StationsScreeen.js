@@ -10,16 +10,14 @@ import {
   Dimensions,
   Animated,
   ScrollView,
-  TextInput,
-  RefreshControl,
-} from "react-native";
-import React, { useState, useRef, useEffect } from "react";
-import MapView, { Marker } from "react-native-maps";
-import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "../../context/ThemeContext";
-import Navbar from "../../components/Navbar";
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from 'expo-location'
+  RefreshControl
+} from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import MapView, { Marker } from 'react-native-maps';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../context/ThemeContext';
+import Navbar from '../../components/Navbar';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function StationsScreeen() {
   const { styles } = useTheme();
@@ -27,92 +25,47 @@ export default function StationsScreeen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [currLat, setCurrLat] = useState(7.102943635598714);
   const [currLong, setCurrLong] = useState(125.58125155146296);
-  const [locationPermission, setLocationPermission] = useState(null);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const pullAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
   const stationsData = [
     {
-      id: "1",
-      name: "MyGas Toril 1",
-      address: "127 Saavedra St., Toril, Davao City",
-      fuelTypes: "Regular, Premium, Diesel",
-      distance: "2.5 km",
-      hours: "24/7",
-      amenities: "Convenience Store, Car Wash",
+      id: '1',
+      name: 'MyGas Toril 1',
+      address: '127 Saavedra St., Toril, Davao City',
+      fuelTypes: 'Regular, Premium, Diesel',
+      distance: '2.5 km',
+      hours: '24/7',
+      amenities: 'Convenience Store, Car Wash',
       lat: 7.102943635598714,
       lon: 125.58125155146296,
     },
     {
-      id: "2",
-      name: "Mygas Station 2",
-      fuelTypes: "Regular, Premium",
-      distance: "5.8 km",
-      hours: "6 AM - 10 PM",
-      amenities: "Convenience Store, ATM",
+      id: '2',
+      name: 'Mygas Station 2',
+      fuelTypes: 'Regular, Premium',
+      distance: '5.8 km',
+      hours: '6 AM - 10 PM',
+      amenities: 'Convenience Store, ATM',
       lat: 7.079302990212743,
       lon: 125.54663569839967,
     },
     {
-      id: "3",
-      name: "Mygas Station 3",
-      fuelTypes: "Premium, Diesel",
-      distance: "10.2 km",
-      hours: "24/7",
-      amenities: "Car Wash, Restroom",
+      id: '3',
+      name: 'Mygas Station 3',
+      fuelTypes: 'Premium, Diesel',
+      distance: '10.2 km',
+      hours: '24/7',
+      amenities: 'Car Wash, Restroom',
       lat: 7.047592979513302,
-      lon: 125.56948195451061,
+      lon: 125.56948195451061
     },
   ];
-
-  const cardContainerTranslateY = scrollY.interpolate({
-    inputRange: [-50, 0, 50],
-    outputRange: [20, 0, -20],
-    extrapolate: "clamp",
-  });
-
-  const [mapLoading, setMapLoading] = useState(true);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-  const [refreshing, setRefreshing] = useState(false);
-  const pullAnim = useRef(new Animated.Value(0)).current;
-  const spinAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    (async () => {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        setLocationPermission(status);
-        
-        if (status === 'granted') {
-            try {
-                let location = await Location.getCurrentPositionAsync({});
-                setCurrLat(location.coords.latitude);
-                setCurrLong(location.coords.longitude);
-                
-                // Animate map to user's location
-                mapRef.current?.animateToRegion({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    latitudeDelta: 0.05,
-                    longitudeDelta: 0.05,
-                }, 1000);
-            } catch (error) {
-                Alert.alert(
-                    "Location Error",
-                    "Unable to get your current location. Using default location instead."
-                );
-            }
-        } else {
-            Alert.alert(
-                "Location Permission Required",
-                "Please enable location services to find nearby gas stations.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => console.log("OK Pressed")
-                    }
-                ]
-            );
-        }
-    })();
-}, []);
 
   useEffect(() => {
     let animation;
@@ -190,7 +143,7 @@ export default function StationsScreeen() {
           duration: 400,
           useNativeDriver: true,
         }).start();
-      }, 1200); // simulate loading
+      }, 1200);
     });
   };
 
@@ -200,7 +153,7 @@ export default function StationsScreeen() {
       {mapLoading && (
         <View style={custom_styles.loaderOverlay} pointerEvents="auto">
           <Animated.Image
-            source={require("../../../assets/mygas_logo.png")}
+            source={require('../../../assets/mygas_logo.png')}
             style={[
               custom_styles.loaderLogo,
               {
@@ -211,9 +164,11 @@ export default function StationsScreeen() {
           />
         </View>
       )}
+
+      {/* Header */}
       <ImageBackground
         resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
+        source={require('../../../assets/mygas-header.jpeg')}
         style={custom_styles.top_bar}
       >
         <LinearGradient
@@ -222,141 +177,113 @@ export default function StationsScreeen() {
           end={{ x: 0.5, y: 1.4 }}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
-        <Image
-          source={require("../../../assets/mygas_logo.png")}
-          style={custom_styles.logo}
-        />
+        <Image source={require("../../../assets/mygas_logo.png")} style={custom_styles.logo} />
         <Navbar
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />
       </ImageBackground>
 
-      <Animated.View
-        style={[
-          custom_styles.cardContainer,
-          {
-            transform: [{ translateY: cardContainerTranslateY }],
-          },
-        ]}
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        contentContainerStyle={custom_styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        style={custom_styles.scrollableContentArea}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="transparent"
+            colors={["transparent"]}
+            progressViewOffset={60}
+          />
+        }
       >
-        <Animated.ScrollView
-          contentContainerStyle={custom_styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-          style={custom_styles.scrollableContentArea}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="transparent"
-              colors={["transparent"]}
-              progressViewOffset={60}
-            />
-          }
-        >
-          <View style={custom_styles.headerContainer}>
-            <Text style={custom_styles.title}>Locate Stations</Text>
-            <Text style={custom_styles.subtitle}>
-              Find the nearest MyGas stations and plan your journey with ease!
-            </Text>
-          </View>
+        <View style={custom_styles.headerContainer}>
+          <Text style={custom_styles.title}>Locate Stations</Text>
+          <Text style={custom_styles.subtitle}>
+            Find the nearest MyGas stations and plan your journey with ease!
+          </Text>
+        </View>
 
-          <View style={custom_styles.searchBarContainer}>
-            <Ionicons
-              name="compass-outline"
-              size={20}
-              color="#777"
-              style={custom_styles.searchIcon}
-            />
-            <TextInput
-              style={custom_styles.searchInput}
-              placeholder="Search Location"
-              placeholderTextColor="#777"
-            />
-          </View>
+        {/* Map Section */}
+        <View style={{ height: 500 }}>
+          <MapView
+            ref={mapRef}
+            style={{ flex: 1 }}
+            initialRegion={{
+              latitude: currLat,
+              longitude: currLong,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+            onMapReady={() => setMapLoading(false)}
+            onRegionChangeComplete={() => setMapLoading(false)}
+            moveOnMarkerPress={false}
+            scrollEnabled={true}
+            zoomEnabled={true}
+            rotateEnabled={true}
+            pitchEnabled={true}
+          >
+            {stationsData.map(station => (
+              <Marker
+                key={station.id}
+                coordinate={{ latitude: station.lat, longitude: station.lon }}
+                title={station.name}
+                description={`Fuel Types: ${station.fuelTypes}\n${station.amenities}`}
+              />
+            ))}
+          </MapView>
+        </View>
 
-          <View style={{ height: 500 }}>
-            <MapView
-              ref={mapRef}
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: currLat,
-                longitude: currLong,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
+        {/* Station Cards */}
+        <View style={{ flex: 1, paddingTop: 16 }}>
+          <Text style={custom_styles.sectionTitle}>Nearby Gasoline Stations</Text>
+          {stationsData.map(item => (
+            <TouchableOpacity
+              key={item.id}
+              style={custom_styles.stationCardNew}
+              onPress={() => {
+                setCurrLat(item.lat);
+                setCurrLong(item.lon);
+                mapRef.current?.animateToRegion({
+                  latitude: item.lat,
+                  longitude: item.lon,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                });
               }}
-              onMapReady={() => setMapLoading(false)}
-              onRegionChangeComplete={() => setMapLoading(false)}
-              onPanDrag={() => {
-                // Prevent scroll view from receiving the drag event
-                scrollY.setValue(0);
-              }}
-              moveOnMarkerPress={false}
-              scrollEnabled={true}
-              zoomEnabled={true}
-              rotateEnabled={true}
-              pitchEnabled={true}
             >
-              {stationsData.map((station) => (
-                <Marker
-                  key={station.id}
-                  coordinate={{
-                    latitude: station.lat,
-                    longitude: station.lon,
+              <Image source={require('../../../assets/mygas_logo.png')} style={custom_styles.stationLogoRow} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={custom_styles.stationNameNew}>{item.name}</Text>
+                <Text style={custom_styles.stationAddress}>{item.address}</Text>
+                <TouchableOpacity
+                  style={custom_styles.directionRow}
+                  onPress={() => {
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`;
+                    Linking.openURL(url);
                   }}
-                  title={station.name}
-                  description={`Fuel Types: ${station.fuelTypes}\n${station.amenities}`}
-                />
-              ))}
-            </MapView>
-          </View>
-
-          <View style={{ flex: 1, paddingTop: 16 }}>
-            <Text style={custom_styles.sectionTitle}>
-              Nearby Gasoline Stations
-            </Text>
-            {stationsData.map((item) => (
-              <View key={item.id} style={custom_styles.stationCardNew}>
-                <Image
-                  source={require("../../../assets/mygas_logo.png")}
-                  style={custom_styles.stationLogoRow}
-                />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={custom_styles.stationNameNew}>{item.name}</Text>
-                  <Text style={custom_styles.stationAddress}>
-                    {item.address}
-                  </Text>
-                  <TouchableOpacity
-                    style={custom_styles.directionRow}
-                    onPress={() => {
-                      const url = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`;
-                      Linking.openURL(url);
-                    }}
-                  >
-                    <Text style={custom_styles.getDirectionText}>
-                      Get Direction
-                    </Text>
-                    <Ionicons
-                      name="paper-plane-outline"
-                      size={16}
-                      color="#fe0002"
-                      style={{ marginLeft: 4 }}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity style={custom_styles.arrowBtn}>
-                  <Ionicons name="chevron-forward" size={24} color="#222" />
+                >
+                  <Text style={custom_styles.getDirectionText}>Get Direction</Text>
+                  <Ionicons name="paper-plane-outline" size={16} color="#fe0002" style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               </View>
-            ))}
-          </View>
-        </Animated.ScrollView>
-      </Animated.View>
+              <TouchableOpacity style={custom_styles.arrowBtn}>
+                <Ionicons name="chevron-forward" size={24} color="#222" />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Animated.ScrollView>
+
+      {/* Spacer */}
+      <View style={{ height: 70 }} />
     </View>
   );
 }
