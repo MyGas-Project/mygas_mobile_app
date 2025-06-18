@@ -15,7 +15,6 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
-import BottomTabNavigator from "../../components/BottomNavigation";
 
 const ProfileScreen = () => {
   const { styles } = useTheme();
@@ -27,8 +26,20 @@ const ProfileScreen = () => {
     email: "juandelacruz@gmail.com",
     phone: "+63 123 456 7890",
     memberSince: "2024",
-    points: 1250
+    points: 1250,
   });
+
+  // Add navigation handlers for bottom tabs
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", (e) => {
+      // Prevent default behavior
+      e.preventDefault();
+      // Navigate to the tab
+      navigation.navigate(e.target.split("-")[0]);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleEditProfile = () => {
     console.log("Edit profile pressed");
@@ -57,7 +68,7 @@ const ProfileScreen = () => {
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
     outputRange: [20, 0, -20],
-    extrapolate: "clamp"
+    extrapolate: "clamp",
   });
 
   return (
@@ -82,7 +93,7 @@ const ProfileScreen = () => {
       <Animated.View
         style={[
           profile_styles.cardContainer,
-          { transform: [{ translateY: cardContainerTranslateY }] }
+          { transform: [{ translateY: cardContainerTranslateY }] },
         ]}
       >
         <Animated.ScrollView
@@ -140,16 +151,13 @@ const ProfileScreen = () => {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-          style={profile_styles.logoutButton}
-          onPress={() => handleLogout(navigation)}
-        >
-          <Text style={profile_styles.logoutButtonText}>Log Out</Text>
-        </TouchableOpacity>
+            style={profile_styles.logoutButton}
+            onPress={() => handleLogout(navigation)}
+          >
+            <Text style={profile_styles.logoutButtonText}>Log Out</Text>
+          </TouchableOpacity>
         </Animated.ScrollView>
       </Animated.View>
-      <View style={profile_styles.bottomNavContainer}>
-        <BottomTabNavigator />
-      </View>
     </View>
   );
 };
@@ -157,12 +165,12 @@ const ProfileScreen = () => {
 const profile_styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5"
+    backgroundColor: "#f5f5f5",
   },
   top_bar: {
     height: 150,
     width: "100%",
-    position: "relative"
+    position: "relative",
   },
   logo: {
     position: "absolute",
@@ -172,7 +180,7 @@ const profile_styles = StyleSheet.create({
     width: 65,
     height: 65,
     resizeMode: "contain",
-    zIndex: 2
+    zIndex: 2,
   },
   cardContainer: {
     flex: 1,
@@ -183,7 +191,7 @@ const profile_styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
   },
   headerRight: {
     position: "absolute",
@@ -191,31 +199,31 @@ const profile_styles = StyleSheet.create({
     top: 50,
     zIndex: 3,
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
   },
   headerImage: {
     width: "100%",
-    height: 200
+    height: 200,
   },
   profile_info: {
     fontSize: 16,
     color: "#666",
     marginBottom: 2,
-    textAlign: "left"
+    textAlign: "left",
   },
   headerIcon: {
-    padding: 5
+    padding: 5,
   },
   myAccountTitle: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 20,
-    color: "#333"
+    color: "#333",
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
   },
   card: {
     backgroundColor: "white",
@@ -227,70 +235,63 @@ const profile_styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
-    position: "relative"
+    position: "relative",
   },
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 5,
-    textAlign: "left"
+    textAlign: "left",
   },
   profileEmail: {
     fontSize: 16,
     color: "#666",
-    textAlign: "left"
+    textAlign: "left",
   },
   editIcon: {
     position: "absolute",
     top: 20,
-    right: 20
+    right: 20,
   },
   loyaltyWrapper: {
-    flex: 1
+    flex: 1,
   },
 
   loyaltyLogo: {
     width: 30,
     height: 30,
     marginRight: 10,
-    resizeMode: "contain"
+    resizeMode: "contain",
   },
   loyaltyProgramContent: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5
+    marginTop: 5,
   },
   motoristaCard: {
     fontSize: 16,
-    color: "#666"
+    color: "#666",
   },
   settingsText: {
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 15,
-    flex: 1
+    flex: 1,
   },
   logoutButton: {
     backgroundColor: "white",
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
-    marginTop: 150,
-    marginBottom: 30, // Add some bottom padding
+    marginTop: 100,
+    marginBottom: 50,
     borderColor: "red",
-    borderWidth: 1
+    borderWidth: 1,
   },
   logoutButtonText: {
     color: "red",
     fontSize: 18,
-    fontWeight: "bold"
-  },
-  bottomNavContainer: {
-    backgroundColor: "#fff",
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    zIndex: 999
+    fontWeight: "bold",
   },
   headerLeft: {
     position: "absolute",
@@ -298,8 +299,8 @@ const profile_styles = StyleSheet.create({
     top: 50,
     zIndex: 3,
     flexDirection: "row",
-    alignItems: "center"
-  }
+    alignItems: "center",
+  },
 });
 
 export default ProfileScreen;

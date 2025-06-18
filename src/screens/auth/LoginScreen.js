@@ -28,7 +28,8 @@ export default function LoginScreen({ navigation }) {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigation.navigate("Home");
+        // Navigation will be handled automatically by the Navigation component
+        // based on userInfo state change
       } else {
         Alert.alert("Login Failed", result.error);
       }
