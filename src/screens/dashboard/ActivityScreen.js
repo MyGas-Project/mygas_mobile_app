@@ -2,11 +2,7 @@ import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, A
 import React, { useRef } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
-<<<<<<< HEAD
-import Navbar from '../../components/Navbar'
-=======
 import Navbar from '../../components/Navbar';
->>>>>>> 9a93d1aa38fc4c0d643e2a9a84b460b374dfab90
 
 export default function ActivityScreen() {
     const {styles} = useTheme();

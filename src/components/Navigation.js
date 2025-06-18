@@ -15,13 +15,15 @@ import { useContext } from "react";
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
+  const { userInfo } = useContext(AuthContext);
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
         {userInfo ? (
           <>
             <Stack.Screen
-              name="Home"
+              name="Main"
               component={BottomNavigation}
               options={{ headerShown: false }}
             />
