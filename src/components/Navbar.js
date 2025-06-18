@@ -14,6 +14,7 @@ export default function Navbar({ onProfilePress, onNotifPress }) {
     navigation.navigate('Notifications');
   };
 
+
   return (
     <View style={styles.container}>
       <TouchableOpacity

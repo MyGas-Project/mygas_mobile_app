@@ -7,8 +7,11 @@ import {
   StyleSheet,
   FlatList,
   Dimensions,
+<<<<<<< HEAD
+=======
   Animated,
   RefreshControl
+>>>>>>> 9a93d1aa38fc4c0d643e2a9a84b460b374dfab90
 } from "react-native";
 import React, { useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +22,8 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function ServicesScreen() {
   const { styles } = useTheme();
+<<<<<<< HEAD
+=======
   const scrollY = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
   const pullAnim = useRef(new Animated.Value(0)).current;
@@ -49,6 +54,7 @@ export default function ServicesScreen() {
     });
   };
 
+>>>>>>> 9a93d1aa38fc4c0d643e2a9a84b460b374dfab90
   const serviceData = [
     {
       id: "1",
@@ -103,6 +109,8 @@ export default function ServicesScreen() {
         <FlatList
           style={custom_styles.flatListContainer}
           data={serviceData}
+<<<<<<< HEAD
+=======
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             { useNativeDriver: true }
@@ -135,6 +143,7 @@ export default function ServicesScreen() {
               </Text>
             </View>
           )}
+>>>>>>> 9a93d1aa38fc4c0d643e2a9a84b460b374dfab90
           renderItem={({ item }) => (
             <View style={custom_styles.card}>
               <Image
