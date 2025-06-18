@@ -13,6 +13,8 @@ import { useContext } from "react";
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
+  const { userInfo } = useContext(AuthContext);
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
