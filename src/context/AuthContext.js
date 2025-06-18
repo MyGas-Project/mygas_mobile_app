@@ -89,7 +89,6 @@ export const AuthProvider = ({ children }) => {
           if (statusCode === 200) {
             console.log(data);
             setUserInfo(null);
-            navigation.navigate("Login");
           }
           console.log(data);
         })

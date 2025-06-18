@@ -24,16 +24,24 @@ export default function LoginScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Validation Error", "Email and password required");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigation.navigate("Home");
+        // Navigation will be handled automatically by the Navigation component
+        // based on userInfo state change
       } else {
-        Alert.alert("Login Failed", result.error);
+        Alert.alert("Login Failed", "Invalid credentials");
+        setPassword("");
       }
     } catch (error) {
       Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      setPassword("");
     } finally {
       setIsLoading(false);
     }
