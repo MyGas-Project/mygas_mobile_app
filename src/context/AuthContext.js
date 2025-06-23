@@ -5,6 +5,91 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
+
+  // STEP 1: Register Step 1
+  const registerStep1 = (data) => {
+    return new Promise((resolve, reject) => {
+      fetch(`${AUTH_URL}register/step1`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          console.log("registerStep1 response:", res); // Add this
+
+          if (statusCode === 200 || statusCode === 201) {
+            resolve({ success: true, data: data.data }); // pass only inner `data`
+          } else {
+            resolve({
+              success: false,
+              error: data?.error || data?.message || "Step 1 failed",
+            });
+          }
+        })
+        .catch((err) => {
+          console.log("registerStep1 error:", err);
+          reject(err);
+        });
+    });
+  };
+
+  // STEP 2: Verify Code (for phone/email)
+  const verifyCode = ({ user_id, code_id, code }) => {
+    return new Promise((resolve, reject) => {
+      fetch(
+        `${AUTH_URL}verify-code?user_id=${user_id}&code_id=${code_id}&code=${code}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      )
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          if (statusCode === 200) {
+            resolve({ success: true, data });
+          } else {
+            resolve({
+              success: false,
+              error: data.error || "Verification failed",
+            });
+          }
+        })
+        .catch(reject);
+    });
+  };
+
+  // STEP 3: Register Step 2
+  const registerStep2 = ({ user_id, email }) => {
+    return new Promise((resolve, reject) => {
+      fetch(`${AUTH_URL}register/step-2`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id, email }),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          if (statusCode === 200) {
+            resolve({ success: true, data });
+          } else {
+            resolve({ success: false, error: data.error || "Step 2 failed" });
+          }
+        })
+        .catch(reject);
+    });
+  };
+
   const login = (email, password) => {
     return new Promise((resolve, reject) => {
       try {
@@ -39,40 +124,7 @@ export const AuthProvider = ({ children }) => {
       }
     });
   };
-  const register = (email, password) => {
-    try {
-      fetch(`${AUTH_URL}register`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          user_type: 1, //1 customer, 2 merchant, 3 rider
-          first_name: "test",
-          last_name: "test",
-          middle_name: "test",
-          contact_no: "0000",
-          address: "",
-          lat: "0000",
-          long: "0000",
-        }),
-      })
-        .then(processResponse)
-        .then((res) => {
-          const { statusCode, data } = res;
-          if (statusCode === 200) {
-            alert(JSON.stringify(data));
-          }
-          console.log(data);
-        })
-        .catch((e) => console.log(e));
-    } catch (e) {
-      console.log(e);
-    }
-  };
+
   const logout = (navigation) => {
     try {
       fetch(`${AUTH_URL}logout`, {
@@ -103,7 +155,9 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         userInfo,
-        register,
+        registerStep1,
+        verifyCode,
+        registerStep2,
       }}
     >
       {children}

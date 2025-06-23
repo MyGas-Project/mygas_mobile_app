@@ -172,7 +172,7 @@ export default function RewardDetails() {
               fontSize: 12,
               textAlign: "justify",
               lineHeight: 18,
-              paddingTop: 10
+              paddingTop: 10,
             }}
           >
             By redeeming this offer, you agree to the terms and conditions

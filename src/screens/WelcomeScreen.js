@@ -5,7 +5,7 @@ import SwipeableComponent from "../components/SwipeableComponent";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function WelcomeScreen({ navigation }) {
   const { theme, styles } = useTheme();
@@ -85,7 +85,7 @@ export default function WelcomeScreen({ navigation }) {
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={async () => {
-                await AsyncStorage.setItem('isNewUser', 'false');
+                await AsyncStorage.setItem("isNewUser", "false");
                 navigation.navigate("Login");
               }}
             >
@@ -96,7 +96,7 @@ export default function WelcomeScreen({ navigation }) {
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={async () => {
-                await AsyncStorage.setItem('isNewUser', 'false');
+                await AsyncStorage.setItem("isNewUser", "false");
                 navigation.navigate("Register");
               }}
             >
