@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
-import RegisterLayout from "./components/RegisterLayout";
-import OTPInput from "./components/OTPInput";
+import { useTheme } from "../../../context/ThemeContext";
+import RegisterLayout from "../components/RegisterLayout";
+import OTPInput from "../components/OTPInput";
 
 const Step5 = ({ navigation }) => {
   const { styles } = useTheme();
@@ -19,6 +19,7 @@ const Step5 = ({ navigation }) => {
       onBack={() => navigation.goBack()}
       onNext={() => navigation.navigate("Step6")}
       backText="Back"
+      nextText="Verify Email"
     >
       <View style={{ padding: 20 }}>
         <Text style={[styles.text, styles.text_md]}>Create Your Account</Text>

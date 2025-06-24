@@ -9,7 +9,7 @@ const ProgressIndicator = ({ step }) => (
       <View
         style={[
           styles.progressFill,
-          { width: `${(step / 6) * (width * 0.9)}` },
+          { width: `${(step / 8) * (width * 0.9)}` },
         ]}
       />
     </View>

@@ -80,7 +80,7 @@ export default function WelcomeScreen({ navigation }) {
         <GestureHandlerRootView style={styles.welcome_content}>
           <SwipeableComponent slides={slides} />
         </GestureHandlerRootView>
-        <View style={styles.footer}>
+        <View style={styles.welcomScreenFooter}>
           <View style={styles.footer_button_container}>
             <TouchableOpacity
               style={styles.secondaryButton}

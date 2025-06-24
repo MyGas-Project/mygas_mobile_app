@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
-import RegisterLayout from "./components/RegisterLayout";
+import { useTheme } from "../../../context/ThemeContext";
+import RegisterLayout from "../components/RegisterLayout";
 
 const Step6 = ({ navigation }) => {
   const { styles } = useTheme();
@@ -11,7 +11,7 @@ const Step6 = ({ navigation }) => {
       step={6}
       navigation={navigation}
       onBack={() => navigation.goBack()}
-      onNext={() => navigation.navigate("Welcome")}
+      onNext={() => navigation.navigate("Step7")}
       backText="Back"
       nextText="Confirm Password"
     >

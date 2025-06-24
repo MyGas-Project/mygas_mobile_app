@@ -10,6 +10,7 @@ import RewardDetails from "../screens/RewardDetails";
 import { AuthContext } from "../context/AuthContext";
 import { useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Step1 from "../screens/auth/steps/RegisterStep1";
 
 const Stack = createNativeStackNavigator();
 
@@ -67,6 +68,11 @@ export default function Navigation() {
             <Stack.Screen
               name="Register"
               component={RegisterScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Step1"
+              component={Step1}
               options={{ headerShown: false }}
             />
           </>

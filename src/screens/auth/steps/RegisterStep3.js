@@ -1,9 +1,9 @@
 import React, { useContext } from "react";
 import { View, Text, Alert } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
-import RegisterLayout from "./components/RegisterLayout";
-import OTPInput from "./components/OTPInput";
-import { AuthContext } from "../../context/AuthContext";
+import { useTheme } from "../../../context/ThemeContext";
+import RegisterLayout from "../components/RegisterLayout";
+import OTPInput from "../components/OTPInput";
+import { AuthContext } from "../../../context/AuthContext";
 
 const Step3 = ({ navigation, route }) => {
   const { styles } = useTheme();
@@ -36,6 +36,7 @@ const Step3 = ({ navigation, route }) => {
       onBack={() => navigation.goBack()}
       onNext={() => navigation.navigate("Step4")}
       backText="Back"
+      nextText="Verify Mobile Number"
     >
       <View style={{ padding: 20 }}>
         <Text style={[styles.text, styles.text_md]}>Create Your Account</Text>

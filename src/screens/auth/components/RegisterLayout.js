@@ -46,8 +46,11 @@ const RegisterLayout = ({
       <View style={styles.footer}>
         <View style={styles.footer_button_container}>
           {showBackButton && (
-            <TouchableOpacity style={styles.secondaryButton} onPress={onBack}>
-              <Text style={styles.secondaryButtonText}>{backText}</Text>
+            <TouchableOpacity
+              style={styles.stepSecondaryButton}
+              onPress={onBack}
+            >
+              <Text style={styles.stepSecondaryButtonText}>{backText}</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -64,7 +64,7 @@ export default function ScanScreen() {
       <Animated.View
         style={[
           custom_styles.cardContainer,
-          { transform: [{ translateY: cardContainerTranslateY }] }
+          { transform: [{ translateY: cardContainerTranslateY }] },
         ]}
       >
         <Animated.ScrollView
@@ -102,8 +102,8 @@ export default function ScanScreen() {
 const custom_styles = StyleSheet.create({
   top_bar: {
     height: 150,
-    width: '100%',
-    position: 'relative',
+    width: "100%",
+    position: "relative",
   },
   logo: {
     position: "absolute",
@@ -123,8 +123,8 @@ const custom_styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    position: 'relative',
-    zIndex: 1
+    position: "relative",
+    zIndex: 1,
   },
   container: {
     flex: 1,

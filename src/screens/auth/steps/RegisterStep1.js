@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
-import RegisterLayout from "./components/RegisterLayout";
+import { useTheme } from "../../../context/ThemeContext";
+import RegisterLayout from "../components/RegisterLayout";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const Step1 = ({ navigation }) => {
   const { styles } = useTheme();
@@ -26,7 +27,7 @@ const Step1 = ({ navigation }) => {
       showBackButton={true}
     >
       <View style={{ padding: 20 }}>
-        <Text style={[styles.text]}>Create Your Account</Text>
+        <Text style={[styles.text, styles.text_md]}>Create Your Account</Text>
         <Text style={[styles.text, styles.text_lg]}>
           Complete Your Profile Details
         </Text>
@@ -53,12 +54,38 @@ const Step1 = ({ navigation }) => {
           />
         </View>
         <View style={styles.form_section}>
-          <TextInput
-            style={styles.form_input}
-            placeholder="Birth Date (YYYY-MM-DD)"
-            value={birthDate}
-            onChangeText={setBirthDate}
-          />
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: styles.form_input.borderColor,
+              borderRadius: 5,
+              paddingRight: 10,
+              backgroundColor: "white",
+            }}
+          >
+            <TextInput
+              style={[
+                styles.form_input,
+                {
+                  flex: 1,
+                  borderWidth: 0,
+                  paddingRight: 0,
+                  backgroundColor: "transparent",
+                },
+              ]}
+              placeholder="Birth Date (YYYY-MM-DD)"
+              value={birthDate}
+              onChangeText={setBirthDate}
+            />
+            <Ionicons
+              name="calendar-outline"
+              size={24}
+              color="#888"
+              style={{ marginLeft: 5 }}
+            />
+          </View>
         </View>
       </View>
       <View style={{ padding: 20 }}>
