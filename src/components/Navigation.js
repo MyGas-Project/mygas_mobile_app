@@ -11,6 +11,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Step1 from "../screens/auth/steps/RegisterStep1";
+import ProfileScreen from "../screens/dashboard/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 

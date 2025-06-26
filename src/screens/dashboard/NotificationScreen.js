@@ -3,12 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
-  ImageBackground,
   Image,
+  ImageBackground,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
@@ -53,25 +52,25 @@ const NotificationScreen = () => {
     },
   ]);
 
-  const handleEditProfile = () => {
-    console.log("Edit profile pressed");
-    // Navigate to an edit profile screen or open a modal
-  };
-
-  const handleLoyaltyProgramPress = () => {
-    console.log("Loyalty Program pressed");
-    // Navigate to Loyalty Program screen
-  };
-
-  const handleSettingsPress = () => {
-    console.log("Settings pressed");
-    // Navigate to Settings screen
-  };
-
-  const handleLogout = () => {
-    console.log("Logout pressed");
-    // Implement logout logic
-  };
+  const renderNotification = ({ item }) => (
+    <TouchableOpacity
+      style={notif_styles.notificationItem}
+      onPress={() => {
+        // Handle notification press, e.g., navigate to details
+        console.log("Notification pressed:", item.id);
+      }}
+    >
+      <View style={notif_styles.notificationContent}>
+        <Text style={notif_styles.notificationDescription}>
+          {item.description}
+        </Text>
+        <Text style={notif_styles.notificationStation}>{item.station}</Text>
+        <Text style={notif_styles.notificationPoints}>
+          {item.points_earned}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
@@ -108,39 +107,34 @@ const NotificationScreen = () => {
   );
 };
 
-const profile_styles = StyleSheet.create({
+const notif_styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
   headerImage: {
     width: "100%",
-    height: 200,
-  },
-  header: {
-    flexDirection: "row",
+    height: 150, // Adjust height as needed
+    justifyContent: "center",
     alignItems: "center",
+  },
+  gradientOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    left: 0,
+  },
+  headerContent: {
+    flexDirection: "row",
     justifyContent: "space-between",
-    padding: 15,
-    paddingTop: 50, // Adjust for status bar
-    backgroundColor: "white",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingTop: 30, // Adjust for status bar
   },
-
-  profile_info:{
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 2,
-    textAlign: "left",
-  },
-  headerIcon: {
-    padding: 5,
+  backButton: {
+    padding: 10,
   },
   logo: {
     position: "absolute",
@@ -152,21 +146,24 @@ const profile_styles = StyleSheet.create({
     resizeMode: "contain",
     zIndex: 2,
   },
-  headerRight: {
+  headerIcons: {
     flexDirection: "row",
   },
-  myAccountTitle: {
+  iconButton: {
+    marginLeft: 15,
+    padding: 5,
+  },
+  pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 20,
     color: "#333",
   },
-  scrollView: {
-    flex: 1,
+  notificationList: {
     paddingHorizontal: 20,
   },
-  card: {
+  notificationItem: {
     backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
@@ -176,70 +173,20 @@ const profile_styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
-    position: "relative",
   },
-  profileName: {
-    fontSize: 20,
+  notificationDescription: {
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
-    textAlign: "left",
   },
-  // profilePhone: {
-  //   fontSize: 16,
-  //   color: "#666",
-  //   marginBottom: 2,
-  //   textAlign: "left",
-  // },
-  profileEmail: {
-    fontSize: 16,
+  notificationStation: {
+    fontSize: 14,
     color: "#666",
-    textAlign: "left",
   },
-  editIcon: {
-    position: "absolute",
-    top: 20,
-    right: 20,
-  },
-  loyaltyWrapper: {
-    flex: 1,
-  },
-  
-  loyaltyLogo: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-    resizeMode: "contain",
-  },
-  loyaltyProgramContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  motoristaCard: {
-    fontSize: 16,
-    color: "#666"
-
-  },
-  settingsText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 15,
-    flex: 1,
-  },
-  logoutButton: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 150,
-    marginBottom: 30, // Add some bottom padding
-    borderColor: "red",
-    borderWidth: 1,
-  },
-  logoutButtonText: {
-    color: "red",
-    fontSize: 18,
-    fontWeight: "bold",
+  notificationPoints: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
   },
   bottomNavContainer: {
     backgroundColor: "#fff",
@@ -274,4 +221,4 @@ const profile_styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+export default NotificationScreen;

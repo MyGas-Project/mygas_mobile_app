@@ -1,7 +1,7 @@
-// export const BASE_URL = 'http://192.168.110.116:5000/api/';
-// export const AUTH_URL = 'http://192.168.110.116:5000/auth/';
-export const BASE_URL = "http://192.168.110.83:5000/api/";
-export const AUTH_URL = "http://192.168.110.83:5000/auth/";
+export const BASE_URL = 'http://192.168.110.116:5000/api/';
+export const AUTH_URL = 'http://192.168.110.116:5000/auth/';
+// export const BASE_URL = "http://192.168.110.83:5000/api/";
+// export const AUTH_URL = "http://192.168.110.83:5000/auth/";
 
 export const processResponse = async (response) => {
   try {
