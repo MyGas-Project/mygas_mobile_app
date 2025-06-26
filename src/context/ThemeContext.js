@@ -71,7 +71,7 @@ export const ThemeProvider = ({ children }) => {
       width: width,
       backgroundColor: currentTheme.backgroundColor,
     },
-    footer: {
+    welcomScreenFooter: {
       flexDirection: "row",
       height: 100,
       width: width,
@@ -94,10 +94,11 @@ export const ThemeProvider = ({ children }) => {
       fontSize: 18,
     },
     text_md: {
-      fontSize: 24
+      fontSize: 20,
     },
     text_lg: {
       fontSize: 35,
+      fontWeight: "bold",
     },
     text_primary: {
       color: mainTheme.primary,
@@ -131,6 +132,20 @@ export const ThemeProvider = ({ children }) => {
     secondaryButtonText: {
       color: currentTheme.foregroundColor,
     },
+    stepSecondaryButton: {
+      // backgroundColor: currentTheme.backgroundColor,
+      width: "100%",
+      paddingVertical: 15,
+      justifyContent: "center",
+      borderRadius: 5,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: "#fe0002",
+    },
+    stepSecondaryButtonText: {
+      color: "#fe0002",
+    },
+
     primaryButton: {
       backgroundColor: mainTheme.primary,
       width: "100%",
@@ -159,8 +174,8 @@ export const ThemeProvider = ({ children }) => {
     },
     top_bar: {
       height: 150,
-      width: '100%',
-      position: 'relative',
+      width: "100%",
+      position: "relative",
       //backgroundColor: currentTheme.headerColor
     },
     top_bar_button: {
@@ -269,22 +284,77 @@ export const ThemeProvider = ({ children }) => {
       justifyContent: "space-between",
       paddingHorizontal: 20,
       paddingTop: 40,
-      alignItems: 'center'
+      alignItems: "center",
     },
     mygas_logo: {
       height: 60,
       width: 150,
-      resizeMode: "contain"
+      resizeMode: "contain",
     },
-    pointsText:{
+    pointsText: {
       color: "#f39c12",
       fontWeight: "bold",
       fontSize: 23,
     },
-    warning:{
+    warning: {
       color: "#e61109",
-      fontSize: 13
-    }
+      fontSize: 13,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    dropdownContainer: {
+      backgroundColor: currentTheme.backgroundColor,
+      borderRadius: 8,
+      maxHeight: 300,
+      width: "80%",
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+    },
+    dropdownList: {
+      borderRadius: 8,
+    },
+    dropdownItem: {
+      paddingVertical: 15,
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: currentTheme.borderColor,
+    },
+    termsContainer: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginTop: 300,
+    },
+    termsRadio: {
+      height: 12,
+      width: 12,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: "#fe0002",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 3,
+      marginRight: 10,
+    },
+    termsInnerRadio: {
+      height: 5,
+      width: 5,
+      borderRadius: 6,
+      backgroundColor: "#fe0002",
+    },
+    helpText: {
+      textAlign: "right",
+      fontSize: 12,
+      marginTop: 5,
+      color: currentTheme.infoColor,
+      fontWeight: "bold",
+    },
   });
 
   return (

@@ -81,6 +81,7 @@ export default function LoginScreen({ navigation }) {
               <TextInput
                 style={styles.form_input}
                 value={email}
+                placeholder="Enter Mobile Number or Email Address"
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -92,16 +93,32 @@ export default function LoginScreen({ navigation }) {
               <TextInput
                 style={styles.form_input}
                 value={password}
+                placeholder="Enter Password"
                 onChangeText={setPassword}
                 secureTextEntry
                 editable={!isLoading}
               />
+              <Text style={styles.helpText}>Forgot Password?</Text>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
       <View style={styles.footer}>
         <View style={styles.footer_button_container}>
+          <Text
+            style={[
+              styles.text,
+              { textAlign: "center", marginTop: -100, marginBottom: 10 },
+            ]}
+          >
+            No account yet?{" "}
+            <Text
+              style={styles.text_bold}
+              onPress={() => navigation.navigate("Step1")}
+            >
+              Register
+            </Text>
+          </Text>
           <TouchableOpacity
             style={[styles.primaryButton, isLoading && styles.disabledButton]}
             onPress={handleLogin}

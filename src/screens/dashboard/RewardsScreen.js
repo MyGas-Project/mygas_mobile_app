@@ -9,7 +9,8 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
-  Animated
+  Animated,
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -67,7 +68,7 @@ export default function RewardsScreen() {
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
     outputRange: [20, 0, -20],
-    extrapolate: "clamp"
+    extrapolate: "clamp",
   });
 
   return (
@@ -97,8 +98,8 @@ export default function RewardsScreen() {
         style={[
           styles.cardContainer,
           {
-            transform: [{ translateY: cardContainerTranslateY }]
-          }
+            transform: [{ translateY: cardContainerTranslateY }],
+          },
         ]}
       >
         <AnimatedScrollView
@@ -141,13 +142,17 @@ export default function RewardsScreen() {
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <Image source={item.image} style={styles.cardImage} />
-                <Text style={styles.cardText} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <TouchableOpacity style={styles.redeemBtn} 
-                onPress={() => navigation.navigate('RewardDetails')}>
-                  <Text style={styles.redeemText}>{item.buttonText}</Text>
-                </TouchableOpacity>
+                <View style={styles.content}>
+                  <Text style={styles.cardText} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.redeemBtn}
+                    onPress={() => navigation.navigate("RewardDetails")}
+                  >
+                    <Text style={styles.redeemText}>{item.buttonText}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           />
@@ -177,7 +182,9 @@ export default function RewardsScreen() {
                         source={require("../../../assets/my.png")}
                         style={styles.miniIconNew}
                       />
-                      <Text style={styles.cardPointsNew}>{item.points} PTS</Text>
+                      <Text style={styles.cardPointsNew}>
+                        {item.points} PTS
+                      </Text>
                     </View>
                   </View>
                   <TouchableOpacity style={styles.redeemBtnNew}>
@@ -196,13 +203,13 @@ export default function RewardsScreen() {
 const styles = StyleSheet.create({
   top_bar: {
     height: 150,
-    width: '100%',
-    position: 'relative',
+    width: "100%",
+    position: "relative",
   },
   scrollContent: {
     paddingHorizontal: 0,
     paddingBottom: 20,
-    flexGrow: 1
+    flexGrow: 1,
   },
   cardContainer: {
     flex: 1,
@@ -212,25 +219,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    position: 'relative',
-    zIndex: 1
+    position: "relative",
+    zIndex: 1,
   },
   headerContainer: {
     alignItems: "center",
     width: "100%",
-    paddingTop: 20
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 8
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 12,
     textAlign: "center",
     color: "#777",
-    marginBottom: 20
+    marginBottom: 20,
   },
   pointsBox: {
     backgroundColor: "#fff",
@@ -270,7 +277,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginVertical: 10
+    marginVertical: 10,
   },
   cardList: {
     paddingBottom: 10,
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 8,
-    overflow: "hidden"
+    overflow: "hidden",
   },
   cardImage: {
     width: "100%",
@@ -294,13 +301,13 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   content: {
-    padding: 16
+    padding: 16,
   },
   cardText: {
     fontSize: 14,
     color: "#555",
     lineHeight: 20,
-    marginBottom: 16
+    marginBottom: 16,
   },
   cardPoints: {
     fontWeight: "bold",
@@ -318,12 +325,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   redeemText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   rewardsRow: {
     flexDirection: "row",
@@ -351,10 +358,10 @@ const styles = StyleSheet.create({
     elevation: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: "#f0f0f0",
   },
   cardImageNew: {
     width: "100%",
@@ -368,7 +375,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 12,
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   titlePointsRowNew: {
     flexDirection: "row",
@@ -405,7 +412,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 4,
-    width: '100%',
+    width: "100%",
   },
   redeemTextNew: {
     color: "#fff",
