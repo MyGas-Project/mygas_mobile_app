@@ -127,24 +127,26 @@ export const AuthProvider = ({ children }) => {
 
   const logout = (navigation) => {
     try {
-      fetch(`${AUTH_URL}logout`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      })
-        .then(processResponse)
-        .then((res) => {
-          const { statusCode, data } = res;
-          if (statusCode === 200) {
-            console.log(data);
-            setUserInfo(null);
-          }
-          console.log(data);
+      // console.log(navigation);
+        fetch(`${AUTH_URL}logout`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${navigation.token}`,
+          },
         })
-        .catch((e) => console.log(e));
+          .then(processResponse)
+          .then((res) => {
+            const { statusCode, data } = res;
+            // console.info(data);
+            if (statusCode == 200) {
+              // console.log(data);
+              setUserInfo(null);
+            }
+            console.log(data);
+          })
+          .catch((e) => console.log(e));
     } catch (e) {
       console.log(e);
     }

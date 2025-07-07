@@ -17,6 +17,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 
 const ProfileScreen = () => {
+  const { userInfo } = useContext(AuthContext);
   const { styles } = useTheme();
   const navigation = useNavigation();
   const { logout } = useContext(AuthContext);
@@ -56,10 +57,10 @@ const ProfileScreen = () => {
     // Navigate to Settings screen
   };
 
-  const handleLogout = (navigate) => {
+  const handleLogout = (data) => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", onPress: () => logout(navigate) },
+      { text: "Logout", onPress: () => logout(data) },
     ]);
   };
 
@@ -152,7 +153,7 @@ const ProfileScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={profile_styles.logoutButton}
-            onPress={() => handleLogout(navigation)}
+            onPress={() => handleLogout(userInfo)}
           >
             <Text style={profile_styles.logoutButtonText}>Log Out</Text>
           </TouchableOpacity>

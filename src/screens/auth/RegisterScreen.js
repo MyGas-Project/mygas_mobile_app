@@ -12,16 +12,14 @@ import {
   ScrollView,
   Dimensions,
   ImageBackground,
-  Alert
+  Alert,
 } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../../context/AuthContext";
 import { processResponse } from "../../config";
-
-
 
 const Stack = createNativeStackNavigator();
 const width = Dimensions.get("window").width;
@@ -39,9 +37,9 @@ const Step1 = ({ navigation }) => {
       await AsyncStorage.setItem(
         "step1Data",
         JSON.stringify({
-            first_name: firstName,
-            last_name: lastName,
-            birth_date: birthDate
+          first_name: firstName,
+          last_name: lastName,
+          birth_date: birthDate,
         })
       );
       navigation.navigate("Step2");
@@ -84,32 +82,32 @@ const Step1 = ({ navigation }) => {
             </Text>
           </View>
 
-        <View style={styles.form_container}>
+          <View style={styles.form_container}>
             <View style={styles.form_section}>
-                <TextInput
+              <TextInput
                 style={styles.form_input}
                 value={firstName}
                 onChangeText={setFirstName}
                 placeholder="First Name"
-                />
+              />
             </View>
             <View style={styles.form_section}>
-                <TextInput
+              <TextInput
                 style={styles.form_input}
                 value={lastName}
                 onChangeText={setLastName}
                 placeholder="Last Name"
-                />
+              />
             </View>
             <View style={styles.form_section}>
-                <TextInput
+              <TextInput
                 style={styles.form_input}
                 value={birthDate}
                 onChangeText={setBirthDate}
                 placeholder="Birth Date"
-                />
+              />
             </View>
-        </View>
+          </View>
 
           <View style={{ padding: 20 }}>
             <Text style={styles.text}>
@@ -146,41 +144,40 @@ const Step2 = ({ navigation, route }) => {
   const [step1Data, setStep1Data] = useState(null);
   const { AUTH_URL } = useContext(AuthContext);
 
-
   useEffect(() => {
-  AsyncStorage.getItem("step1Data")
-    .then((data) => data ? setStep1Data(JSON.parse(data)) : null);
-}, []);
+    AsyncStorage.getItem("step1Data").then((data) =>
+      data ? setStep1Data(JSON.parse(data)) : null
+    );
+  }, []);
 
-const handleSubmit = async () =>
-  !step1Data
-    ? Alert.alert("Error", "Missing profile details. Please complete Step 1.")
-    : (async () => {
-        try {
+  const handleSubmit = async () =>
+    !step1Data
+      ? Alert.alert("Error", "Missing profile details. Please complete Step 1.")
+      : (async () => {
+          try {
             const response = await fetch(`${AUTH_URL}register/step1`, {
-                method: "POST",
-                headers: {
-                  Accept: "application/json",
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  ...step1Data,
-                  phone_number: mobileNumber,
-                }),
-              });
-              
-          const { statusCode } = await processResponse(response);
-        console.log("Response Status Code:", statusCode);
-          statusCode === 200
-            ? (await AsyncStorage.removeItem("step1Data"),
-              navigation.navigate("Step3"))
-            : Alert.alert("Error", "Failed to register. Please try again.");
-        } catch (error) {
-          console.error(error);
-          Alert.alert("Error", "Something went wrong.");
-        }
-      })();
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                ...step1Data,
+                phone_number: mobileNumber,
+              }),
+            });
 
+            const { statusCode } = await processResponse(response);
+            console.log("Response Status Code:", statusCode);
+            statusCode === 200
+              ? (await AsyncStorage.removeItem("step1Data"),
+                navigation.navigate("Step3"))
+              : Alert.alert("Error", "Failed to register. Please try again.");
+          } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Something went wrong.");
+          }
+        })();
 
   return (
     <View style={styles.container}>
@@ -213,20 +210,19 @@ const handleSubmit = async () =>
           </View>
           <View style={styles.form_container}>
             <View style={styles.form_section}>
-                <TextInput
+              <TextInput
                 style={styles.form_input}
                 value={mobileNumber}
                 onChangeText={setMobileNumber}
                 placeholder="Mobile Number"
                 keyboardType="numeric"
                 maxLength={10}
-                />
-                <Text style={styles.form_input_info}>
+              />
+              <Text style={styles.form_input_info}>
                 Please enter 10-digit number, excluding 0 at the beginning.
-                </Text>
+              </Text>
             </View>
-        </View>
-
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
       <View style={styles.footer}>
@@ -239,7 +235,12 @@ const handleSubmit = async () =>
           </TouchableOpacity>
         </View>
         <View style={styles.footer_button_container}>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleSubmit}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => {
+              navigation.navigate("Step3");
+            }}
+          >
             <Text style={styles.primaryButtonText}>Next</Text>
           </TouchableOpacity>
         </View>
@@ -254,7 +255,7 @@ const Step3 = ({ navigation, route }) => {
   const inputs = useRef([]);
 
   const handleChange = (text, index) => {
-    if (text.length > 1) text = text.charAt(0); 
+    if (text.length > 1) text = text.charAt(0);
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
@@ -275,28 +276,27 @@ const Step3 = ({ navigation, route }) => {
       inputs.current[newIndex].focus();
     }
   };
-//   const handleVerify = async () => {
-//     try {
-//       const response = await fetch(`${AUTH_URL}verify-code?code=${code.join("")}`, {
-//         method: "GET",
-//         headers: {
-//           Accept: "application/json",
-//         },
-//       });
-  
-//       const { statusCode, data } = await processResponse(response);
-  
-//       if (statusCode === 200) {
-//         navigation.navigate("Step4", { refresh: true });
-//       } else {
-//         Alert.alert("Error", "Verification failed.");
-//       }
-//     } catch (error) {
-//       console.error("Verification error:", error);
-//       Alert.alert("Error", "Something went wrong.");
-//     }
-//   };
-  
+  //   const handleVerify = async () => {
+  //     try {
+  //       const response = await fetch(`${AUTH_URL}verify-code?code=${code.join("")}`, {
+  //         method: "GET",
+  //         headers: {
+  //           Accept: "application/json",
+  //         },
+  //       });
+
+  //       const { statusCode, data } = await processResponse(response);
+
+  //       if (statusCode === 200) {
+  //         navigation.navigate("Step4", { refresh: true });
+  //       } else {
+  //         Alert.alert("Error", "Verification failed.");
+  //       }
+  //     } catch (error) {
+  //       console.error("Verification error:", error);
+  //       Alert.alert("Error", "Something went wrong.");
+  //     }
+  //   };
 
   return (
     <View style={styles.container}>
