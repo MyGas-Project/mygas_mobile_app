@@ -40,7 +40,8 @@ export default function LoginScreen({ navigation }) {
         setPassword("");
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      Alert.alert(error.message || "Login failed", "Please try again");
+      // Alert.alert("Error", "An unexpected error occurred. Please try again.");
       setPassword("");
     } finally {
       setIsLoading(false);
