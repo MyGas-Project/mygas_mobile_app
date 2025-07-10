@@ -17,18 +17,18 @@ import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 
 const ProfileScreen = () => {
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, userDetails } = useContext(AuthContext);
   const { styles } = useTheme();
   const navigation = useNavigation();
   const { logout } = useContext(AuthContext);
   const route = useRoute();
-  const [userProfile, setUserProfile] = useState({
-    name: "Juan Dela Cruz",
-    email: "juandelacruz@gmail.com",
-    phone: "+63 123 456 7890",
-    memberSince: "2024",
-    points: 1250,
-  });
+  // const [userProfile, setUserProfile] = useState({
+  //   name: "Juan Dela Cruz",
+  //   email: "juandelacruz@gmail.com",
+  //   phone: "+63 123 456 7890",
+  //   memberSince: "2024",
+  //   points: 1250,
+  // });
 
   // Add navigation handlers for bottom tabs
   React.useEffect(() => {
@@ -110,9 +110,9 @@ const ProfileScreen = () => {
           <Text style={profile_styles.myAccountTitle}>My Account</Text>
           <View style={[profile_styles.card]}>
             <View style={profile_styles.profile_info}>
-              <Text style={profile_styles.profileName}>{userProfile.name}</Text>
-              <Text>{userProfile.phone}</Text>
-              <Text>{userProfile.email}</Text>
+              <Text style={profile_styles.profileName}> {userDetails?.first_name || ""}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name || ""}</Text>
+              <Text>{userDetails?.phone_number}</Text>
+              <Text>{userDetails?.email || "No email yet!"}</Text>
               <TouchableOpacity
                 onPress={handleEditProfile}
                 style={profile_styles.editIcon}

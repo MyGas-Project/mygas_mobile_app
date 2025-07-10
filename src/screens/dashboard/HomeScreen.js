@@ -11,18 +11,22 @@ import {
   TouchableOpacity,
   RefreshControl
 } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Navbar from "../../components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
+import { AuthContext } from "../../context/AuthContext";
+import { BASE_URL } from "../../config";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
 export default function HomeScreen({ navigation }) {
+  const { userInfo, userDetails } = useContext(AuthContext);
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+
   const DATA = [
     {
       id: "1",
@@ -84,6 +88,7 @@ export default function HomeScreen({ navigation }) {
       image: require("../../../assets/motorista.png")
     }
   ];
+
   const Item = ({ title }) => (
     <View style={styles.item}>
       <Text style={styles.title}>{title}</Text>
@@ -137,7 +142,7 @@ export default function HomeScreen({ navigation }) {
           style={custom_styles.logo}
         />
         <View style={{ position: "absolute", right: 0, top: 0 }}>
-          <Navbar hideBack />
+          <Navbar hideBack/>
         </View>
       </ImageBackground>
       <Animated.View
@@ -170,7 +175,7 @@ export default function HomeScreen({ navigation }) {
               <View>
                 <Text style={[styles.text, styles.text_sm]}>Good Day,</Text>
                 <Text style={[styles.text, styles.text_lg, styles.text_bold]}>
-                  Juan Dela Cruz
+                  {userDetails?.first_name || ""}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name || ""}
                 </Text>
               </View>
               <TouchableOpacity
@@ -223,7 +228,7 @@ export default function HomeScreen({ navigation }) {
                           fontSize: 30
                         }}
                       >
-                        1,234.05
+                        {userDetails?.total_points || 0}
                       </Text>
                       <Text
                         style={{
@@ -259,7 +264,7 @@ export default function HomeScreen({ navigation }) {
                     marginLeft: 25
                   }}
                 >
-                  **** **** **** 1234
+                  {userDetails?.bar_code ? `**** **** ***${userDetails.bar_code.slice(-3)}` : ""}
                 </Text>
               </ImageBackground>
             </View>
@@ -357,6 +362,7 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
+
 const custom_styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",

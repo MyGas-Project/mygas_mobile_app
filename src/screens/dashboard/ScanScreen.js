@@ -9,14 +9,18 @@ import {
   Dimensions,
   Animated,
 } from "react-native";
-import React, { useRef } from "react";
+import React, { useContext, useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import Navbar from "../../components/Navbar";
+import { AuthContext } from "../../context/AuthContext";
+import { Barcode } from "expo-barcode-generator";
+// import { QRCode } from "react-native-qrcode-svg";
 
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+// const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function ScanScreen() {
+  const { userInfo, userDetails } = useContext(AuthContext);
   const { styles } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardContainerTranslateY = scrollY.interpolate({
@@ -24,23 +28,6 @@ export default function ScanScreen() {
     outputRange: [20, 0, -20],
     extrapolate: "clamp",
   });
-
-  const serviceData = [
-    {
-      id: "1",
-      title: "Lubes and Engine Oil",
-      description:
-        "We offer lubes and engine oil services to help maintain and extend the life of your vehicle's engine.",
-      image: require("../../../assets/motorista.png"),
-    },
-    {
-      id: "2",
-      title: "Fleet Card",
-      description:
-        "Get your Fleet card today for exclusive fuel discounts, 24/7 expense tracking, and seamless fleet management.",
-      image: require("../../../assets/motorista.png"),
-    },
-  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
@@ -82,15 +69,20 @@ export default function ScanScreen() {
               Simply scan the barcode or QR code to start collecting points and
               unlock exclusive rewards!
             </Text>
-            <Image
+            <Barcode
+              value={userDetails?.bar_code}
+              options={{ format: 'CODE128', background: 'transparent' }}
+            />
+            {/* <Image
               source={require("../../../assets/code.png")}
               style={custom_styles.code}
-            />
-            <Text style={custom_styles.barcodeText}>1234 ******</Text>
-            <Image
+            /> */}
+            <Text style={custom_styles.barcodeText}>{userDetails?.bar_code ? `**** **** ***${userDetails.bar_code.slice(-3)}` : ""}</Text>
+            {/* <QRCode value="54321" size={300} /> */}
+            {/* <Image
               source={require("../../../assets/barcode.png")}
               style={custom_styles.barcode}
-            />
+            /> */}
           </View>
         </Animated.ScrollView>
       </Animated.View>
@@ -152,10 +144,10 @@ const custom_styles = StyleSheet.create({
   barcodeText: {
     fontSize: 16,
     color: "#333",
-  },  
+  },
   barcode: {
     width: 300,
     height: 200,
     resizeMode: "contain",
-  },  
+  },
 });

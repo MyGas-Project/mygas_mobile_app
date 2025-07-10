@@ -1,50 +1,138 @@
-import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, Animated, ScrollView } from 'react-native'
-import React, { useRef } from 'react'
+import { View, ImageBackground, StyleSheet, FlatList, Text, Dimensions, Image, Animated, ScrollView, VirtualizedList } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
 import Navbar from '../../components/Navbar';
+import { AuthContext } from '../../context/AuthContext';
+import { BASE_URL, processResponse } from '../../config';
+import ActivityCard from './components/ActivityCard';
 
 export default function ActivityScreen() {
-    const {styles} = useTheme();
+    const { userInfo, userDetails } = useContext(AuthContext);
+    const { styles } = useTheme();
     const scrollY = useRef(new Animated.Value(0)).current;
     const cardContainerTranslateY = scrollY.interpolate({
         inputRange: [-50, 0, 50],
         outputRange: [20, 0, -20],
         extrapolate: 'clamp',
     });
+    const [activity, setActivities] = useState(null);
+    const [groupedTransactions, setGroupedTransactions] = useState({});
     const transactions = [
         {
-          id: '1',
-          group: 'Today',
-          station: 'MyGas Toril 1',
-          transactionNo: '0000000123',
-          datetime: '01/23/2025, 11:00AM',
-          service: 'Fuel-Diesel',
-          amount: 1000,
-          points: 1.00,
+            id: '1',
+            group: 'Today',
+            station: 'MyGas Toril 1',
+            transactionNo: '0000000123',
+            datetime: '01/23/2025, 11:00AM',
+            service: 'Fuel-Diesel',
+            amount: 1000,
+            points: 1.00,
         },
         {
-          id: '2',
-          group: 'Last 7 Days',
-          station: 'MyGas Buhangin',
-          transactionNo: '0000000456',
-          datetime: '01/15/2025, 08:00PM',
-          service: 'Fuel-Diesel',
-          amount: 500,
-          points: 0.50,
+            id: '2',
+            group: 'Last 7 Days',
+            station: 'MyGas Buhangin',
+            transactionNo: '0000000456',
+            datetime: '01/15/2025, 08:00PM',
+            service: 'Fuel-Diesel',
+            amount: 500,
+            points: 0.50,
         },
         {
-          id: '3',
-          group: 'Last 7 Days',
-          station: 'MyGas Cabantian',
-          transactionNo: '0000000789',
-          datetime: '01/05/2025, 09:00AM',
-          service: 'Oil',
-          amount: 1000,
-          points: 0.25,
+            id: '3',
+            group: 'Last 7 Days',
+            station: 'MyGas Cabantian',
+            transactionNo: '0000000789',
+            datetime: '01/05/2025, 09:00AM',
+            service: 'Oil',
+            amount: 1000,
+            points: 0.25,
         },
     ];
     const groups = ['Today', 'Last 7 Days'];
+
+    const getUserTransactions = () => {
+        try {
+            fetch(`${BASE_URL}customer/activity`, {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${userInfo.token}`,
+                }
+            }).then(processResponse).then((res) => {
+                const { statusCode, data } = res;
+                if (statusCode === 200) {
+                    const grouped = groupByDate(data.result);
+                    setGroupedTransactions(grouped);
+                    // console.info(data.result);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const getGroupLabel = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+
+        const toDateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+        const today = toDateOnly(now);
+        const yesterday = toDateOnly(new Date(now.setDate(now.getDate() - 1)));
+        const target = toDateOnly(date);
+
+        if (target.getTime() === today.getTime()) return "Today";
+        if (target.getTime() === yesterday.getTime()) return "Yesterday";
+
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return target.toLocaleDateString(undefined, options);
+    };
+
+    const groupByDate = (transactions) => {
+        const groupedMap = {};
+
+        transactions.forEach((item) => {
+            const groupLabel = getGroupLabel(item.date);
+            if (!groupedMap[groupLabel]) {
+                groupedMap[groupLabel] = [];
+            }
+            groupedMap[groupLabel].push(item);
+        });
+
+        // Convert to array with date_id and label
+        return Object.entries(groupedMap).map(([dateLabel, items], index) => ({
+            date_id: index,
+            date: dateLabel,
+            items: items
+        }));
+    };
+
+
+    const formatDateTime = (dateStr, timeStr) => {
+        const [year, month, day] = dateStr.split('-');
+        const [hour, minute] = timeStr.split(':');
+
+        const date = new Date(year, month - 1, day, hour, minute);
+
+        const options = {
+            year: 'numeric',
+            month: 'short', // 3-letter month
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true,
+        };
+
+        return date.toLocaleString(undefined, options); // uses device locale
+    };
+
+    useEffect(() => {
+        getUserTransactions();
+        console.info(groupedTransactions);
+    }, []);
 
     return (
         <View style={{ flex: 1, backgroundColor: '#E5E5E5' }}>
@@ -63,10 +151,6 @@ export default function ActivityScreen() {
                     onProfilePress={() => console.log("Profile tapped")}
                     onNotifPress={() => console.log("Notifications tapped")}
                 />
-                <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
             </ImageBackground>
             <Animated.View
                 style={[
@@ -88,45 +172,61 @@ export default function ActivityScreen() {
                     <View style={custom_styles.sortRow}>
                         <Text style={custom_styles.sortLabel}>Sort Transactions By</Text>
                         <View style={custom_styles.sortBtn}>
-                            <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{fontSize: 13, color: '#888'}}>▼</Text></Text>
+                            <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{ fontSize: 13, color: '#888' }}>▼</Text></Text>
                         </View>
                     </View>
-                    {groups.map(group => (
-                        <View key={group}>
-                            <Text style={custom_styles.sectionHeader}>{group}</Text>
-                            {transactions.filter(t => t.group === group).map(item => (
-                                <View key={item.id} style={custom_styles.itemCard}>
-                                    <View style={custom_styles.leftCol}>
-                                        <View style={custom_styles.logoContainer}>
-                                            <Image source={require('../../../assets/mygas_logo.png')} style={custom_styles.logoSmall} />
+                    {groupedTransactions.length > 0 ? (
+                        groupedTransactions.map((group, index) => (
+                            <View key={index}>
+                                <Text style={custom_styles.sectionHeader}>{group.date}</Text>
+                                {group.items.map((item, ind) => (
+                                    // <VirtualizedList
+                                    //     initialNumToRender={5}
+                                    //     renderItem={({ item, index }) => <ActivityCard item={item} index={ind} />}
+                                    //     keyExtractor={(item, index) => index.toString()}
+                                    //     data={item}
+                                    //     getItemCount={(data) => data.length}
+                                    // />
+                                    <View key={ind} style={custom_styles.itemCard}>
+                                        <View style={custom_styles.leftCol}>
+                                            <View style={custom_styles.logoContainer}>
+                                                <Image source={require('../../../assets/mygas_logo.png')} style={custom_styles.logoSmall} />
+                                            </View>
+                                            <View style={custom_styles.textBlock}>
+                                                <Text style={custom_styles.stationName}>{item.station_name}</Text>
+                                                <Text style={custom_styles.detail}>Transaction No.: {item.transaction_number}</Text>
+                                                <Text style={custom_styles.detail}>Date/Time: {formatDateTime(item.date, item.time)}</Text>
+                                                <View style={custom_styles.serviceRow}>
+                                                    <Text style={custom_styles.serviceLabel}>Service: </Text>
+                                                    <Text style={custom_styles.serviceValue}>{item.service}</Text>
+                                                </View>
+                                            </View>
                                         </View>
-                                        <View style={custom_styles.textBlock}>
-                                            <Text style={custom_styles.stationName}>{item.station}</Text>
-                                            <Text style={custom_styles.detail}>Transaction No.: {item.transactionNo}</Text>
-                                            <Text style={custom_styles.detail}>Date/Time: {item.datetime}</Text>
-                                            <View style={custom_styles.serviceRow}>
-                                                <Text style={custom_styles.serviceLabel}>Service: </Text>
-                                                <Text style={custom_styles.serviceValue}>{item.service}</Text>
+                                        <View style={custom_styles.rightCol}>
+                                            <Text style={custom_styles.amount}>PHP {item.amount}</Text>
+                                            <View style={custom_styles.pointsBlock}>
+                                                <Text style={[custom_styles.points, { color: item.service === 'Cash Redeem' ? 'red' : '#FFB300' }]}>
+                                                    {item.service === 'Cash Redeem' ? '-' : '+'}{item.points}
+                                                </Text>
+                                                <Text style={custom_styles.pointsLabel}>{item.service == 'Cash Redeem' ? 'points redeemed' : 'points earned'}</Text>
                                             </View>
                                         </View>
                                     </View>
-                                    <View style={custom_styles.rightCol}>
-                                        <Text style={custom_styles.amount}>PHP {item.amount}</Text>
-                                        <View style={custom_styles.pointsBlock}>
-                                            <Text style={custom_styles.points}>+{item.points.toFixed(2)}</Text>
-                                            <Text style={custom_styles.pointsLabel}>points earned</Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            ))}
+                                ))}
+                            </View>
+                        ))
+                    ) : (
+                        <View style={custom_styles.noTransactionsContainer}>
+                            <Text style={custom_styles.noTransactionsText}>No transactions found</Text>
                         </View>
-                    ))}
+                    )}
                     <View style={{ height: 50 }} />
                 </Animated.ScrollView>
             </Animated.View>
         </View>
     )
 }
+
 const custom_styles = StyleSheet.create({
     top_bar: {
         height: 150,
@@ -173,52 +273,52 @@ const custom_styles = StyleSheet.create({
         marginBottom: 20
     },
     item: {
-      backgroundColor: '#fff',
-      padding: 16,
-      marginBottom: 12,
-      borderRadius: 12,
-      borderLeftWidth: 5,
-      borderLeftColor: '#fe0002',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+        backgroundColor: '#fff',
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: 12,
+        borderLeftWidth: 5,
+        borderLeftColor: '#fe0002',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     id: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: '#4B5563',
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#4B5563',
     },
     date: {
-      fontSize: 12,
-      color: '#9CA3AF',
+        fontSize: 12,
+        color: '#9CA3AF',
     },
     type: {
-      fontSize: 14,
-      color: '#fe0002',
-      marginTop: 4,
+        fontSize: 14,
+        color: '#fe0002',
+        marginTop: 4,
     },
     amount: {
-      fontSize: 17,
-      fontWeight: 'bold',
-      color: '#222',
-      marginBottom: 8,
-      marginTop: -4,
+        fontSize: 17,
+        fontWeight: 'bold',
+        color: '#222',
+        marginBottom: 8,
+        marginTop: -4,
     },
     points: {
-      fontSize: 17,
-      fontWeight: 'bold',
-      color: '#FFB300',
-      textAlign: 'right',
-      marginTop: 8,
-      marginBottom: 0,
+        fontSize: 17,
+        fontWeight: 'bold',
+        // color: '#FFB300',
+        textAlign: 'right',
+        marginTop: 8,
+        marginBottom: 0,
     },
     pointsLabel: {
-      fontSize: 12,
-      color: '#888',
-      textAlign: 'right',
-      marginTop: -2,
+        fontSize: 12,
+        color: '#888',
+        textAlign: 'right',
+        marginTop: -2,
     },
     stationName: {
         fontSize: 17,
@@ -336,19 +436,5 @@ const custom_styles = StyleSheet.create({
     pointsBlock: {
         alignItems: 'flex-end',
         marginTop: 56,
-    },
-    points: {
-        fontSize: 17,
-        fontWeight: 'bold',
-        color: '#FFB300',
-        textAlign: 'right',
-        marginTop: 0,
-        marginBottom: 0,
-    },
-    pointsLabel: {
-        fontSize: 12,
-        color: '#888',
-        textAlign: 'right',
-        marginTop: -2,
     },
 });

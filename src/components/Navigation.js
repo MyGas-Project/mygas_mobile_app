@@ -12,6 +12,10 @@ import { useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Step1 from "../screens/auth/steps/RegisterStep1";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
+import ActivityScreen from "../screens/dashboard/ActivityScreen";
+import NotificationScreen from "../screens/dashboard/NotificationScreen";
+import ServicesScreen from "../screens/dashboard/ServicesScreen";
+import StationsScreeen from "../screens/dashboard/StationsScreeen";
 
 const Stack = createNativeStackNavigator();
 
@@ -35,12 +39,37 @@ export default function Navigation() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={userInfo ? "Home" : initialRoute}>
+      <Stack.Navigator initialRouteName={userInfo ? "HomeScreen" : initialRoute}>
         {userInfo ? (
           <>
             <Stack.Screen
-              name="Main"
+              name="HomeScreen"
               component={BottomNavigation}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Notification"
+              component={NotificationScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Activity"
+              component={ActivityScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Service"
+              component={ServicesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Stations"
+              component={StationsScreeen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
