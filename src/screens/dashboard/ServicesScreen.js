@@ -84,6 +84,7 @@ export default function ServicesScreen() {
           style={custom_styles.logo}
         />
         <Navbar
+          hideBack
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />

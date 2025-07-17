@@ -44,6 +44,7 @@ export const PATH_URL = 'http://192.168.110.77:5000/';
 //     };
 //   }
 // };
+
 export const processResponse = async (response) => {
   try {
     const statusCode = response.status;                 //

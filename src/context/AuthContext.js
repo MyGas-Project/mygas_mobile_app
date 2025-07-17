@@ -109,21 +109,25 @@ export const AuthProvider = ({ children }) => {
           .then(processResponse)
           .then((res) => {
             const { statusCode, data } = res;
+            console.log("login response:", res);
             if (statusCode === 200) {
               setUserInfo(data);
               getUserDetails(data);
               AsyncStorage.setItem("userInfo", JSON.stringify(data));
+              AsyncStorage.setItem("newUser", "false");
               resolve({ success: true, data });
             } else {
               resolve({ success: false, error: data.error || "Login failed" });
             }
-            console.log(data);
+            // console.log(data);
           })
           .catch((error) => {
-            reject(error);
+            // reject(error);
+            console.error("login error:", error);
           });
       } catch (error) {
-        reject(error);
+        // reject(error);
+        console.error("login error:", error);
       }
     });
   };
@@ -139,15 +143,23 @@ export const AuthProvider = ({ children }) => {
         },
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
-        // console.log("user details: ", data);
+        // console.log("user details: ", data.data);
         setUserDetails(data.data);
       });
     } catch (error) {
       reject(error);
+      console.error("getUserDetails error:", error);
     }
   };
 
   const logout = (navigation) => {
+    let res;
+    if(!navigation){
+      res = AsyncStorage.getItem("userInfo");
+    }else{
+      res = navigation
+    }
+
     try {
       // console.log(navigation);
       fetch(`${AUTH_URL}logout`, {
@@ -155,20 +167,15 @@ export const AuthProvider = ({ children }) => {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${navigation.token}`,
+          Authorization: `Bearer ${res.token}`,
         },
       })
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.info(data);
-          if (statusCode == 200) {
-            // console.log(data);
-            setUserInfo(null);
-            setUserDetails(null);
-            AsyncStorage.removeItem("userInfo");
-          }
-          console.log(data);
+          setUserInfo(null);
+          setUserDetails(null);
+          AsyncStorage.removeItem("userInfo");
         })
         .catch((e) => console.log(e));
     } catch (e) {
@@ -180,13 +187,21 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       try {
         const userData = await AsyncStorage.getItem("userInfo");
+        // console.info("from authcontext: ", userData);
         if (userData) {
           const parsedData = JSON.parse(userData);
           setUserInfo(parsedData);
           getUserDetails(parsedData);
+        }else{
+          setUserInfo(null);
+          setUserDetails(null);
+          AsyncStorage.removeItem("userInfo");
         }
       } catch (e) {
         console.log("Failed to load user from storage", e);
+        setUserInfo(null);
+        setUserDetails(null);
+        AsyncStorage.removeItem("userInfo");
       }
     };
 

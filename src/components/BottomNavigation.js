@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  Keyboard,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useTheme } from "../context/ThemeContext";
@@ -28,6 +29,7 @@ const Tab = createBottomTabNavigator();
 
 const CenterButton = ({ onPress }) => {
   const { styles } = useTheme();
+
   return (
     <TouchableOpacity
       style={styles.centerTabButton}
@@ -44,26 +46,37 @@ const CenterButton = ({ onPress }) => {
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { styles } = useTheme();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  if (keyboardVisible) return null; // 👈 Hide tab bar when keyboard is visible
+
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
-        // Skip rendering tab bar items for Profile and Notifications
-        if (route.name === "Profile" || route.name === "Notifications") {
-          return null;
-        }
+        if (route.name === "Profile" || route.name === "Notifications") return null;
 
         const iconName =
           route.name === "Services"
             ? icons.services
             : route.name === "Rewards"
-            ? icons.rewards
-            : route.name === "Home"
-            ? "home"
-            : route.name === "Stations"
-            ? icons.station
-            : route.name === "Activity"
-            ? icons.activity
-            : "ellipse";
+              ? icons.rewards
+              : route.name === "Home"
+                ? "home"
+                : route.name === "Stations"
+                  ? icons.station
+                  : route.name === "Activity"
+                    ? icons.activity
+                    : "ellipse";
 
         const isFocused = state.index === index;
 
@@ -71,9 +84,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           return (
             <View key={index} style={styles.tabButton}>
               <CenterButton onPress={() => navigation.navigate(route.name)} />
-              <Text
-                style={{ marginTop: 25, color: isFocused ? "#E63946" : "#555" }}
-              >
+              <Text style={{ marginTop: 25, color: isFocused ? "#E63946" : "#555" }}>
                 {route.name}
               </Text>
             </View>
@@ -86,7 +97,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             onPress={() => navigation.navigate(route.name)}
             style={styles.tabButton}
           >
-            {/* <Icon name={iconName} size={25} color={isFocused ? "#E63946" : "#555"} /> */}
             <Image
               source={iconName}
               style={{
@@ -109,7 +119,7 @@ const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, }}
       initialRouteName="Home"
     >
       <Tab.Screen name="Services" component={ServicesScreen} />

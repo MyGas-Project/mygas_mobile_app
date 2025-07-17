@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Navbar from "../../components/Navbar";
 
 import { Ionicons } from "@expo/vector-icons";
+import { AuthContext } from "../../context/AuthContext";
 
 const rewardsData = [
   {
@@ -63,6 +64,7 @@ const offersData = [
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export default function RewardsScreen() {
+  const { userInfo, userDetails } = useContext(AuthContext);
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardContainerTranslateY = scrollY.interpolate({
@@ -89,6 +91,7 @@ export default function RewardsScreen() {
           style={styles.logo}
         />
         <Navbar
+          hideBack
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />
@@ -126,14 +129,14 @@ export default function RewardsScreen() {
                 source={require("../../../assets/my.png")}
                 style={styles.mygasIcon}
               />
-              <Text style={styles.pointsValue}>1,234.05</Text>
+              <Text style={styles.pointsValue}>{userDetails?.total_points || 0}</Text>
             </View>
           </View>
 
           <Text style={styles.sectionTitle}>
             MyGas Motorista Card Member Benefits
           </Text>
-          <FlatList
+          {/* <FlatList
             data={rewardsData}
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -155,7 +158,7 @@ export default function RewardsScreen() {
                 </View>
               </View>
             )}
-          />
+          /> */}
 
           <View style={styles.rewardsRow}>
             <Text style={styles.sectionTitle}>Rewards</Text>
@@ -163,7 +166,7 @@ export default function RewardsScreen() {
               <Text style={styles.viewAll}>View All Rewards ›</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
+          {/* <FlatList
             data={offersData}
             numColumns={2}
             keyExtractor={(item) => item.id}
@@ -193,7 +196,7 @@ export default function RewardsScreen() {
                 </View>
               </View>
             )}
-          />
+          /> */}
         </AnimatedScrollView>
       </Animated.View>
     </View>

@@ -9,8 +9,9 @@ import {
   ScrollView,
   ImageBackground,
   Alert,
+  Keyboard,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,6 +23,21 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -41,7 +57,7 @@ export default function LoginScreen({ navigation }) {
       }
     } catch (error) {
       Alert.alert(error.message || "Login failed", "Please try again");
-      // Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      setIsLoading(false);
       setPassword("");
     } finally {
       setIsLoading(false);
@@ -104,32 +120,35 @@ export default function LoginScreen({ navigation }) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <Text
-            style={[
-              styles.text,
-              { textAlign: "center", marginTop: -100, marginBottom: 10 },
-            ]}
-          >
-            No account yet?{" "}
+      {!isKeyboardVisible && (
+        <View style={styles.footer}>
+          <View style={styles.footer_button_container}>
             <Text
-              style={styles.text_bold}
-              onPress={() => navigation.navigate("Step1")}
+              style={[
+                styles.text,
+                { textAlign: "center", marginTop: -100, marginBottom: 10 },
+              ]}
             >
-              Register
+              No account yet?{" "}
+              <Text
+                style={styles.text_bold}
+                onPress={() => navigation.navigate('Register')}
+              >
+                Register
+              </Text>
             </Text>
-          </Text>
-          <TouchableOpacity
-            style={[styles.primaryButton, isLoading && styles.disabledButton]}
-            onPress={handleLogin}
-          >
-            <Text style={styles.primaryButtonText}>
-              {isLoading ? "Logging in..." : "Login"}
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.primaryButton, isLoading && styles.disabledButton]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.primaryButtonText}>
+                {isLoading ? "Logging in..." : "Login"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,64 +13,71 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
+import { AuthContext } from "../../context/AuthContext";
+import { BASE_URL, processResponse } from "../../config";
 
 const NotificationScreen = () => {
+  const { userInfo, userData } = useContext(AuthContext);
+
   const { styles } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
 
   // Add navigation handlers for bottom tabs
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribe = navigation.addListener("tabPress", (e) => {
-      // Prevent default behavior
       e.preventDefault();
-      // Navigate to the tab
       navigation.navigate(e.target.split("-")[0]);
     });
 
     return unsubscribe;
   }, [navigation]);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      description: "You have purchased PHP 1000 fuel diesel",
-      station: "MyGas Toril 1",
-      points_earned: "1.00 points earned",
-    },
-    {
-      id: "2",
-      description: "You have purchased PHP 500 fuel diesel",
-      station: "MyGas Buhangin",
-      points_earned: "0.50 points earned",
-    },
-    {
-      id: "3",
-      description: "You have purchased PHP 1000 engine oil",
-      station: "MyGas Cabantian",
-      points_earned: "0.25 points earned",
-    },
-  ]);
+  const [notifications, setNotifications] = useState({});
 
-  const renderNotification = ({ item }) => (
+  const renderNotification = (item) => (
     <TouchableOpacity
       style={notif_styles.notificationItem}
       onPress={() => {
         // Handle notification press, e.g., navigate to details
-        console.log("Notification pressed:", item.id);
+        console.log("Notification pressed:", item.transaction_number);
       }}
     >
       <View style={notif_styles.notificationContent}>
         <Text style={notif_styles.notificationDescription}>
-          {item.description}
+          {item.type === "Earn" ? `You have purchased PHP ${item.amount} fuel ${item.service}` : `You have redeemed ${item.points}`}
         </Text>
-        <Text style={notif_styles.notificationStation}>{item.station}</Text>
+        <Text style={notif_styles.notificationStation}>{item.station_name}</Text>
         <Text style={notif_styles.notificationPoints}>
-          {item.points_earned}
+          {item.points}
         </Text>
       </View>
     </TouchableOpacity>
   );
+
+  const customer_notification = () => {
+    try {
+      fetch(`${BASE_URL}customer/customer-notifications`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        }
+      }).then(processResponse).then((res) => {
+        const { statusCode, data } = res;
+        // console.log(data.result);
+        setNotifications(data.result);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    customer_notification();
+  }, [])
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
@@ -89,14 +96,17 @@ const NotificationScreen = () => {
           source={require("../../../assets/mygas_logo.png")}
           style={notif_styles.logo}
         />
-        <Navbar />
+        <Navbar
+          onProfilePress={() => console.log("Profile tapped")}
+          onNotifPress={() => console.log("Notifications tapped")}
+        />
       </ImageBackground>
       <View style={notif_styles.cardContainer}>
         <Text style={notif_styles.pageTitle}>Notifications</Text>
         <FlatList
           data={notifications}
-          renderItem={renderNotification}
-          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => renderNotification(item)}
+          keyExtractor={(item) => item.transaction_number}
           contentContainerStyle={[
             notif_styles.notificationList,
             { paddingBottom: 80 },

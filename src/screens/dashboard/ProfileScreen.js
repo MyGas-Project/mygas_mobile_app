@@ -8,6 +8,10 @@ import {
   ImageBackground,
   Image,
   Alert,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,46 +19,54 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ProfileScreen = () => {
-  const { userInfo, userDetails } = useContext(AuthContext);
+  const { userInfo, userDetails, updateUserDetails } = useContext(AuthContext);
+  const [showDetails, setShowDetails] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [editedDetails, setEditedDetails] = useState({ ...userDetails });
+
   const { styles } = useTheme();
   const navigation = useNavigation();
   const { logout } = useContext(AuthContext);
   const route = useRoute();
-  // const [userProfile, setUserProfile] = useState({
-  //   name: "Juan Dela Cruz",
-  //   email: "juandelacruz@gmail.com",
-  //   phone: "+63 123 456 7890",
-  //   memberSince: "2024",
-  //   points: 1250,
-  // });
-
-  // Add navigation handlers for bottom tabs
-  React.useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", (e) => {
-      // Prevent default behavior
-      e.preventDefault();
-      // Navigate to the tab
-      navigation.navigate(e.target.split("-")[0]);
-    });
-
-    return unsubscribe;
-  }, [navigation]);
 
   const handleEditProfile = () => {
-    console.log("Edit profile pressed");
-    // Navigate to an edit profile screen or open a modal
+    setShowDetails(true);
+  };
+
+  const handleEditPress = () => {
+    setEditMode(true);
+    setEditedDetails({ ...userDetails });
+  };
+
+  const handleSaveChanges = () => {
+    updateUserDetails(editedDetails);
+    setEditMode(false);
+    Alert.alert("Success", "Your profile has been updated");
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditedDetails({ ...userDetails });
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setEditedDetails({ ...editedDetails, birthdate: formattedDate });
+    }
   };
 
   const handleLoyaltyProgramPress = () => {
     console.log("Loyalty Program pressed");
-    // Navigate to Loyalty Program screen
   };
 
   const handleSettingsPress = () => {
     console.log("Settings pressed");
-    // Navigate to Settings screen
   };
 
   const handleLogout = (data) => {
@@ -64,7 +76,6 @@ const ProfileScreen = () => {
     ]);
   };
 
-  // Animation for card container
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
@@ -91,6 +102,7 @@ const ProfileScreen = () => {
         />
         <Navbar />
       </ImageBackground>
+
       <Animated.View
         style={[
           profile_styles.cardContainer,
@@ -99,7 +111,7 @@ const ProfileScreen = () => {
       >
         <Animated.ScrollView
           style={{ flex: 1, width: "100%" }}
-          contentContainerStyle={{ paddingTop: 10 }}
+          contentContainerStyle={profile_styles.scrollContent}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -108,55 +120,229 @@ const ProfileScreen = () => {
           scrollEventThrottle={16}
         >
           <Text style={profile_styles.myAccountTitle}>My Account</Text>
-          <View style={[profile_styles.card]}>
-            <View style={profile_styles.profile_info}>
-              <Text style={profile_styles.profileName}> {userDetails?.first_name || ""}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name || ""}</Text>
-              <Text>{userDetails?.phone_number}</Text>
-              <Text>{userDetails?.email || "No email yet!"}</Text>
-              <TouchableOpacity
-                onPress={handleEditProfile}
-                style={profile_styles.editIcon}
-              >
-                <Ionicons name="create-outline" size={20} color="#333" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={profile_styles.card}
-            onPress={handleLoyaltyProgramPress}
-          >
-            <View style={profile_styles.profile_info}>
-              <Text style={profile_styles.profileName}>Loyalty Program</Text>
-              <View style={profile_styles.loyaltyProgramContent}>
-                <Image
-                  source={require("../../../assets/mygas_logo.png")}
-                  style={profile_styles.loyaltyLogo}
-                />
-                <Text style={profile_styles.motoristaCard}>Motorista Card</Text>
+
+          {showDetails ? (
+            <View style={profile_styles.card}>
+              <View style={profile_styles.headerRow}>
+                <Text style={profile_styles.profileName}>User Details</Text>
+                {!editMode && (
+                  <TouchableOpacity onPress={handleEditPress} style={profile_styles.editButton}>
+                    <Ionicons name="create-outline" size={20} color="#4a90e2" />
+                    <Text style={profile_styles.editButtonText}>Edit</Text>
+                  </TouchableOpacity>
+                )}
               </View>
+
+              {/* PERSONAL INFO */}
+              <Text style={profile_styles.sectionTitle}>Personal Information</Text>
+              <View style={profile_styles.divider} />
+
+              <View style={profile_styles.row}>
+                <View style={profile_styles.col}>
+                  <Text style={profile_styles.profileLabel}>Gender</Text>
+                  {editMode ? (
+                    <TextInput
+                      style={profile_styles.input}
+                      value={editedDetails.gender}
+                      onChangeText={(text) => setEditedDetails({ ...editedDetails, gender: text })}
+                    />
+                  ) : (
+                    <Text style={profile_styles.profileValue}>{userDetails?.gender || "N/A"}</Text>
+                  )}
+                </View>
+                <View style={profile_styles.col}>
+                  <Text style={profile_styles.profileLabel}>Civil Status</Text>
+                  {editMode ? (
+                    <TextInput
+                      style={profile_styles.input}
+                      value={editedDetails.civil_status}
+                      onChangeText={(text) => setEditedDetails({ ...editedDetails, civil_status: text })}
+                    />
+                  ) : (
+                    <Text style={profile_styles.profileValue}>{userDetails?.civil_status || "N/A"}</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={profile_styles.row}>
+                <View style={profile_styles.col}>
+                  <Text style={profile_styles.profileLabel}>Birth Date</Text>
+                  {editMode ? (
+                    <>
+                      <TouchableOpacity
+                        style={profile_styles.input}
+                        onPress={() => setShowDatePicker(true)}
+                      >
+                        <Text>{editedDetails.birthdate || "Select date"}</Text>
+                      </TouchableOpacity>
+                      {showDatePicker && (
+                        <DateTimePicker
+                          value={new Date(editedDetails.birthdate || Date.now())}
+                          mode="date"
+                          display="default"
+                          onChange={handleDateChange}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <Text style={profile_styles.profileValue}>{userDetails?.birthdate || "N/A"}</Text>
+                  )}
+                </View>
+                <View style={profile_styles.col}>
+                  <Text style={profile_styles.profileLabel}>ID Presented</Text>
+                  {editMode ? (
+                    <TextInput
+                      style={profile_styles.input}
+                      value={editedDetails.id_presented}
+                      onChangeText={(text) => setEditedDetails({ ...editedDetails, id_presented: text })}
+                    />
+                  ) : (
+                    <Text style={profile_styles.profileValue}>{userDetails?.id_presented || "N/A"}</Text>
+                  )}
+                </View>
+              </View>
+
+              {/* CONTACT INFO */}
+              <Text style={profile_styles.sectionTitle}>Contact Information</Text>
+              <View style={profile_styles.divider} />
+
+              <View style={profile_styles.colFull}>
+                <Text style={profile_styles.profileLabel}>Phone Number</Text>
+                {editMode ? (
+                  <TextInput
+                    style={profile_styles.input}
+                    value={editedDetails.phone_number}
+                    onChangeText={(text) => setEditedDetails({ ...editedDetails, phone_number: text })}
+                    keyboardType="phone-pad"
+                  />
+                ) : (
+                  <Text style={profile_styles.profileValue}>
+                    {userDetails?.phone_number || "N/A"}
+                  </Text>
+                )}
+              </View>
+
+              <View style={profile_styles.colFull}>
+                <Text style={profile_styles.profileLabel}>Email</Text>
+                {editMode ? (
+                  <TextInput
+                    style={profile_styles.input}
+                    value={editedDetails.email}
+                    onChangeText={(text) => setEditedDetails({ ...editedDetails, email: text })}
+                    keyboardType="email-address"
+                  />
+                ) : (
+                  <Text style={profile_styles.profileValue}>
+                    {userDetails?.email || "Not provided"}
+                  </Text>
+                )}
+              </View>
+
+              <View style={profile_styles.colFull}>
+                <Text style={profile_styles.profileLabel}>Address</Text>
+                {editMode ? (
+                  <TextInput
+                    style={[profile_styles.input, { height: 60 }]}
+                    value={editedDetails.address}
+                    onChangeText={(text) => setEditedDetails({ ...editedDetails, address: text })}
+                    multiline
+                  />
+                ) : (
+                  <Text style={profile_styles.profileValue}>
+                    {userDetails?.address || "N/A"}
+                  </Text>
+                )}
+              </View>
+
+              {editMode && (
+                <View style={profile_styles.editButtonsContainer}>
+                  <TouchableOpacity
+                    onPress={handleCancelEdit}
+                    style={[profile_styles.editActionButton, { backgroundColor: '#f5f5f5' }]}
+                  >
+                    <Text style={[profile_styles.editActionButtonText, { color: '#333' }]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveChanges}
+                    style={[profile_styles.editActionButton, { backgroundColor: '#4a90e2' }]}
+                  >
+                    <Text style={[profile_styles.editActionButtonText, { color: '#fff' }]}>Save Changes</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {!editMode && (
+                <TouchableOpacity
+                  onPress={() => setShowDetails(false)}
+                  style={[profile_styles.logoutButton, { marginTop: 30, borderColor: "#ccc" }]}
+                >
+                  <Text style={[profile_styles.logoutButtonText, { color: "#333" }]}>Close</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <>
+              <View style={[profile_styles.card]}>
+                <View style={profile_styles.profile_info}>
+                  <Text style={profile_styles.profileName}>
+                    {userDetails?.first_name || ""},{" "}
+                    {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + "." : ""}{" "}
+                    {userDetails?.last_name || ""}
+                  </Text>
+                  <Text style={profile_styles.profileText}>{userDetails?.phone_number}</Text>
+                  <Text style={profile_styles.profileText}>{userDetails?.email || "No email yet!"}</Text>
+                  <TouchableOpacity
+                    onPress={handleEditProfile}
+                    style={profile_styles.editIcon}
+                  >
+                    <Ionicons name="create-outline" size={20} color="#4a90e2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               <TouchableOpacity
-                onPress={handleEditProfile}
-                style={profile_styles.editIcon}
+                style={profile_styles.card}
+                onPress={handleLoyaltyProgramPress}
               >
-                <Ionicons name="chevron-forward" size={24} color="#333" />
+                <View style={profile_styles.profile_info}>
+                  <Text style={profile_styles.profileName}>Loyalty Program</Text>
+                  <View style={profile_styles.loyaltyProgramContent}>
+                    <Image
+                      source={require("../../../assets/mygas_logo.png")}
+                      style={profile_styles.loyaltyLogo}
+                    />
+                    <Text style={profile_styles.motoristaCard}>Motorista Card</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleEditProfile}
+                    style={profile_styles.editIcon}
+                  >
+                    <Ionicons name="chevron-forward" size={24} color="#4a90e2" />
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={profile_styles.card}
-            onPress={handleSettingsPress}
-          >
-            <View style={profile_styles.loyaltyProgramContent}>
-              <Ionicons name="settings-outline" size={24} color="#333" />
-              <Text style={profile_styles.settingsText}>Settings</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={profile_styles.logoutButton}
-            onPress={() => handleLogout(userInfo)}
-          >
-            <Text style={profile_styles.logoutButtonText}>Log Out</Text>
-          </TouchableOpacity>
+
+              <TouchableOpacity
+                style={profile_styles.card}
+                onPress={handleSettingsPress}
+              >
+                <View style={profile_styles.loyaltyProgramContent}>
+                  <Ionicons name="settings-outline" size={24} color="#4a90e2" />
+                  <Text style={profile_styles.settingsText}>Settings</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={profile_styles.logoutButton}
+                onPress={() => handleLogout(userInfo)}
+              >
+                <Text style={profile_styles.logoutButtonText}>Log Out</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Add padding at the bottom to prevent navbar overlap */}
+          <View style={{ height: 80 }} />
         </Animated.ScrollView>
       </Animated.View>
     </View>
@@ -193,6 +379,10 @@ const profile_styles = StyleSheet.create({
     borderTopRightRadius: 20,
     position: "relative",
     zIndex: 1,
+  },
+  scrollContent: {
+    paddingTop: 10,
+    paddingBottom: 100, // Added padding to prevent navbar overlap
   },
   headerRight: {
     position: "absolute",
@@ -244,6 +434,11 @@ const profile_styles = StyleSheet.create({
     marginBottom: 5,
     textAlign: "left",
   },
+  profileText: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 5,
+  },
   profileEmail: {
     fontSize: 16,
     color: "#666",
@@ -257,7 +452,6 @@ const profile_styles = StyleSheet.create({
   loyaltyWrapper: {
     flex: 1,
   },
-
   loyaltyLogo: {
     width: 30,
     height: 30,
@@ -285,7 +479,7 @@ const profile_styles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     marginTop: 100,
-    marginBottom: 50,
+    marginBottom: 20,
     borderColor: "red",
     borderWidth: 1,
   },
@@ -301,6 +495,84 @@ const profile_styles = StyleSheet.create({
     zIndex: 3,
     flexDirection: "row",
     alignItems: "center",
+  },
+  sectionTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 6,
+    color: "#333",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginVertical: 10,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  col: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  colFull: {
+    marginBottom: 16,
+  },
+  profileLabel: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 4,
+  },
+  profileValue: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 6,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 12,
+    backgroundColor: '#f9f9f9',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 20,
+    top: 20,
+  },
+  editButtonText: {
+    color: '#4a90e2',
+    marginLeft: 5,
+    fontWeight: '500',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  editButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 20, // Added margin to prevent overlap
+  },
+  editActionButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  editActionButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

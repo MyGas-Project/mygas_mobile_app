@@ -7,20 +7,13 @@ export default function Navbar({ onProfilePress, onNotifPress, hideBack = false 
   const navigation = useNavigation();
   const route = useRoute();
 
-  const handleProfilePress = () => {
-    navigation.navigate("Profile");
-  };
-
-  const handleNotifPress = () => {
-    navigation.navigate("Notifications");
-  };
-
-
   return (
     <View style={styles.container}>
       {!hideBack ? (
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            navigation.goBack();
+          }}
           style={styles.iconWrapper}
         >
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -30,13 +23,17 @@ export default function Navbar({ onProfilePress, onNotifPress, hideBack = false 
       )}
       <View style={styles.rightIcons}>
         <TouchableOpacity
-          onPress={handleNotifPress}
+          onPress={() => {
+            navigation.navigate("Notifications");
+          }}
           style={styles.singleIconWrapper}
         >
           <Ionicons name="notifications-outline" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={handleProfilePress}
+          onPress={() => {
+            navigation.navigate("Profile");
+          }}
           style={styles.singleIconWrapper}
         >
           <Ionicons name="person-circle-outline" size={26} color="black" />

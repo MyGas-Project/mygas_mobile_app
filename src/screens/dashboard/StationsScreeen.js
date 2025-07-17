@@ -12,9 +12,10 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
+  VirtualizedList,
 } from "react-native";
 import React, { useState, useRef, useEffect, useContext } from "react";
-import MapView, { Marker } from "react-native-maps";
+// import MapView, { Marker } from "react-native-maps";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import Navbar from "../../components/Navbar";
@@ -22,49 +23,23 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from 'expo-location'
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
+import Mapbox, { UserLocationRenderMode } from "@rnmapbox/maps";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const window_height = Dimensions.get('window').height;
+Mapbox.setAccessToken('pk.eyJ1IjoicnVpbnplIiwiYSI6ImNrOTd0N3F2bjBpdjkzZnBha3FsZmk4NjcifQ.VprSZLmMu0zRldMobXT6Fg');
 
 export default function StationsScreeen() {
   const { userInfo, userDetails } = useContext(AuthContext);
   const { styles } = useTheme();
-  const mapRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [currLat, setCurrLat] = useState(7.102943635598714);
   const [currLong, setCurrLong] = useState(125.58125155146296);
+  const [showMap, setShowMap] = useState(true);
   const [locationPermission, setLocationPermission] = useState(null);
   const [stationsLists, setStationsLists] = useState(null);
-  const stationsData = [
-    // {
-    //   id: "1",
-    //   name: "MyGas Toril 1",
-    //   address: "127 Saavedra St., Toril, Davao City",
-    //   fuelTypes: "Regular, Premium, Diesel",
-    //   distance: "2.5 km",
-    //   hours: "24/7",
-    //   amenities: "Convenience Store, Car Wash",
-    //   lat: 7.102943635598714,
-    //   lon: 125.58125155146296,
-    // },
-    // {
-    //   id: "2",
-    //   name: "Mygas Station 2",
-    //   fuelTypes: "Regular, Premium",
-    //   distance: "5.8 km",
-    //   hours: "6 AM - 10 PM",
-    //   amenities: "Convenience Store, ATM",
-    //   lat: 7.079302990212743,
-    //   lon: 125.54663569839967,
-    // },
-    // {
-    //   id: "3",
-    //   name: "Mygas Station 3",
-    //   fuelTypes: "Premium, Diesel",
-    //   distance: "10.2 km",
-    //   hours: "24/7",
-    //   amenities: "Car Wash, Restroom",
-    //   lat: 7.047592979513302,
-    //   lon: 125.56948195451061,
-    // },
-  ];
+  const getItem = (data, index) => data[index];
+  const getItemCount = (data) => data.length;
 
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
@@ -72,7 +47,7 @@ export default function StationsScreeen() {
     extrapolate: "clamp",
   });
 
-  const [mapLoading, setMapLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -81,38 +56,50 @@ export default function StationsScreeen() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status);
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermission(status);
 
-      if (status === 'granted') {
-        try {
-          let location = await Location.getCurrentPositionAsync({});
-          setCurrLat(location.coords.latitude);
-          setCurrLong(location.coords.longitude);
+        // if (status !== 'granted') {
+        //   Alert.alert(
+        //     "Location Permission Required",
+        //     "Please enable location services to find nearby gas stations."
+        //   );
+        //   return;
+        // }
 
-          // Animate map to user's location
-          mapRef.current?.animateToRegion({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }, 1000);
-        } catch (error) {
-          Alert.alert(
-            "Location Error",
-            "Unable to get your current location. Using default location instead."
-          );
+        const location = await Location.getCurrentPositionAsync({});
+        const currentLat = location.coords.latitude;
+        const currentLong = location.coords.longitude;
+
+        const storedLocation = await AsyncStorage.getItem("lat_long");
+
+        if (storedLocation) {
+          const { lat: savedLat, long: savedLong } = JSON.parse(storedLocation);
+
+          if (savedLat !== currentLat || savedLong !== currentLong) {
+            await AsyncStorage.setItem("lat_long", JSON.stringify({
+              lat: currentLat,
+              long: currentLong
+            }));
+          }
+
+          setCurrLat(savedLat);
+          setCurrLong(savedLong);
+        } else {
+          await AsyncStorage.setItem("lat_long", JSON.stringify({
+            lat: currentLat,
+            long: currentLong
+          }));
+
+          setCurrLat(currentLat);
+          setCurrLong(currentLong);
         }
-      } else {
+      } catch (error) {
+        console.error("Location error:", error);
         Alert.alert(
-          "Location Permission Required",
-          "Please enable location services to find nearby gas stations.",
-          [
-            {
-              text: "OK",
-              onPress: () => console.log("OK Pressed")
-            }
-          ]
+          "Location Error",
+          "Unable to get your current location. Using default location instead."
         );
       }
     })();
@@ -198,9 +185,10 @@ export default function StationsScreeen() {
     });
   };
 
-  const getStationLists = () => {
+  const getStationLists = (value) => {
+    // console.info(value);
     try {
-      fetch(`${BASE_URL}super-admin/station-lists`, {
+      fetch(`${BASE_URL}customer/station-list?filter=${value}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -208,8 +196,8 @@ export default function StationsScreeen() {
         }
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
+        // console.log(data.result);
         if (statusCode === 200) {
-          // console.log(data.result);
           setStationsLists(data.result);
         }
       });
@@ -255,6 +243,7 @@ export default function StationsScreeen() {
           style={custom_styles.logo}
         />
         <Navbar
+          hideBack
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />
@@ -305,45 +294,80 @@ export default function StationsScreeen() {
               style={custom_styles.searchInput}
               placeholder="Search Location"
               placeholderTextColor="#777"
+              onChangeText={(value) => {
+                if (value === "") {
+                  getStationLists();
+                  setShowMap(true);
+                } else {
+                  getStationLists(value);
+                  setShowMap(false);
+                }
+              }}
             />
           </View>
 
-          <View style={{ height: 500 }}>
-            <MapView
-              ref={mapRef}
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: currLat,
-                longitude: currLong,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-              onMapReady={() => setMapLoading(false)}
-              onRegionChangeComplete={() => setMapLoading(false)}
-              onPanDrag={() => {
-                // Prevent scroll view from receiving the drag event
-                scrollY.setValue(0);
-              }}
-              moveOnMarkerPress={false}
-              scrollEnabled={true}
-              zoomEnabled={true}
-              rotateEnabled={true}
-              pitchEnabled={true}
-            >
-              {/* {stationsLists?.map((station, index) => (
-                <Marker
-                  key={station.id}
-                  coordinate={{
-                    latitude: station.station_lat,
-                    longitude: station.station_long,
-                  }}
-                  title={station.station_name}
-                  description={`Fuel Types: ${station.fuelTypes}\n${station.amenities}`}
-                />
-              )) || null} */}
-            </MapView>
-          </View>
+          {showMap ?
+            <>
+              <View style={{ height: 200 }}>
+                {/* Map Here */}
+                <Mapbox.MapView
+                  style={{ flex: 1 }}
+                  onDidFinishRenderingMapFully={() => setMapLoading(false)}
+                  onMapIdle={() => setMapLoading(false)}
+                  compassEnabled={true}
+                  onTouchStart={() => scrollY.setValue(0)}
+                  zoomEnabled={true}
+                  scrollEnabled={true}
+                  rotateEnabled={true}
+                  pitchEnabled={true}
+                  logoEnabled={false}
+                  attributionEnabled={false}
+                  scaleBarEnabled={false}
+                  styleURL={`mapbox://styles/mapbox/navigation-day-v1`}
+                >
+                  <Mapbox.UserLocation
+                    androidRenderMode='gps'
+                    visible={true}
+                    requestsAlwaysUse={true}
+                  />
+                  {currLat && currLong && !isNaN(currLat) && !isNaN(currLong) && (
+                    <Mapbox.Camera
+                      // followUserLocation={true}
+                      // followUserMode="normal"
+                      zoomLevel={13}
+                      centerCoordinate={[currLong, currLat]}
+                      animationMode='flyTo'
+                      animationDuration={2000}
+                      // pitch={0}
+                    />
+                  )}
+                  {stationsLists?.map((item, index) => {
+                    const lat = item?.station_lat;
+                    const long = item?.station_long;
 
+                    if (lat != null && long != null) {
+                      return (
+                        <Mapbox.PointAnnotation
+                          id={index.toString()}
+                          key={index}
+                          coordinate={[parseFloat(long), parseFloat(lat)]}
+                        >
+                          <Mapbox.Callout
+                            title={item.station_name}
+                            snippet={item.station_address}
+                          />
+                        </Mapbox.PointAnnotation>
+                      );
+                    }
+
+                    return null;
+                  })}
+                </Mapbox.MapView>
+              </View>
+            </>
+            :
+            null
+          }
           <View style={{ flex: 1, paddingTop: 16 }}>
             <Text style={custom_styles.sectionTitle}>
               Nearby Gasoline Stations
@@ -362,7 +386,7 @@ export default function StationsScreeen() {
                   <TouchableOpacity
                     style={custom_styles.directionRow}
                     onPress={() => {
-                      const url = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`;
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${item.station_lat},${item.station_long}`;
                       Linking.openURL(url);
                     }}
                   >

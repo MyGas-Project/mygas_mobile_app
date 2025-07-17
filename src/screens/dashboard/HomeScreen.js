@@ -194,7 +194,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <View style={{ alignItems: "center", marginVertical: 20 }}>
               <ImageBackground
-                source={require("../../../assets/Card.png")}
+                source={require("../../../assets/Card_New.png")}
                 resizeMode="contain"
                 style={{
                   width: width - 2,
@@ -218,7 +218,7 @@ export default function HomeScreen({ navigation }) {
                         flexDirection: "row",
                         alignItems: "center",
                         marginTop: 85,
-                        marginLeft: 25
+                        marginLeft: 5
                       }}
                     >
                       <Text
@@ -243,14 +243,14 @@ export default function HomeScreen({ navigation }) {
                     </View>
 
                     <Text
-                      style={{ color: "#000", fontSize: 10, marginLeft: 25 }}
+                      style={{ color: "#000", fontSize: 10, marginLeft: 10 }}
                     >
-                      01/22/25
+                      {userDetails?.created_at ? new Date(userDetails.created_at).toLocaleDateString("en-US") : ""}
                     </Text>
                     <Text
-                      style={{ color: "#000", fontSize: 10, marginLeft: 25 }}
+                      style={{ color: "#000", fontSize: 10, marginLeft: 10 }}
                     >
-                      Earned Points: 0.25pts
+                      Earned Points: {userDetails?.points || 0}pts
                     </Text>
                   </View>
                 </View>
@@ -259,9 +259,9 @@ export default function HomeScreen({ navigation }) {
                     color: "#000",
                     fontSize: 12,
                     position: "absolute",
-                    bottom: 20,
+                    bottom: 35,
                     left: 20,
-                    marginLeft: 25
+                    marginLeft: 10
                   }}
                 >
                   {userDetails?.bar_code ? `**** **** ***${userDetails.bar_code.slice(-3)}` : ""}
