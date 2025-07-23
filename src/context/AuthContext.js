@@ -115,19 +115,18 @@ export const AuthProvider = ({ children }) => {
               getUserDetails(data);
               AsyncStorage.setItem("userInfo", JSON.stringify(data));
               AsyncStorage.setItem("newUser", "false");
-              resolve({ success: true, data });
+              // resolve({ success: true, data });
             } else {
-              resolve({ success: false, error: data.error || "Login failed" });
+              // resolve({ success: false, error: data.error || "Login failed" });
             }
-            // console.log(data);
           })
           .catch((error) => {
-            // reject(error);
-            console.error("login error:", error);
+            console.error("login error:", error.message);
+            alert("Login Catch Error: ", error.message);
           });
       } catch (error) {
-        // reject(error);
-        console.error("login error:", error);
+        console.error("login error:", error.message);
+        alert("Login Catch Error Final: ", error.message);
       }
     });
   };

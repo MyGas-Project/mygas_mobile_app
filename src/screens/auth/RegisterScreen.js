@@ -139,6 +139,7 @@ const Step1 = ({ navigation }) => {
 const Step2 = ({ navigation, route }) => {
   const { styles } = useTheme();
 
+
   return (
     <View style={styles.container}>
       <ImageBackground

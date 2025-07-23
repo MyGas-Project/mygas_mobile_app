@@ -32,7 +32,11 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE"
-      ]
+      ],
+      "intentFilters": [],
+      "config": {
+        "cleartextTraffic": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
