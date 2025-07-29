@@ -142,7 +142,8 @@ export const AuthProvider = ({ children }) => {
           .then(processResponse)
           .then((res) => {
             const { statusCode, data } = res;
-            // console.log("login response:", res);
+            console.log("login response:", res);
+
             if (statusCode === 200) {
               setUserInfo(data);
               getUserDetails(data);
@@ -150,9 +151,10 @@ export const AuthProvider = ({ children }) => {
               AsyncStorage.setItem("newUser", "false");
               resolve({ success: true, data });
             } else {
-              resolve({ success: false, error: data.message || "Login failed" });
+              resolve({ success: false, error: data.message});
               // Alert.alert("Login Failed", data.message || "Login failed");
             }
+
           })
           .catch((error) => {
             console.error("login error:", error.message);

@@ -56,11 +56,10 @@ export default function LoginScreen({ navigation }) {
         setPassword("");
       }
     } catch (error) {
-      Alert.alert("Login failed", "Please try again");
+      Alert.alert("Login failed", error.message);
       setIsLoading(false);
       setPassword("");
     } finally {
-      Alert.alert("Login failed", "Please try again");
       setIsLoading(false);
       setPassword("");
     }

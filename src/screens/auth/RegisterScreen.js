@@ -242,7 +242,7 @@ const Step2 = ({ navigation, route }) => {
               const { statusCode, data } = await registerStep1(batch1Final);
               setLoadingState(true);
               if (statusCode == 201) {
-                navigation.navigate("Step3", { data });
+                navigation.navigate("Step3", { data: data, batch1form: batch1Final });
               } else {
                 setLoadingState(false);
                 Alert.alert("Error", data.message);
@@ -262,7 +262,7 @@ const Step3 = ({ navigation, route }) => {
   const { styles } = useTheme();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const inputs = useRef([]);
-  const { data } = route.params;
+  const { data, batch1form } = route.params;
   const { verifyCode } = useContext(AuthContext);
   const [loadingState, setLoadingState] = useState(false);
 
@@ -294,12 +294,6 @@ const Step3 = ({ navigation, route }) => {
     }
   };
 
-  useEffect(() => {
-    if (data) {
-      Alert.alert("OTP", data.data.code);
-    }
-  }, [data])
-
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -329,8 +323,10 @@ const Step3 = ({ navigation, route }) => {
               Enter 6-digit Verification Code
             </Text>
             <Text style={styles.text}>
-              A one-time passcode has been seent to (+63) 9123456789. Please
+              A one-time passcode has been seent to (+63) {batch1form?.mobileNumber || 0}. Please
               enter the passcode to verify your phone number.
+
+              {data?.data.code || "empty"}
             </Text>
           </View>
           <View style={styles.codeContainer}>
@@ -367,6 +363,7 @@ const Step3 = ({ navigation, route }) => {
             style={styles.primaryButton}
             // onPress={handleVerify}
             onPress={async () => {
+              console.info(batch1form);
               const res = await verifyCode(data.data, code.join(""));
               setLoadingState(true);
               if (res.statusCode == 200) {
