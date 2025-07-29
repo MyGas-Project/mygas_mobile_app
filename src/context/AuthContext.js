@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("registerStep1 response: ", res); // Add this
+          console.log("registerStep1 response: ", res); // Add this
           return res;
         })
         .catch((err) => {
