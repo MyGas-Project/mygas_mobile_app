@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import { AUTH_URL, BASE_URL, processResponse } from "../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 
 export const AuthContext = createContext();
 
@@ -10,86 +11,118 @@ export const AuthProvider = ({ children }) => {
 
   // STEP 1: Register Step 1
   const registerStep1 = (data) => {
-    return new Promise((resolve, reject) => {
-      fetch(`${AUTH_URL}register/step1`, {
+    try {
+      return fetch(`${AUTH_URL}register/step1`, {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          birthday: data.birthDate,
+          phone_number: data.mobileNumber,
+        }),
       })
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("registerStep1 response:", res); // Add this
-
-          if (statusCode === 200 || statusCode === 201) {
-            resolve({ success: true, data: data.data }); // pass only inner `data`
-          } else {
-            resolve({
-              success: false,
-              error: data?.error || data?.message || "Step 1 failed",
-            });
-          }
+          // console.log("registerStep1 response: ", res); // Add this
+          return res;
         })
         .catch((err) => {
-          console.log("registerStep1 error:", err);
-          reject(err);
+          console.log("registerStep1 error: ", err);
         });
-    });
+    } catch (error) {
+      console.log("registerStep1 error: ", error);
+    }
   };
 
-  // STEP 2: Verify Code (for phone/email)
-  const verifyCode = ({ user_id, code_id, code }) => {
-    return new Promise((resolve, reject) => {
-      fetch(
-        `${AUTH_URL}verify-code?user_id=${user_id}&code_id=${code_id}&code=${code}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      )
-        .then(processResponse)
-        .then((res) => {
-          const { statusCode, data } = res;
-          if (statusCode === 200) {
-            resolve({ success: true, data });
-          } else {
-            resolve({
-              success: false,
-              error: data.error || "Verification failed",
-            });
-          }
-        })
-        .catch(reject);
-    });
-  };
-
-  // STEP 3: Register Step 2
-  const registerStep2 = ({ user_id, email }) => {
-    return new Promise((resolve, reject) => {
-      fetch(`${AUTH_URL}register/step-2`, {
+  const verifyCode = (data, code) => {
+    try {
+      return fetch(`${AUTH_URL}verify-code`, {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ user_id, email }),
+        body: JSON.stringify({
+          user_id: data.user_id,
+          code: code,
+          code_id: data.code_id,
+        }),
       })
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          if (statusCode === 200) {
-            resolve({ success: true, data });
-          } else {
-            resolve({ success: false, error: data.error || "Step 2 failed" });
-          }
+          // console.log("verification response: ", res); // Add this
+
+          return res;
         })
-        .catch(reject);
-    });
+        .catch((err) => {
+          console.log("registerStep1 error: ", err);
+        });
+    } catch (error) {
+      console.log("registerStep1 error: ", err);
+    }
+  };
+
+  const registerStep2 = (data) => {
+    // console.info(data);
+    try {
+      return fetch(`${AUTH_URL}register/step-2`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: data.data.user_id,
+          password: data.password,
+          email: data.email
+        }),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          // console.log("registerStep1 response: ", res); // Add this
+          return res;
+        })
+        .catch((err) => {
+          console.log("registerStep1 error: ", err);
+        });
+    } catch (error) {
+      console.log("registerStep1 error: ", error);
+    }
+  };
+
+  const registerStep3 = (data) => {
+    // console.info(data);
+    try {
+      return fetch(`${AUTH_URL}register/step-3`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: data.user_id,
+          wheel_type_id: data.wheel_type_id
+        }),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          // console.log("registerStep1 response: ", res); // Add this
+          return res;
+        })
+        .catch((err) => {
+          console.log("registerStep1 error: ", err);
+        });
+    } catch (error) {
+      console.log("registerStep1 error: ", error);
+    }
   };
 
   const login = (email, password) => {
@@ -109,19 +142,21 @@ export const AuthProvider = ({ children }) => {
           .then(processResponse)
           .then((res) => {
             const { statusCode, data } = res;
-            console.log("login response:", res);
+            // console.log("login response:", res);
             if (statusCode === 200) {
               setUserInfo(data);
               getUserDetails(data);
               AsyncStorage.setItem("userInfo", JSON.stringify(data));
               AsyncStorage.setItem("newUser", "false");
-              // resolve({ success: true, data });
+              resolve({ success: true, data });
             } else {
-              // resolve({ success: false, error: data.error || "Login failed" });
+              resolve({ success: false, error: data.message || "Login failed" });
+              // Alert.alert("Login Failed", data.message || "Login failed");
             }
           })
           .catch((error) => {
             console.error("login error:", error.message);
+            // Alert.alert("Login Failed", error || "Login failed");
             alert("Login Catch Error: ", error.message);
           });
       } catch (error) {
@@ -153,9 +188,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = (navigation) => {
     let res;
-    if(!navigation){
+    if (!navigation) {
       res = AsyncStorage.getItem("userInfo");
-    }else{
+    } else {
       res = navigation
     }
 
@@ -191,7 +226,7 @@ export const AuthProvider = ({ children }) => {
           const parsedData = JSON.parse(userData);
           setUserInfo(parsedData);
           getUserDetails(parsedData);
-        }else{
+        } else {
           setUserInfo(null);
           setUserDetails(null);
           AsyncStorage.removeItem("userInfo");
@@ -217,6 +252,7 @@ export const AuthProvider = ({ children }) => {
         registerStep1,
         verifyCode,
         registerStep2,
+        registerStep3
       }}
     >
       {children}

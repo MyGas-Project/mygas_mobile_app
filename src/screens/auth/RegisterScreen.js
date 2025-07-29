@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import React, { useState, useRef, useEffect, useContext, use } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   ImageBackground,
   Alert,
 } from "react-native";
+import DatePicker from 'react-native-neat-date-picker';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,120 +26,153 @@ const Stack = createNativeStackNavigator();
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
-// 
-
 const Step1 = ({ navigation }) => {
   const { styles } = useTheme();
-  const [Batch1Form, setBatch1Form] = useState({});
+  const [Batch1Form, setBatch1Form] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
-      >
-        <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
+    <>
+      <DatePicker
+        isVisible={showDatePicker}
+        mode="single"
+        // minDate={new Date('1900-01-01')}
+        // initialDate={new Date('2000-01-01')}
+        colorOptions={{
+          headerColor: '#fe0002',
+          weekDaysColor: '#fe0002',
+          selectedDateBackgroundColor: '#fe0002',
+          confirmButtonColor: '#fe0002',
+        }}
+        onCancel={() => { setShowDatePicker(false); }}
+        onConfirm={(e) => {
+          setShowDatePicker(false);
+          setBatch1Form({
+            ...Batch1Form,
+            birthDate: e.dateString
+          })
+        }}
+      />
+      <View style={styles.container}>
+        <ImageBackground
+          resizeMode="stretch"
+          source={require("../../../assets/mygas-header.jpeg")}
+          style={styles.top_bar}
+        >
+          <LinearGradient
+            colors={["transparent", "rgba(255,255,255,0.5)"]}
+            style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          />
+          {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
                     <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
                 </TouchableOpacity> */}
-      </ImageBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ProgressIndicator step={1} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text]}>Create Your Account</Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Complete Your Profile Details
-            </Text>
-            <Text style={styles.text}>
-              Finish your profile to get personalized offers, rewards, and a
-              better fueling experience. Update now and start enjoying the
-              perks!
-            </Text>
-          </View>
+        </ImageBackground>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ProgressIndicator step={1} />
+          <ScrollView style={styles.auth_content}>
+            <View style={{ padding: 20 }}>
+              <Text style={[styles.text]}>Create Your Account</Text>
+              <Text style={[styles.text, styles.text_lg]}>
+                Complete Your Profile Details
+              </Text>
+              <Text style={styles.text}>
+                Finish your profile to get personalized offers, rewards, and a
+                better fueling experience. Update now and start enjoying the
+                perks!
+              </Text>
+            </View>
 
-          <View style={styles.form_container}>
-            <View style={styles.form_section}>
-              <TextInput
-                style={styles.form_input}
-                value={Batch1Form?.firstName || ""}
-                onChangeText={() => {
-                  setBatch1Form({
-                    ...Batch1Form,
-                    firstName: firstName
-                  })
-                }}
-                placeholder="First Name"
-              />
-            </View>
-            <View style={styles.form_section}>
-              <TextInput
-                style={styles.form_input}
-                value={Batch1Form?.lastName || ""}
-                onChangeText={() => {
-                  setBatch1Form({
-                    ...Batch1Form,
-                    lastName: lastName
-                  })
-                }}
-                placeholder="Last Name"
-              />
-            </View>
-            <View style={styles.form_section}>
-              <TextInput
+            <View style={styles.form_container}>
+              <View style={styles.form_section}>
+                <TextInput
+                  style={styles.form_input}
+                  value={Batch1Form?.firstName || ""}
+                  onChangeText={(firstName) => {
+                    setBatch1Form({
+                      ...Batch1Form,
+                      firstName: firstName
+                    })
+                  }}
+                  placeholder="First Name"
+                />
+              </View>
+              <View style={styles.form_section}>
+                <TextInput
+                  style={styles.form_input}
+                  value={Batch1Form?.lastName || ""}
+                  onChangeText={(lastName) => {
+                    setBatch1Form({
+                      ...Batch1Form,
+                      lastName: lastName
+                    })
+                  }}
+                  placeholder="Last Name"
+                />
+              </View>
+              <View style={styles.form_section}>
+                {/* <TextInput
                 style={styles.form_input}
                 value={Batch1Form?.birthDate || ""}
-                onChangeText={() => {
+                onChangeText={(birthDate) => {
                   setBatch1Form({
                     ...Batch1Form,
                     birthDate: birthDate
                   })
                 }}
-                placeholder="Birth Date"
-              />
+                placeholder="Birth Date eg: 1995-01-01"
+              /> */}
+                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                  <View style={styles.form_input}>
+                    <Text style={styles.text}>{Batch1Form?.birthDate || "Birth Date"}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
-          <View style={{ padding: 20 }}>
-            <Text style={styles.text}>
-              Get ready for exclusive promos in your birthmonth! By adding your
-              birthdate, youl'll unlock soecial offeres and rewaards to make
-              your celebration even sweeter.
-            </Text>
+            <View style={{ padding: 20 }}>
+              <Text style={styles.text}>
+                Get ready for exclusive promos in your birthmonth! By adding your
+                birthdate, youl'll unlock soecial offeres and rewaards to make
+                your celebration even sweeter.
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+        <View style={styles.footer}>
+          <View style={styles.footer_button_container}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.secondaryButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity style={styles.primaryButton} onPress={() => {
-            navigation.navigate("Step2");
-          }}>
-            <Text style={styles.primaryButtonText}>Next</Text>
-          </TouchableOpacity>
+          <View style={styles.footer_button_container}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => {
+              if (!Batch1Form?.firstName || !Batch1Form?.lastName || !Batch1Form?.birthDate) {
+                Alert.alert("Validation Error", "All fields are required");
+              } else {
+                navigation.navigate("Step2", { Batch1Form });
+              }
+            }}>
+              <Text style={styles.primaryButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </>
   );
 };
 
 const Step2 = ({ navigation, route }) => {
   const { styles } = useTheme();
-
+  const { Batch1Form } = route.params;
+  const [batch1Final, setBatch1Final] = useState(Batch1Form);
+  const { registerStep1 } = useContext(AuthContext);
+  const [loadingState, setLoadingState] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -173,8 +207,13 @@ const Step2 = ({ navigation, route }) => {
             <View style={styles.form_section}>
               <TextInput
                 style={styles.form_input}
-                // value={mobileNumber}
-                // onChangeText={setMobileNumber}
+                value={batch1Final?.mobileNumber || ""}
+                onChangeText={(mobileNumber) => {
+                  setBatch1Final({
+                    ...batch1Final,
+                    mobileNumber: mobileNumber
+                  })
+                }}
                 placeholder="Mobile Number"
                 keyboardType="numeric"
                 maxLength={10}
@@ -198,8 +237,17 @@ const Step2 = ({ navigation, route }) => {
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => {
-              navigation.navigate("Step4");
+            disabled={loadingState}
+            onPress={async () => {
+              const { statusCode, data } = await registerStep1(batch1Final);
+              setLoadingState(true);
+              if (statusCode == 201) {
+                navigation.navigate("Step3", { data });
+              } else {
+                setLoadingState(false);
+                Alert.alert("Error", data.message);
+              }
+              console.info(data);
             }}
           >
             <Text style={styles.primaryButtonText}>Next</Text>
@@ -214,6 +262,9 @@ const Step3 = ({ navigation, route }) => {
   const { styles } = useTheme();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const inputs = useRef([]);
+  const { data } = route.params;
+  const { verifyCode } = useContext(AuthContext);
+  const [loadingState, setLoadingState] = useState(false);
 
   const handleChange = (text, index) => {
     if (text.length > 1) text = text.charAt(0);
@@ -226,17 +277,28 @@ const Step3 = ({ navigation, route }) => {
     }
 
     if (newCode.every((digit) => digit !== "")) {
-      console.log(newCode.join("")); // Call verification function
+      // console.log(newCode.join("")); // Call verification function
+      // console.info(data.data.code);
+      // if (newCode.join("") != data.data.code) {
+      //   console.info(data);
+      //   Alert.alert("Validation Error", "Invalid OTP");
+      // }
     }
   };
 
   const handleKeyPress = (e, index) => {
-    console.log(e.nativeEvent.key);
+    // console.log(e.nativeEvent.key);
     if (e.nativeEvent.key === "Backspace" && index > 0) {
       const newIndex = index === 0 ? 0 : index - 1;
       inputs.current[newIndex].focus();
     }
   };
+
+  useEffect(() => {
+    if (data) {
+      Alert.alert("OTP", data.data.code);
+    }
+  }, [data])
 
   return (
     <View style={styles.container}>
@@ -301,9 +363,19 @@ const Step3 = ({ navigation, route }) => {
         </View>
         <View style={styles.footer_button_container}>
           <TouchableOpacity
+            disabled={loadingState}
             style={styles.primaryButton}
             // onPress={handleVerify}
-            onPress={() => navigation.navigate("Step4")}
+            onPress={async () => {
+              const res = await verifyCode(data.data, code.join(""));
+              setLoadingState(true);
+              if (res.statusCode == 200) {
+                navigation.navigate("Step4", { res });
+              } else {
+                setLoadingState(false);
+                Alert.alert("Invalid Code", "Verification failed");
+              }
+            }}
           >
             <Text style={styles.primaryButtonText}>Verify</Text>
           </TouchableOpacity>
@@ -314,7 +386,9 @@ const Step3 = ({ navigation, route }) => {
 };
 
 const Step4 = ({ navigation, route }) => {
+  const { res } = route.params;
   const { styles } = useTheme();
+  const [Batch2Form, setBatch2Form] = useState(res);
 
   return (
     <View style={styles.container}>
@@ -350,24 +424,26 @@ const Step4 = ({ navigation, route }) => {
           </View>
           <View style={styles.form_container}>
             <View style={styles.form_section}>
-              <TextInput style={styles.form_input} />
+              <TextInput style={styles.form_input}
+                onChangeText={(e) => { setBatch2Form({ ...Batch2Form, email: e }); }}
+                value={Batch2Form.email} />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
       <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
+        {/* <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.secondaryButtonText}>Back</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => navigation.navigate("Step6")}
+            onPress={() => navigation.navigate("Step6", { Batch2Form })}
           >
             <Text style={styles.primaryButtonText}>Next</Text>
           </TouchableOpacity>
@@ -480,7 +556,12 @@ const Step5 = ({ navigation, route }) => {
 };
 
 const Step6 = ({ navigation, route }) => {
+  const { Batch2Form } = route.params;
   const { styles } = useTheme();
+  const [finalForm, setFinalForm] = useState(Batch2Form);
+  const [reconfirmPassword, setReconfirmPassword] = useState("");
+  const { registerStep2 } = useContext(AuthContext);
+  const [loadingState, setLoadingState] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -518,11 +599,20 @@ const Step6 = ({ navigation, route }) => {
           <View style={styles.form_container}>
             <View style={styles.form_section}>
               <Text style={styles.form_label}>Enter your password</Text>
-              <TextInput style={styles.form_input} />
+              <TextInput style={styles.form_input}
+                onChangeText={(password) => {
+                  setFinalForm({
+                    ...finalForm,
+                    password: password,
+                  })
+                }} secureTextEntry={true} />
             </View>
             <View style={styles.form_section}>
               <Text style={styles.form_label}>Re-enter your password</Text>
-              <TextInput style={styles.form_input} />
+              <TextInput style={styles.form_input} secureTextEntry={true}
+                onChangeText={(e) => {
+                  setReconfirmPassword(e);
+                }} />
             </View>
           </View>
         </ScrollView>
@@ -539,7 +629,28 @@ const Step6 = ({ navigation, route }) => {
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => navigation.navigate("Step7")}
+            disabled={loadingState}
+            onPress={async () => {
+              // console.log(finalForm);
+              setLoadingState(true);
+
+              if (reconfirmPassword !== finalForm.password) {
+                Alert.alert("Password Mismatch", "Passwords do not match");
+                setLoadingState(false);
+                return;
+              }
+
+              const res = await registerStep2(finalForm);
+              console.info(res);
+
+              if (res.statusCode == 201) {
+                navigation.navigate("Step7", { user_id: res.data.user_id });
+              } else {
+                setLoadingState(false);
+                Alert.alert("Error", res.data.message);
+              }
+              // navigation.navigate("Step7");
+            }}
           >
             <Text style={styles.primaryButtonText}>Confirm Password</Text>
           </TouchableOpacity>
@@ -550,8 +661,12 @@ const Step6 = ({ navigation, route }) => {
 };
 
 const Step7 = ({ navigation, route }) => {
+  const { user_id } = route.params;
   const { styles } = useTheme();
   const [wheelTypes, setWheelTypes] = useState({});
+  const [selectedWheelType, setSelectedWheelType] = useState(null);
+  const { registerStep3 } = useContext(AuthContext);
+  const [loadingState, setLoadingState] = useState(false);
 
   const getWheelTypes = () => {
     try {
@@ -564,8 +679,6 @@ const Step7 = ({ navigation, route }) => {
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
         if (statusCode !== 200) return;
-        console.info(data.result);
-        // setWheelTypes(data.result);
         setWheelTypes(
           data.result.map((item) => ({
             id: item.id,
@@ -573,11 +686,6 @@ const Step7 = ({ navigation, route }) => {
             label: item.name
           }))
         );
-        // data.map((item) => ({
-        //   id: item.id,
-        //   value: item.id,
-        //   label: item.name
-        // }))
       });
     } catch (error) {
       console.error("getWheelTypes error:", error);
@@ -587,7 +695,6 @@ const Step7 = ({ navigation, route }) => {
   useEffect(() => {
     getWheelTypes();
   }, [])
-
 
   return (
     <View style={styles.container}>
@@ -621,17 +728,13 @@ const Step7 = ({ navigation, route }) => {
           <View style={styles.form_container}>
             <SelectList
               data={wheelTypes}
-              setSelected={(val) => console.log(val)}
+              setSelected={(val) => {
+                setSelectedWheelType(
+                  wheelTypes.find((item) => item.value === val)
+                );
+              }}
               save="value"
             />
-            {/* <View style={styles.form_section}>
-              <Text style={styles.form_label}>Enter your password</Text>
-              <TextInput style={styles.form_input} />
-            </View>
-            <View style={styles.form_section}>
-              <Text style={styles.form_label}>Re-enter your password</Text>
-              <TextInput style={styles.form_input} />
-            </View> */}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -647,9 +750,25 @@ const Step7 = ({ navigation, route }) => {
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => navigation.navigate("Step8")}
+            disabled={loadingState}
+            onPress={async () => {
+              setLoadingState(true);
+              const data = {
+                user_id: user_id,
+                wheel_type_id: selectedWheelType.id
+              }
+              // console.info(data);
+              const res = await registerStep3(data);
+              // console.log(res);
+              if (res.statusCode == 201) {
+                navigation.navigate("Step8", { user_id: user_id });
+              } else {
+                setLoadingState(false);
+                Alert.alert("Error", res.data.message);
+              }
+            }}
           >
-            <Text style={styles.primaryButtonText}>Confirm Password</Text>
+            <Text style={styles.primaryButtonText}>Confirm Vehicle</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -743,7 +862,7 @@ const ProgressIndicator = ({ step }) => (
       <View
         style={[
           custom_styles.progressFill,
-          { width: `${(step / 8) * (width * 0.9)}` },
+          { width: `${(step / 7) * (width * 0.9)}` },
         ]}
       />
     </View>

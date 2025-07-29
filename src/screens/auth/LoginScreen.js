@@ -48,19 +48,21 @@ export default function LoginScreen({ navigation }) {
     setIsLoading(true);
     try {
       const result = await login(email, password);
-      if (result.success) {
-        // Navigation will be handled automatically by the Navigation component
-        // based on userInfo state change
-      } else {
-        Alert.alert("Login Failed", "Invalid credentials");
+      console.info(result);
+
+      if (!result.success) {
+        Alert.alert("Login Failed", result.error || "Invalid credentials");
+        setIsLoading(false);
         setPassword("");
       }
     } catch (error) {
-      Alert.alert(error.message || "Login failed", "Please try again");
+      Alert.alert("Login failed", "Please try again");
       setIsLoading(false);
       setPassword("");
     } finally {
+      Alert.alert("Login failed", "Please try again");
       setIsLoading(false);
+      setPassword("");
     }
   };
 

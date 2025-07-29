@@ -41,7 +41,7 @@ export default function Navigation() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={initialRoute}>
         {userInfo !== null ? (
           <>
             <Stack.Screen

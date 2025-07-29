@@ -1,6 +1,10 @@
-export const BASE_URL = 'http://139.180.156.26:1818/api/';
-export const AUTH_URL = 'http://139.180.156.26:1818/auth/';
-export const PATH_URL = 'http://139.180.156.26:1818/';
+// export const BASE_URL = 'http://139.180.156.26:3100/api/';
+// export const AUTH_URL = 'http://139.180.156.26:3100/auth/';
+// export const PATH_URL = 'http://139.180.156.26:3100/';
+
+export const BASE_URL = 'http://192.168.110.78:5000/api/';
+export const AUTH_URL = 'http://192.168.110.78:5000/auth/';
+export const PATH_URL = 'http://192.168.110.78:5000/';
 
 // export const processResponse = async (response) => {
 //   try {

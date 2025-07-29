@@ -306,10 +306,10 @@ export default function StationsScreeen() {
             />
           </View>
 
-          {showMap ?
+          {/* map  */}
+          {/* {showMap ?
             <>
               <View style={{ height: 200 }}>
-                {/* Map Here */}
                 <Mapbox.MapView
                   style={{ flex: 1 }}
                   onDidFinishRenderingMapFully={() => setMapLoading(false)}
@@ -332,13 +332,10 @@ export default function StationsScreeen() {
                   />
                   {currLat && currLong && !isNaN(currLat) && !isNaN(currLong) && (
                     <Mapbox.Camera
-                      // followUserLocation={true}
-                      // followUserMode="normal"
                       zoomLevel={13}
                       centerCoordinate={[currLong, currLat]}
                       animationMode='flyTo'
                       animationDuration={2000}
-                      // pitch={0}
                     />
                   )}
                   {stationsLists?.map((item, index) => {
@@ -367,7 +364,8 @@ export default function StationsScreeen() {
             </>
             :
             null
-          }
+          } */}
+                  
           <View style={{ flex: 1, paddingTop: 16 }}>
             <Text style={custom_styles.sectionTitle}>
               Nearby Gasoline Stations
