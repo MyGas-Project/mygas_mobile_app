@@ -13,35 +13,39 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Step1 from "../screens/auth/steps/RegisterStep1";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
+import LoadingPage from "./LoadingState";
 
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
   const { userInfo, userDetails } = useContext(AuthContext);
   const [initialRoute, setInitialRoute] = useState("");
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // if(userDetails == null) {
-    //   AsyncStorage.removeItem("userInfo");
-    // }
-
     const checkIfNewUser = async () => {
       try {
         const isNewUser = await AsyncStorage.getItem("newUser");
-        // console.info(String(isNewUser));
-        setInitialRoute(String(isNewUser) === 'true' ? "Welcome" : "Login");
+        // console.info("AsyncStorage newUser:", isNewUser);
+        setInitialRoute(isNewUser);
       } catch (e) {
-        setInitialRoute("Welcome"); // fallback
+        await AsyncStorage.removeItem("newUser");
+        setInitialRoute(null);
+      } finally {
+        setIsReady(true);
       }
     };
+
     checkIfNewUser();
   }, []);
 
-  if (!initialRoute && !userInfo) return null; // or a loading spinner 
+  if (!isReady) {
+    return <LoadingPage />;
+  }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={initialRoute}>
+      <Stack.Navigator>
         {userInfo !== null ? (
           <>
             <Stack.Screen
@@ -72,11 +76,16 @@ export default function Navigation() {
           </>
         ) : (
           <>
-            <Stack.Screen
-              name="Welcome"
-              component={WelcomeScreen}
-              options={{ headerShown: false }}
-            />
+            {initialRoute ?
+              <>
+              </> : <>
+                <Stack.Screen
+                  name="Welcome"
+                  component={WelcomeScreen}
+                  options={{ headerShown: false }}
+                />
+              </>
+            }
             <Stack.Screen
               name="Login"
               component={LoginScreen}

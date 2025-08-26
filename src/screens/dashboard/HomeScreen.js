@@ -17,13 +17,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import Navbar from "../../components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "../../context/AuthContext";
-import { BASE_URL } from "../../config";
+import { BASE_URL, processResponse } from "../../config";
+import { Websockets } from "../../lib/Websockets";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
 export default function HomeScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
+  const [rewards, setRewards] = useState(null);
+  const { rewardsInf } = useRef();
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -124,6 +127,43 @@ export default function HomeScreen({ navigation }) {
     });
   };
 
+  const fetchRewards = async () => {
+    try {
+      await fetch(`${BASE_URL}customer/user-total-points`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }).then(processResponse).then((res) => {
+        const { statusCode, data } = res;
+        console.log("user details: ", data);
+        setRewards(data);
+      }).catch(error => {
+        console.error(error);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    // onRefresh();
+    // console.log(userDetails, userInfo);
+
+    fetchRewards();
+
+    const setupWebsocket = async () => {
+      await Websockets("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
+        console.info(event);
+        fetchRewards();
+      });
+    };
+
+    setupWebsocket();
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <ImageBackground
@@ -142,7 +182,7 @@ export default function HomeScreen({ navigation }) {
           style={custom_styles.logo}
         />
         <View style={{ position: "absolute", right: 0, top: 0 }}>
-          <Navbar hideBack/>
+          <Navbar hideBack />
         </View>
       </ImageBackground>
       <Animated.View
@@ -172,7 +212,7 @@ export default function HomeScreen({ navigation }) {
         >
           <View style={{ marginTop: 10 }}>
             <View style={styles.greetingsContainer}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[styles.text, styles.text_sm]}>Good Day,</Text>
                 <Text style={[styles.text, styles.text_lg, styles.text_bold]}>
                   {userDetails?.first_name || ""}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name || ""}
@@ -180,16 +220,14 @@ export default function HomeScreen({ navigation }) {
               </View>
               <TouchableOpacity
                 onPress={() => navigation.navigate("ScanScreen")}
+                style={{
+                  backgroundColor: "#FFF",
+                  borderRadius: 20,
+                  padding: 8,
+                  marginLeft: 10, // Add some margin
+                }}
               >
-                <View
-                  style={{
-                    backgroundColor: "#FFF",
-                    borderRadius: 20,
-                    padding: 8
-                  }}
-                >
-                  <Ionicons name="qr-code-outline" size={24} color="#000" />
-                </View>
+                <Ionicons name="qr-code-outline" size={24} color="#000" />
               </TouchableOpacity>
             </View>
             <View style={{ alignItems: "center", marginVertical: 20 }}>
@@ -228,7 +266,7 @@ export default function HomeScreen({ navigation }) {
                           fontSize: 30
                         }}
                       >
-                        {userDetails?.total_points || 0}
+                        {rewards?.points || 0}
                       </Text>
                       <Text
                         style={{
@@ -264,7 +302,7 @@ export default function HomeScreen({ navigation }) {
                     marginLeft: 10
                   }}
                 >
-                  {userDetails?.bar_code ? `**** **** ***${userDetails.bar_code.slice(-3)}` : ""}
+                  {userDetails?.bar_code ? `**** **** *** ${userDetails.bar_code.slice(-3)}` : ""}
                 </Text>
               </ImageBackground>
             </View>

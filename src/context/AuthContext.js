@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
 
-  // STEP 1: Register Step 1
   const registerStep1 = (data) => {
     try {
       return fetch(`${AUTH_URL}register/step1`, {
@@ -22,7 +21,7 @@ export const AuthProvider = ({ children }) => {
           first_name: data.firstName,
           last_name: data.lastName,
           birthday: data.birthDate,
-          phone_number: data.mobileNumber,
+          phone_number: "0" + data.mobileNumber,
         }),
       })
         .then(processResponse)
@@ -125,47 +124,48 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (email, password) => {
-    return new Promise((resolve, reject) => {
-      try {
-        fetch(`${AUTH_URL}login-customer`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cred: email,
-            password: password,
-          }),
+  const login = async (email, password) => {
+    try {
+      // const token = await AsyncStorage.getItem("expoPushToken");
+      // console.log(token);
+      fetch(`${AUTH_URL}login-customer`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cred: email,
+          password: password,
+        }),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          console.log("login response: ", res);
+
+          if (statusCode !== 200) {
+            Alert.alert("Login Failed", data.message || "Login failed");
+            return
+          }
+
+          setUserInfo(data);
+          getUserDetails(data);
+          AsyncStorage.setItem("userInfo", JSON.stringify(data));
+          AsyncStorage.setItem("newUser", "true");
+
+          // pushCodeNotifcation(data.user_id);
         })
-          .then(processResponse)
-          .then((res) => {
-            const { statusCode, data } = res;
-            console.log("login response:", res);
-
-            if (statusCode === 200) {
-              setUserInfo(data);
-              getUserDetails(data);
-              AsyncStorage.setItem("userInfo", JSON.stringify(data));
-              AsyncStorage.setItem("newUser", "false");
-              resolve({ success: true, data });
-            } else {
-              resolve({ success: false, error: data.message});
-              // Alert.alert("Login Failed", data.message || "Login failed");
-            }
-
-          })
-          .catch((error) => {
-            console.error("login error:", error.message);
-            // Alert.alert("Login Failed", error || "Login failed");
-            alert("Login Catch Error: ", error.message);
-          });
-      } catch (error) {
-        console.error("login error:", error.message);
-        alert("Login Catch Error Final: ", error.message);
-      }
-    });
+        .catch((error) => {
+          // console.error("login error:", error.message);
+          // Alert.alert("Login Failed", error || "Login failed");
+          console.error(error);
+          alert("Login Catch Error: ", error);
+        });
+    } catch (error) {
+      // console.error("login error:", error.message);
+      alert("Login Error", error);
+    }
   };
 
   const getUserDetails = (data) => {
@@ -183,7 +183,7 @@ export const AuthProvider = ({ children }) => {
         setUserDetails(data.data);
       });
     } catch (error) {
-      reject(error);
+      // reject(error);
       console.error("getUserDetails error:", error);
     }
   };
@@ -195,6 +195,10 @@ export const AuthProvider = ({ children }) => {
     } else {
       res = navigation
     }
+
+    setUserInfo(null);
+    setUserDetails(null);
+    AsyncStorage.removeItem("userInfo");
 
     try {
       // console.log(navigation);
@@ -209,9 +213,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          setUserInfo(null);
-          setUserDetails(null);
-          AsyncStorage.removeItem("userInfo");
         })
         .catch((e) => console.log(e));
     } catch (e) {
@@ -219,11 +220,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const pushCodeNotifcation = async (id) => {
+    const token = await AsyncStorage.getItem("expoPushToken");
+    try {
+      fetch(`${AUTH_URL}save-token`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: token,
+          user_id: id
+        }),
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          console.log("notification code response: ", res);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() => {
     const loadUser = async () => {
       try {
         const userData = await AsyncStorage.getItem("userInfo");
         // console.info("from authcontext: ", userData);
+
         if (userData) {
           const parsedData = JSON.parse(userData);
           setUserInfo(parsedData);

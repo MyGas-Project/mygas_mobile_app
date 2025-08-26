@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext, use } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -13,14 +13,16 @@ import {
   Dimensions,
   ImageBackground,
   Alert,
+  Modal,
 } from "react-native";
-import DatePicker from 'react-native-neat-date-picker';
+
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthContext } from "../../context/AuthContext";
 import { AUTH_URL, BASE_URL, processResponse } from "../../config";
 import { SelectList } from "react-native-dropdown-select-list";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Stack = createNativeStackNavigator();
 const width = Dimensions.get("window").width;
@@ -30,10 +32,11 @@ const Step1 = ({ navigation }) => {
   const { styles } = useTheme();
   const [Batch1Form, setBatch1Form] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [date, setDate] = useState(new Date())
 
   return (
     <>
-      <DatePicker
+      {/* <DatePicker
         isVisible={showDatePicker}
         mode="single"
         // minDate={new Date('1900-01-01')}
@@ -52,7 +55,7 @@ const Step1 = ({ navigation }) => {
             birthDate: e.dateString
           })
         }}
-      />
+      /> */}
       <View style={styles.container}>
         <ImageBackground
           resizeMode="stretch"
@@ -87,6 +90,7 @@ const Step1 = ({ navigation }) => {
 
             <View style={styles.form_container}>
               <View style={styles.form_section}>
+                <Text style={styles.text}>First Name</Text>
                 <TextInput
                   style={styles.form_input}
                   value={Batch1Form?.firstName || ""}
@@ -100,6 +104,7 @@ const Step1 = ({ navigation }) => {
                 />
               </View>
               <View style={styles.form_section}>
+                <Text style={styles.text}>Last Name</Text>
                 <TextInput
                   style={styles.form_input}
                   value={Batch1Form?.lastName || ""}
@@ -113,6 +118,7 @@ const Step1 = ({ navigation }) => {
                 />
               </View>
               <View style={styles.form_section}>
+                <Text style={styles.text}>Birth Date</Text>
                 {/* <TextInput
                 style={styles.form_input}
                 value={Batch1Form?.birthDate || ""}
@@ -124,6 +130,73 @@ const Step1 = ({ navigation }) => {
                 }}
                 placeholder="Birth Date eg: 1995-01-01"
               /> */}
+                {/* {showDatePicker && (
+                  // <DateTimePicker
+                  //   value={new Date(Batch1Form?.birthDate || Date.now())}
+                  //   mode="date"
+                  //   display="default"
+                  //   onChange={(event, selectedDate) => {
+                  //     setShowDatePicker(false);
+                  //     setBatch1Form({
+                  //       ...Batch1Form,
+                  //       birthDate: selectedDate.toISOString().split('T')[0]
+                  //     })
+                  //   }}
+                  // />
+                  <DateTimePicker
+                    value={new Date(Batch1Form?.birthDate || Date.now())}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(event, selectedDate) => {
+                      // setShowDatePicker(false);
+                      if (selectedDate) {
+                        setBatch1Form({
+                          ...Batch1Form,
+                          birthDate: selectedDate.toISOString().split("T")[0],
+                        });
+                      }
+                    }}
+                  />
+                )} */}
+                {showDatePicker && (
+                  Platform.OS === "ios" ? (
+                    <Modal transparent={true} animationType="slide">
+                      <View style={{ flex: 1, justifyContent: "flex-end" }}>
+                        <View style={{ backgroundColor: "#fff", padding: 16 }}>
+                          <DateTimePicker
+                            value={new Date(Batch1Form?.birthDate || Date.now())}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                              if (event.type === "set") {
+                                setBatch1Form({
+                                  ...Batch1Form,
+                                  birthDate: selectedDate.toISOString().split("T")[0],
+                                });
+                              }
+                            }}
+                          />
+                          <Button title="Done" onPress={() => setShowDatePicker(false)} />
+                        </View>
+                      </View>
+                    </Modal>
+                  ) : (
+                    <DateTimePicker
+                      value={new Date(Batch1Form?.birthDate || Date.now())}
+                      mode="date"
+                      display="default"
+                      onChange={(event, selectedDate) => {
+                        setShowDatePicker(false);
+                        if (selectedDate) {
+                          setBatch1Form({
+                            ...Batch1Form,
+                            birthDate: selectedDate.toISOString().split("T")[0],
+                          });
+                        }
+                      }}
+                    />
+                  )
+                )}
                 <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                   <View style={styles.form_input}>
                     <Text style={styles.text}>{Batch1Form?.birthDate || "Birth Date"}</Text>
@@ -157,6 +230,7 @@ const Step1 = ({ navigation }) => {
               } else {
                 navigation.navigate("Step2", { Batch1Form });
               }
+              // navigation.navigate("Step2", { Batch1Form });
             }}>
               <Text style={styles.primaryButtonText}>Next</Text>
             </TouchableOpacity>
@@ -205,14 +279,16 @@ const Step2 = ({ navigation, route }) => {
           </View>
           <View style={styles.form_container}>
             <View style={styles.form_section}>
+              <Text style={styles.country_code}>+63</Text>
               <TextInput
-                style={styles.form_input}
+                style={[styles.form_input, styles.form_input_with_prefix]}
                 value={batch1Final?.mobileNumber || ""}
                 onChangeText={(mobileNumber) => {
+                  const cleanedNumber = mobileNumber.replace(/^0+/, "");
                   setBatch1Final({
                     ...batch1Final,
-                    mobileNumber: mobileNumber
-                  })
+                    mobileNumber: cleanedNumber,
+                  });
                 }}
                 placeholder="Mobile Number"
                 keyboardType="numeric"
@@ -843,7 +919,10 @@ const Step8 = ({ navigation, route }) => {
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => { handleConfirm(); navigation.navigate("Welcome") }}
+            onPress={() => {
+              handleConfirm();
+              navigation.navigate("Login");
+            }}
           >
             <Text style={styles.primaryButtonText}>Complete Registration</Text>
           </TouchableOpacity>

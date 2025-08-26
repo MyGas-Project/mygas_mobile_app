@@ -23,11 +23,17 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from 'expo-location'
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
-import Mapbox, { UserLocationRenderMode } from "@rnmapbox/maps";
+// import Mapbox, { UserLocationRenderMode } from "@rnmapbox/maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  Pusher,
+} from '@pusher/pusher-websocket-react-native';
+import { Websockets } from "../../lib/Websockets";
+import { sendTestNotification } from "../../lib/Notification";
+import Loader from "../../components/Loader";
 
 const window_height = Dimensions.get('window').height;
-Mapbox.setAccessToken('pk.eyJ1IjoicnVpbnplIiwiYSI6ImNrOTd0N3F2bjBpdjkzZnBha3FsZmk4NjcifQ.VprSZLmMu0zRldMobXT6Fg');
+// Mapbox.setAccessToken('pk.eyJ1IjoicnVpbnplIiwiYSI6ImNrOTd0N3F2bjBpdjkzZnBha3FsZmk4NjcifQ.VprSZLmMu0zRldMobXT6Fg');
 
 export default function StationsScreeen() {
   const { userInfo, userDetails } = useContext(AuthContext);
@@ -38,6 +44,7 @@ export default function StationsScreeen() {
   const [showMap, setShowMap] = useState(true);
   const [locationPermission, setLocationPermission] = useState(null);
   const [stationsLists, setStationsLists] = useState(null);
+  const [stationsLoading, setStationsLoading] = useState(false);
   const getItem = (data, index) => data[index];
   const getItemCount = (data) => data.length;
 
@@ -57,17 +64,6 @@ export default function StationsScreeen() {
   useEffect(() => {
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        setLocationPermission(status);
-
-        // if (status !== 'granted') {
-        //   Alert.alert(
-        //     "Location Permission Required",
-        //     "Please enable location services to find nearby gas stations."
-        //   );
-        //   return;
-        // }
-
         const location = await Location.getCurrentPositionAsync({});
         const currentLat = location.coords.latitude;
         const currentLong = location.coords.longitude;
@@ -185,29 +181,49 @@ export default function StationsScreeen() {
     });
   };
 
-  const getStationLists = (value) => {
-    // console.info(value);
+  const getStationLists = (value = "") => {
     try {
+      setStationsLoading(true);
       fetch(`${BASE_URL}customer/station-list?filter=${value}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userInfo.token}`,
         }
-      }).then(processResponse).then((res) => {
-        const { statusCode, data } = res;
-        // console.log(data.result);
-        if (statusCode === 200) {
-          setStationsLists(data.result);
-        }
-      });
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          if (statusCode === 200) {
+            setStationsLists(data.result);
+          }
+        })
+        .catch((err) => console.log(err))
+        .finally(() => setStationsLoading(false));
     } catch (error) {
       console.log(error);
+      setStationsLoading(false);
     }
   };
 
+
   useEffect(() => {
     getStationLists();
+
+    const setupWebsocket = async () => {
+      await Websockets("station-add", "station-add-event", (event) => {
+        // console.info(event);
+        getStationLists();
+        // sendTestNotification();
+        // console.info("test 1: ", userInfo?.token);
+      });
+    };
+
+    setupWebsocket();
+
+    return () => {
+      Pusher.getInstance().disconnect();
+    };
   }, []);
 
   return (
@@ -365,46 +381,55 @@ export default function StationsScreeen() {
             :
             null
           } */}
-                  
+
           <View style={{ flex: 1, paddingTop: 16 }}>
-            <Text style={custom_styles.sectionTitle}>
-              Nearby Gasoline Stations
-            </Text>
-            {stationsLists?.map((item, index) => (
-              <View key={item.id} style={custom_styles.stationCardNew}>
-                <Image
-                  source={require("../../../assets/mygas_logo.png")}
-                  style={custom_styles.stationLogoRow}
-                />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={custom_styles.stationNameNew}>{item.station_name}</Text>
-                  <Text style={custom_styles.stationAddress}>
-                    {item.station_address}
-                  </Text>
-                  <TouchableOpacity
-                    style={custom_styles.directionRow}
-                    onPress={() => {
-                      const url = `https://www.google.com/maps/dir/?api=1&destination=${item.station_lat},${item.station_long}`;
-                      Linking.openURL(url);
-                    }}
-                  >
-                    <Text style={custom_styles.getDirectionText}>
-                      Get Direction
-                    </Text>
-                    <Ionicons
-                      name="paper-plane-outline"
-                      size={16}
-                      color="#fe0002"
-                      style={{ marginLeft: 4 }}
-                    />
+            <Text style={custom_styles.sectionTitle}>Nearby Gasoline Stations</Text>
+
+            {stationsLoading ? (
+              <Loader 
+                // overlay={false}
+                text="Please wait..."
+                color="#FF6B6B" 
+                type="dots"
+              /> // 👈 show loader while fetching
+            ) : stationsLists?.length > 0 ? (
+              stationsLists.map((item, index) => (
+                <View key={item.id} style={custom_styles.stationCardNew}>
+                  <Image
+                    source={require("../../../assets/mygas_logo.png")}
+                    style={custom_styles.stationLogoRow}
+                  />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={custom_styles.stationNameNew}>{item.station_name}</Text>
+                    <Text style={custom_styles.stationAddress}>{item.station_address}</Text>
+                    <TouchableOpacity
+                      style={custom_styles.directionRow}
+                      onPress={() => {
+                        const url = `https://www.google.com/maps/dir/?api=1&destination=${item.station_lat},${item.station_long}`;
+                        Linking.openURL(url);
+                      }}
+                    >
+                      <Text style={custom_styles.getDirectionText}>Get Direction</Text>
+                      <Ionicons
+                        name="paper-plane-outline"
+                        size={16}
+                        color="#fe0002"
+                        style={{ marginLeft: 4 }}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity style={custom_styles.arrowBtn}>
+                    <Ionicons name="chevron-forward" size={24} color="#222" />
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={custom_styles.arrowBtn}>
-                  <Ionicons name="chevron-forward" size={24} color="#222" />
-                </TouchableOpacity>
-              </View>
-            )) || null}
+              ))
+            ) : (
+              <Text style={{ textAlign: "center", color: "#777", marginTop: 16 }}>
+                No stations found.
+              </Text>
+            )}
           </View>
+
         </Animated.ScrollView>
       </Animated.View>
     </View>

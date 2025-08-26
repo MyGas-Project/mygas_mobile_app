@@ -71,7 +71,8 @@ export const ThemeProvider = ({ children }) => {
       height: 100,
       width: width,
       bottom: 0,
-      position: 'absolute'
+      position: 'absolute',
+      paddingTop: 50
     },
     footer_button_container: {
       flex: 1,
@@ -162,14 +163,14 @@ export const ThemeProvider = ({ children }) => {
     },
     logo_container: {
       width: '100%',
-      paddingVertical: 50,
+      paddingVertical: 20,
       alignItems: 'center',
       justifyContent: 'center'
     },
     logo: {
-      width: 175,
-      height: undefined,
-      aspectRatio: 1/1
+      width: 150,
+      height: 150,
+      aspectRatio: 1 / 1
     },
     form_container: {
       width: '100%',
@@ -200,6 +201,22 @@ export const ThemeProvider = ({ children }) => {
       fontSize: 12,
       marginTop: 5,
       color: currentTheme.infoColor
+    },
+    form_input_with_prefix: {
+      paddingLeft: 55, // Make room for the +63 prefix (20 original + 30 for prefix)
+    },
+    input_container_number: {
+      position: 'absolute',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    country_code: {
+      position: 'absolute',
+      top: 20,
+      left: 20, // Matches your form_input padding
+      color: '#999', // Gray color
+      fontSize: 16, // Match your form_input font size
+      zIndex: 1,
     },
     codeContainer: {
       flexDirection: "row",
@@ -256,13 +273,13 @@ export const ThemeProvider = ({ children }) => {
       bottom: 30
     },
     greetingsContainer: {
-      flex: 1,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 40,
-      alignItems: 'center'
+      width: '100%',
     }
+
   });
 
   return (

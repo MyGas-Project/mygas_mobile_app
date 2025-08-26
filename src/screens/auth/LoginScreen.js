@@ -40,23 +40,16 @@ export default function LoginScreen({ navigation }) {
   }, []);
 
   const handleLogin = async () => {
+
     if (!email.trim() || !password.trim()) {
       Alert.alert("Validation Error", "Email and password required");
       return;
     }
-
-    setIsLoading(true);
+    
     try {
-      const result = await login(email, password);
-      console.info(result);
-
-      if (!result.success) {
-        Alert.alert("Login Failed", result.error || "Invalid credentials");
-        setIsLoading(false);
-        setPassword("");
-      }
+      setIsLoading(true);
+      await login(email, password);
     } catch (error) {
-      Alert.alert("Login failed", error.message);
       setIsLoading(false);
       setPassword("");
     } finally {
@@ -120,36 +113,36 @@ export default function LoginScreen({ navigation }) {
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-      {!isKeyboardVisible && (
-        <View style={styles.footer}>
-          <View style={styles.footer_button_container}>
-            <Text
-              style={[
-                styles.text,
-                { textAlign: "center", marginTop: -100, marginBottom: 10 },
-              ]}
-            >
-              No account yet?{" "}
+        {!isKeyboardVisible && (
+          <View style={styles.footer}>
+            <View style={styles.footer_button_container}>
               <Text
-                style={styles.text_bold}
-                onPress={() => navigation.navigate('Register')}
+                style={[
+                  styles.text,
+                  { textAlign: "center", marginTop: -100, marginBottom: 10 },
+                ]}
               >
-                Register
+                No account yet?{" "}
+                <Text
+                  style={styles.text_bold}
+                  onPress={() => navigation.navigate('Register')}
+                >
+                  Register
+                </Text>
               </Text>
-            </Text>
-            <TouchableOpacity
-              style={[styles.primaryButton, isLoading && styles.disabledButton]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.primaryButtonText}>
-                {isLoading ? "Logging in..." : "Login"}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryButton, isLoading && styles.disabledButton]}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {isLoading ? "Logging in..." : "Login"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
+        )}
+      </KeyboardAvoidingView>
     </View>
   );
 }

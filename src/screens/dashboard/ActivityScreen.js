@@ -6,6 +6,8 @@ import Navbar from '../../components/Navbar';
 import { AuthContext } from '../../context/AuthContext';
 import { BASE_URL, processResponse } from '../../config';
 import DatePicker from 'react-native-neat-date-picker';
+import { Pusher } from '@pusher/pusher-websocket-react-native';
+import { Websockets } from '../../lib/Websockets';
 // import ActivityCard from './components/ActivityCard';
 
 export default function ActivityScreen() {
@@ -17,8 +19,9 @@ export default function ActivityScreen() {
         outputRange: [20, 0, -20],
         extrapolate: 'clamp',
     });
-    const [groupedTransactions, setGroupedTransactions] = useState({});
+    const [groupedTransactions, setGroupedTransactions] = useState([]); // Changed from {} to []
     const [showDatePicker, setShowDatePicker] = useState(false)
+
 
     const getUserTransactions = (startDate, endDate) => {
         try {
@@ -36,10 +39,16 @@ export default function ActivityScreen() {
                     const grouped = groupByDate(data.result);
                     setGroupedTransactions(grouped);
                     // console.info(data.result);
+                } else {
+                    setGroupedTransactions([]); // Set empty array if API call fails
                 }
+            }).catch(error => {
+                console.error(error);
+                setGroupedTransactions([]); // Set empty array on error
             });
         } catch (error) {
             console.error(error);
+            setGroupedTransactions([]); // Set empty array on error
         }
     };
 
@@ -61,7 +70,11 @@ export default function ActivityScreen() {
     };
 
     const groupByDate = (transactions) => {
+        if (!transactions || transactions.length === 0) return [];
+
         const groupedMap = {};
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
 
         // Group using raw date string
         transactions.forEach((item) => {
@@ -71,8 +84,25 @@ export default function ActivityScreen() {
             groupedMap[item.date].push(item);
         });
 
-        // Sort the dates in descending order
-        const sortedDates = Object.keys(groupedMap).sort((a, b) => new Date(b) - new Date(a));
+        // Sort transactions within each date by time (latest first)
+        Object.keys(groupedMap).forEach(date => {
+            groupedMap[date].sort((a, b) => {
+                // Convert time strings to comparable format (HH:MM to minutes since midnight)
+                const timeToMinutes = (timeStr) => {
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    return hours * 60 + minutes;
+                };
+
+                return timeToMinutes(b.time) - timeToMinutes(a.time); // Latest first
+            });
+        });
+
+        // Sort the dates with today first, then descending order for other dates
+        const sortedDates = Object.keys(groupedMap).sort((a, b) => {
+            if (a === todayStr) return -1; // Today comes first
+            if (b === todayStr) return 1;  // Today comes first
+            return new Date(b) - new Date(a); // Other dates in descending order
+        });
 
         // Convert to labeled groups
         return sortedDates.map((dateStr, index) => ({
@@ -102,7 +132,20 @@ export default function ActivityScreen() {
 
     useEffect(() => {
         getUserTransactions();
-        // console.info(groupedTransactions);
+
+        const setupWebsocket = async () => {
+            await Websockets("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
+                console.info(event);
+                getUserTransactions();
+                // console.info("test 1: ", userInfo?.token);
+            });
+        };
+
+        setupWebsocket();
+
+        return () => {
+            Pusher.getInstance().disconnect();
+        };
     }, []);
 
     return (
@@ -120,6 +163,7 @@ export default function ActivityScreen() {
                 onConfirm={(e) => {
                     // setStartDate(e.startDateString);
                     // setEndDate(e.endDateString);
+                    console.log(e.startDateString, e.endDateString);
                     setShowDatePicker(false);
                     getUserTransactions(e.startDateString, e.endDateString);
                 }}
@@ -162,13 +206,14 @@ export default function ActivityScreen() {
                         <View style={custom_styles.sortRow}>
                             <Text style={custom_styles.sortLabel}>Sort Transactions By</Text>
                             {/* <View style={custom_styles.sortBtn}> 
-                            <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{ fontSize: 13, color: '#888' }}>▼</Text></Text>
-                        </View> */}
+                                    <Text style={custom_styles.sortBtnText}>January 2025 <Text style={{ fontSize: 13, color: '#888' }}>▼</Text></Text>
+                                </View> */}
                             <TouchableOpacity style={custom_styles.sortBtn} onPress={() => { setShowDatePicker(true); }}>
                                 <Text style={custom_styles.sortBtnText}>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}<Text style={{ fontSize: 13, color: '#888' }}>▼</Text></Text>
                             </TouchableOpacity>
                         </View>
-                        {groupedTransactions.length > 0 ? (
+
+                        {groupedTransactions && groupedTransactions.length > 0 ? (
                             groupedTransactions.map((group, index) => (
                                 <View key={index}>
                                     <Text style={custom_styles.sectionHeader}>{group.date}</Text>
@@ -210,7 +255,7 @@ export default function ActivityScreen() {
                             ))
                         ) : (
                             <View style={custom_styles.noTransactionsContainer}>
-                                <Text style={custom_styles.noTransactionsText}>No transactions found</Text>
+                                <Text style={custom_styles.noTransactionsText}>No Activity Yet</Text>
                             </View>
                         )}
                         <View style={{ height: 50 }} />
@@ -430,5 +475,15 @@ const custom_styles = StyleSheet.create({
     pointsBlock: {
         alignItems: 'flex-end',
         marginTop: 56,
+    },
+    noTransactionsContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    noTransactionsText: {
+        fontSize: 18,
+        color: '#888',
+        textAlign: 'center',
     },
 });
