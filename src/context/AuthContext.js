@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }) => {
           AsyncStorage.setItem("userInfo", JSON.stringify(data));
           AsyncStorage.setItem("newUser", "true");
 
-          // pushCodeNotifcation(data.user_id);
+          pushCodeNotifcation(data.user_id);
         })
         .catch((error) => {
           // console.error("login error:", error.message);

@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import useNotifications from './src/lib/Notification';
 
 export default function App() {
-  // useNotifications();
+  useNotifications();
 
   return (
     <ThemeProvider>
