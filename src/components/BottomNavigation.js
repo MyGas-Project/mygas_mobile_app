@@ -17,6 +17,7 @@ import RewardsScreen from "../screens/dashboard/RewardsScreen";
 import ServicesScreen from "../screens/dashboard/ServicesScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
+import RewardDetails from "../screens/dashboard/RewardDetails";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -46,43 +47,22 @@ const CenterButton = ({ onPress }) => {
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { styles } = useTheme();
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  useEffect(() => {
-    const showSub = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  if (keyboardVisible) return null; // 👈 Hide tab bar when keyboard is visible
+  // Define the visual order you want
+  const orderedRoutes = ["Services", "Rewards", "Home", "Stations", "Activity"];
 
   return (
     <View style={styles.tabBar}>
-      {state.routes.map((route, index) => {
-        if (route.name === "Profile" || route.name === "Notifications") return null;
+      {orderedRoutes.map((routeName, index) => {
+        const routeIndex = state.routes.findIndex(r => r.name === routeName);
+        if (routeIndex === -1) return null;
 
-        const iconName =
-          route.name === "Services"
-            ? icons.services
-            : route.name === "Rewards"
-              ? icons.rewards
-              : route.name === "Home"
-                ? "home"
-                : route.name === "Stations"
-                  ? icons.station
-                  : route.name === "Activity"
-                    ? icons.activity
-                    : "ellipse";
-
-        const isFocused = state.index === index;
+        const route = state.routes[routeIndex];
+        const isFocused = state.index === routeIndex;
 
         if (route.name === "Home") {
           return (
-            <View key={index} style={styles.tabButton}>
+            <View key={route.name} style={styles.tabButton}>
               <CenterButton onPress={() => navigation.navigate(route.name)} />
               <Text style={{ marginTop: 25, color: isFocused ? "#E63946" : "#555" }}>
                 {route.name}
@@ -91,9 +71,20 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           );
         }
 
+        const iconName =
+          route.name === "Services"
+            ? icons.services
+            : route.name === "Rewards"
+              ? icons.rewards
+              : route.name === "Stations"
+                ? icons.station
+                : route.name === "Activity"
+                  ? icons.activity
+                  : "ellipse";
+
         return (
           <TouchableOpacity
-            key={index}
+            key={route.name}
             onPress={() => navigation.navigate(route.name)}
             style={styles.tabButton}
           >
@@ -115,6 +106,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   );
 };
 
+
 const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
@@ -122,21 +114,22 @@ const BottomTabNavigator = () => {
       screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, }}
       initialRouteName="Home"
     >
-      <Tab.Screen name="Services" component={ServicesScreen} />
-      <Tab.Screen name="Rewards" component={RewardsScreen} />
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Stations" component={StationsScreeen} />
-      <Tab.Screen name="Activity" component={ActivityScreen} />
-      <Tab.Screen
+      <Tab.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Services" component={ServicesScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Rewards" component={RewardsScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Stations" component={StationsScreeen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Activity" component={ActivityScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="RewardDetails" component={RewardDetails} options={{ tabBarButton: () => null, unmountOnBlur: true }} />
+      {/* <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarButton: () => null }}
+        options={{ tabBarButton: () => null, unmountOnBlur: true }}
       />
       <Tab.Screen
         name="Notifications"
         component={NotificationScreen}
-        options={{ tabBarButton: () => null }}
-      />
+        options={{ tabBarButton: () => null, unmountOnBlur: true }}
+      /> */}
     </Tab.Navigator>
   );
 };

@@ -126,8 +126,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // const token = await AsyncStorage.getItem("expoPushToken");
-      // console.log(token);
       fetch(`${AUTH_URL}login-customer`, {
         method: "POST",
         headers: {
@@ -142,7 +140,7 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          console.log("login response: ", res);
+          // console.log("login response: ", res);
 
           if (statusCode !== 200) {
             Alert.alert("Login Failed", data.message || "Login failed");
@@ -170,6 +168,7 @@ export const AuthProvider = ({ children }) => {
 
   const getUserDetails = (data) => {
     try {
+      pushCodeNotifcation(data.user_id);
       fetch(`${BASE_URL}customer/user-profile`, {
         method: "GET",
         headers: {
@@ -221,8 +220,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const pushCodeNotifcation = async (id) => {
-    const token = await AsyncStorage.getItem("expoPushToken");
     try {
+      const token = await AsyncStorage.getItem("expoPushToken");
       fetch(`${AUTH_URL}save-token`, {
         method: "POST",
         headers: {
@@ -237,7 +236,7 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          console.log("notification code response: ", res);
+          // console.log("notification code response: ", res);
         })
         .catch((error) => {
           console.error(error);
@@ -251,16 +250,12 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       try {
         const userData = await AsyncStorage.getItem("userInfo");
-        // console.info("from authcontext: ", userData);
 
         if (userData) {
           const parsedData = JSON.parse(userData);
           setUserInfo(parsedData);
           getUserDetails(parsedData);
-        } else {
-          setUserInfo(null);
-          setUserDetails(null);
-          AsyncStorage.removeItem("userInfo");
+          // pushCodeNotifcation(parsedData.user_id);
         }
       } catch (e) {
         console.log("Failed to load user from storage", e);

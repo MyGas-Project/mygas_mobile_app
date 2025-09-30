@@ -8,6 +8,7 @@ const mainTheme = {
   primary: '#fe0002',
   accent: '#ffff01'
 }
+
 const lightTheme = {
   backgroundColor: '#ffffff',
   foregroundColor: '#343434',
@@ -15,15 +16,37 @@ const lightTheme = {
   headerColor: '#DDDDDD',
   labelColor: '#333333',
   infoColor: '#777777',
+  // Connection Loss specific colors
+  connectionBg: '#f8f9fa',
+  connectionContentBg: '#ffffff',
+  connectionTitle: '#2c3e50',
+  connectionSubtitle: '#e67e22',
+  connectionDescription: '#6c757d',
+  connectionButton: '#dc3545',
+  connectionButtonHover: '#c82333',
+  connectionIcon: '#dc3545',
+  decorativeDot: '#e67e22',
+  decorativeLargeDot: '#dc3545',
 };
 
 const darkTheme = {
   backgroundColor: '#343434',
   foregroundColor: '#ffffff',
   borderColor: '#444444',
-  headerColor: '333333',
+  headerColor: '#333333', // Fixed: was missing '#'
   labelColor: '#F5F5F5',
   infoColor: '#888888',
+  // Connection Loss specific colors
+  connectionBg: '#1a1a2e',
+  connectionContentBg: '#2d2d44',
+  connectionTitle: '#ffffff',
+  connectionSubtitle: '#e67e22',
+  connectionDescription: '#bdc3c7',
+  connectionButton: '#c0392b',
+  connectionButtonHover: '#a93226',
+  connectionIcon: '#e74c3c',
+  decorativeDot: '#e67e22',
+  decorativeLargeDot: '#c0392b',
 };
 
 const ThemeContext = createContext();
@@ -45,6 +68,7 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -112,7 +136,6 @@ export const ThemeProvider = ({ children }) => {
       marginBottom: 16,
     },
     secondaryButton: {
-      // backgroundColor: currentTheme.backgroundColor,
       width: '100%',
       paddingVertical: 15,
       justifyContent: 'center',
@@ -154,7 +177,6 @@ export const ThemeProvider = ({ children }) => {
       height: 150,
       width: '100%',
       position: 'relative',
-      //backgroundColor: currentTheme.headerColor
     },
     top_bar_button: {
       width: 32,
@@ -203,7 +225,7 @@ export const ThemeProvider = ({ children }) => {
       color: currentTheme.infoColor
     },
     form_input_with_prefix: {
-      paddingLeft: 55, // Make room for the +63 prefix (20 original + 30 for prefix)
+      paddingLeft: 55,
     },
     input_container_number: {
       position: 'absolute',
@@ -213,9 +235,9 @@ export const ThemeProvider = ({ children }) => {
     country_code: {
       position: 'absolute',
       top: 20,
-      left: 20, // Matches your form_input padding
-      color: '#999', // Gray color
-      fontSize: 16, // Match your form_input font size
+      left: 20,
+      color: '#999',
+      fontSize: 16,
       zIndex: 1,
     },
     codeContainer: {
@@ -241,7 +263,7 @@ export const ThemeProvider = ({ children }) => {
     tabBar: {
       flexDirection: "row",
       height: 70,
-      backgroundColor: "#FFF",
+      backgroundColor: currentTheme.backgroundColor,
       elevation: 5,
       alignItems: "center",
       justifyContent: "space-between",
@@ -260,7 +282,7 @@ export const ThemeProvider = ({ children }) => {
     centerTabButton: {
       width: 80,
       height: 80,
-      backgroundColor: "#ffffff",
+      backgroundColor: currentTheme.backgroundColor,
       borderRadius: 40,
       justifyContent: "center",
       alignItems: "center",
@@ -279,11 +301,10 @@ export const ThemeProvider = ({ children }) => {
       paddingTop: 40,
       width: '100%',
     }
-
   });
 
   return (
-    <ThemeContext.Provider value={{ theme, currentTheme, styles }}>
+    <ThemeContext.Provider value={{ theme, currentTheme, styles, mainTheme }}>
       {children}
     </ThemeContext.Provider>
   );

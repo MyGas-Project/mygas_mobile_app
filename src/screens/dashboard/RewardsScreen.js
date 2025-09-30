@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -18,53 +18,13 @@ import Navbar from "../../components/Navbar";
 
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "../../context/AuthContext";
-
-const rewardsData = [
-  {
-    id: "1",
-    title: "10% off on MyGas Lubes and Oil",
-    image: require("../../../assets/image.png"),
-    buttonText: "Redeem Now",
-  },
-  {
-    id: "2",
-    title: "Free Accident Insurance",
-    image: require("../../../assets/image.png"),
-    buttonText: "Redeem Now",
-  },
-];
-
-const offersData = [
-  {
-    id: "3",
-    title: "Free Fuel",
-    image: require("../../../assets/image.png"),
-    points: 2000,
-  },
-  {
-    id: "4",
-    title: "Snack/Beverage Discount",
-    image: require("../../../assets/image.png"),
-    points: 500,
-  },
-  {
-    id: "5",
-    title: "Free Fuel",
-    image: require("../../../assets/image.png"),
-    points: 2000,
-  },
-  {
-    id: "6",
-    title: "Snack/Beverage Discount",
-    image: require("../../../assets/image.png"),
-    points: 500,
-  },
-];
-
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+import { BASE_URL, processResponse } from "../../config";
+import { PointsDetailContext } from "../../context/PointsDetails";
 
 export default function RewardsScreen() {
   const { userInfo, userDetails } = useContext(AuthContext);
+  const { rewards } = useContext(PointsDetailContext);
+  const [blog, setBlogs] = useState(null);
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardContainerTranslateY = scrollY.interpolate({
@@ -72,6 +32,42 @@ export default function RewardsScreen() {
     outputRange: [20, 0, -20],
     extrapolate: "clamp",
   });
+
+  const getBlogs = () => {
+    try {
+      fetch(`${BASE_URL}customer/get-rewards`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { data, statusCode } = res;
+          setBlogs(data.result);
+        }).catch((error) => {
+          console.error(error);
+        });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  function groupByCategory(items) {
+    return items.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = [];
+      }
+      acc[item.type].push(item.data);
+      return acc;
+    }, {});
+  }
+
+  useEffect(() => {
+    getBlogs();
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
@@ -97,23 +93,13 @@ export default function RewardsScreen() {
         />
       </ImageBackground>
 
-      <Animated.View
-        style={[
-          styles.cardContainer,
-          {
-            transform: [{ translateY: cardContainerTranslateY }],
-          },
-        ]}
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        <AnimatedScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-        >
+        <View style={styles.cardContainer}>
           <View style={styles.headerContainer}>
             <Text style={styles.title}>Rewards</Text>
             <Text style={styles.subtitle}>
@@ -129,76 +115,77 @@ export default function RewardsScreen() {
                 source={require("../../../assets/my.png")}
                 style={styles.mygasIcon}
               />
-              <Text style={styles.pointsValue}>{userDetails?.total_points || 0}</Text>
+              <Text style={styles.pointsValue}>{rewards?.points || 0}</Text>
             </View>
           </View>
 
           <Text style={styles.sectionTitle}>
             MyGas Motorista Card Member Benefits
           </Text>
-          {/* <FlatList
-            data={rewardsData}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.cardList}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <Image source={item.image} style={styles.cardImage} />
-                <View style={styles.content}>
-                  <Text style={styles.cardText} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.redeemBtn}
-                    onPress={() => navigation.navigate("RewardDetails")}
-                  >
-                    <Text style={styles.redeemText}>{item.buttonText}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          /> */}
 
-          <View style={styles.rewardsRow}>
-            <Text style={styles.sectionTitle}>Rewards</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>View All Rewards ›</Text>
-            </TouchableOpacity>
-          </View>
-          {/* <FlatList
-            data={offersData}
-            numColumns={2}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.gridList}
-            columnWrapperStyle={styles.gridRow}
-            renderItem={({ item }) => (
-              <View style={styles.rewardCardNew}>
-                <Image source={item.image} style={styles.cardImageNew} />
-                <View style={styles.contentNew}>
-                  <View style={styles.titlePointsRowNew}>
-                    <Text style={styles.cardTextNew} numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    <View style={styles.pointsRowNew}>
-                      <Image
-                        source={require("../../../assets/my.png")}
-                        style={styles.miniIconNew}
-                      />
-                      <Text style={styles.cardPointsNew}>
-                        {item.points} PTS
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity style={styles.redeemBtnNew}>
-                    <Text style={styles.redeemTextNew}>Redeem Now</Text>
+          {blog ? (
+            Object.entries(groupByCategory(blog)).map(([type, items], index) => (
+              <View key={index} style={styles.categorySection}>
+                <View style={styles.rewardsRow}>
+                  <Text style={styles.sectionTitle}>{type}</Text>
+                  <TouchableOpacity>
+                    <Text style={styles.viewAll}>View All Rewards ›</Text>
                   </TouchableOpacity>
                 </View>
+
+                <View style={styles.gridContainer}>
+                  {items.slice(0, 4).map((item, idx) => (
+                    <View key={item.id?.toString() || idx.toString()} style={styles.rewardCardNew}>
+                      <Image
+                        source={
+                          item.image
+                            ? { uri: item.image }
+                            : require("../../../assets/image.png")
+                        }
+                        style={styles.cardImageNew}
+                      />
+                      <View style={styles.contentNew}>
+                        <View style={styles.titlePointsRowNew}>
+                          <Text style={styles.cardTextNew} numberOfLines={2}>
+                            {item?.title || "n/a"}
+                          </Text>
+                          <View style={styles.pointsRowNew}>
+                            <Image
+                              source={require("../../../assets/my.png")}
+                              style={styles.miniIconNew}
+                            />
+                            <Text style={styles.cardPointsNew}>123 PTS</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => navigation.navigate("RewardDetails", { details: item })}
+                          style={styles.redeemBtnNew}
+                        >
+                          <Text style={styles.redeemTextNew}>Redeem Now</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                {items.length > 4 && (
+                  <TouchableOpacity
+                    style={styles.viewMoreButton}
+                    onPress={() => navigation.navigate("CategoryRewards", {
+                      category: type,
+                      items: items
+                    })}
+                  >
+                    <Text style={styles.viewMoreText}>
+                      View More ({items.length - 4} more items)
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            )}
-          /> */}
-        </AnimatedScrollView>
-      </Animated.View>
+            ))
+          ) : null}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -209,26 +196,26 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
+  scrollContainer: {
+    flex: 1,
+    marginTop: -20,
+  },
   scrollContent: {
-    paddingHorizontal: 0,
-    paddingBottom: 20,
     flexGrow: 1,
+    paddingBottom: 100, // Add extra padding for tab bar
   },
   cardContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    marginTop: -20,
     backgroundColor: "#F5F5F5",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    position: "relative",
-    zIndex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    minHeight: '100%',
   },
   headerContainer: {
     alignItems: "center",
     width: "100%",
-    paddingTop: 20,
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -240,18 +227,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     color: "#777",
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   pointsBox: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     elevation: 6,
-    marginVertical: 10,
+    marginVertical: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: Dimensions.get("window").width - 32,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
@@ -282,80 +268,28 @@ const styles = StyleSheet.create({
     color: "#333",
     marginVertical: 10,
   },
-  cardList: {
-    paddingBottom: 10,
-    paddingTop: 20,
-  },
-  card: {
-    backgroundColor: "#fff",
-    width: Dimensions.get("window").width - 32,
-    borderRadius: 12,
-    marginVertical: 10,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    overflow: "hidden",
-  },
-  cardImage: {
-    width: "100%",
-    height: 180,
-    resizeMode: "cover",
-  },
-  content: {
-    padding: 16,
-  },
-  cardText: {
-    fontSize: 14,
-    color: "#555",
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  cardPoints: {
-    fontWeight: "bold",
-    fontSize: 14,
-    color: "#f39c12",
-    marginLeft: 4,
-  },
-  miniIcon: {
-    width: 18,
-    height: 18,
-    resizeMode: "contain",
-  },
-  redeemBtn: {
-    backgroundColor: "#FF0000",
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  redeemText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  categorySection: {
+    marginBottom: 20,
   },
   rewardsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 10,
+    marginBottom: 15,
   },
   viewAll: {
     color: "#666",
     fontSize: 13,
   },
-  gridList: {
-    paddingVertical: 20,
-  },
-  gridRow: {
-    justifyContent: "space-between",
-    marginBottom: 16,
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   rewardCardNew: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    width: "48%",
+    width: '48%',
     overflow: "hidden",
     marginBottom: 16,
     elevation: 6,
@@ -383,7 +317,7 @@ const styles = StyleSheet.create({
   titlePointsRowNew: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   cardTextNew: {
@@ -415,13 +349,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 4,
-    width: "100%",
   },
   redeemTextNew: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "bold",
     letterSpacing: 0.2,
+  },
+  viewMoreButton: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FF0000",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  viewMoreText: {
+    color: "#FF0000",
+    fontSize: 14,
+    fontWeight: "600",
   },
   logo: {
     position: "absolute",

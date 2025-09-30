@@ -6,11 +6,11 @@ import Navbar from '../../components/Navbar';
 import { AuthContext } from '../../context/AuthContext';
 import { BASE_URL, processResponse } from '../../config';
 import DatePicker from 'react-native-neat-date-picker';
+import { subscribeToChannel, unsubscribeChannel, Websockets } from '../../lib/Websockets';
 import { Pusher } from '@pusher/pusher-websocket-react-native';
-import { Websockets } from '../../lib/Websockets';
-// import ActivityCard from './components/ActivityCard';
+import { NotificationContext } from '../../context/ActivityNotif';
 
-export default function ActivityScreen() {
+export default function ActivityScreen({ navigation }) {
     const { userInfo, userDetails } = useContext(AuthContext);
     const { styles } = useTheme();
     const scrollY = useRef(new Animated.Value(0)).current;
@@ -23,9 +23,9 @@ export default function ActivityScreen() {
     const [showDatePicker, setShowDatePicker] = useState(false)
 
 
-    const getUserTransactions = (startDate, endDate) => {
+    const getUserTransactions = async (startDate, endDate) => {
         try {
-            fetch(`${BASE_URL}customer/activity?date_start=${startDate}&date_end=${endDate}`, {
+            await fetch(`${BASE_URL}customer/activity?date_start=${startDate}&date_end=${endDate}`, {
                 method: "GET",
                 headers: {
                     Accept: "application/json",
@@ -34,7 +34,7 @@ export default function ActivityScreen() {
                 }
             }).then(processResponse).then((res) => {
                 const { statusCode, data } = res;
-                // console.log(data);
+                // console.log("called");
                 if (statusCode === 200) {
                     const grouped = groupByDate(data.result);
                     setGroupedTransactions(grouped);
@@ -78,22 +78,15 @@ export default function ActivityScreen() {
 
         // Group using raw date string
         transactions.forEach((item) => {
-            if (!groupedMap[item.date]) {
-                groupedMap[item.date] = [];
-            }
-            groupedMap[item.date].push(item);
+            const dateKey = new Date(item.date).toISOString().split('T')[0]; // still per day
+            if (!groupedMap[dateKey]) groupedMap[dateKey] = [];
+            groupedMap[dateKey].push(item);
         });
 
         // Sort transactions within each date by time (latest first)
         Object.keys(groupedMap).forEach(date => {
             groupedMap[date].sort((a, b) => {
-                // Convert time strings to comparable format (HH:MM to minutes since midnight)
-                const timeToMinutes = (timeStr) => {
-                    const [hours, minutes] = timeStr.split(':').map(Number);
-                    return hours * 60 + minutes;
-                };
-
-                return timeToMinutes(b.time) - timeToMinutes(a.time); // Latest first
+                return new Date(b.datetime).getTime() - new Date(a.datetime).getTime();
             });
         });
 
@@ -132,21 +125,29 @@ export default function ActivityScreen() {
 
     useEffect(() => {
         getUserTransactions();
-
-        const setupWebsocket = async () => {
-            await Websockets("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
-                console.info(event);
-                getUserTransactions();
-                // console.info("test 1: ", userInfo?.token);
-            });
-        };
-
-        setupWebsocket();
-
-        return () => {
-            Pusher.getInstance().disconnect();
-        };
     }, []);
+
+    const { notifCount } = useContext(NotificationContext);
+
+    useEffect(() => {
+        if (notifCount > 0) {
+            getUserTransactions();
+        }
+    }, [notifCount]);
+
+    // useEffect(() => {
+    //     let subscription;
+
+    //     const setup = async () => {
+    //         subscription = await subscribeToChannel("activity-screen-refresh", "activity-refresh", (event) => {
+    //             console.info("📡 Received from ActivityScreen:");
+    //                 getUserTransactions();
+    //             }
+    //         );
+    //     };
+
+    //     setup();
+    // }, []);
 
     return (
         <>
@@ -217,14 +218,8 @@ export default function ActivityScreen() {
                             groupedTransactions.map((group, index) => (
                                 <View key={index}>
                                     <Text style={custom_styles.sectionHeader}>{group.date}</Text>
-                                    {group.items.map((item, ind) => (
-                                        // <VirtualizedList
-                                        //     initialNumToRender={5}
-                                        //     renderItem={({ item, index }) => <ActivityCard item={item} index={ind} />}
-                                        //     keyExtractor={(item, index) => index.toString()}
-                                        //     data={item}
-                                        //     getItemCount={(data) => data.length}
-                                        // />
+                                    {/* {group.items.map((item, ind) => ( */}
+                                    {[...group.items].reverse().map((item, ind) => (
                                         <View key={ind} style={custom_styles.itemCard}>
                                             <View style={custom_styles.leftCol}>
                                                 <View style={custom_styles.logoContainer}>

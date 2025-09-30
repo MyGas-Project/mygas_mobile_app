@@ -11,14 +11,17 @@ import {
   TouchableOpacity,
   RefreshControl
 } from "react-native";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Navbar from "../../components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
-import { Websockets } from "../../lib/Websockets";
+import { subscribeToChannel, unsubscribeChannel, Websockets } from "../../lib/Websockets";
+import { Pusher } from "@pusher/pusher-websocket-react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { PointsDetailContext } from "../../context/PointsDetails";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
@@ -26,6 +29,7 @@ const height = Dimensions.get("window").height;
 export default function HomeScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
   const [rewards, setRewards] = useState(null);
+  // const { rewards } = useContext(PointsDetailContext);
   const { rewardsInf } = useRef();
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
@@ -108,25 +112,6 @@ export default function HomeScreen({ navigation }) {
   const pullAnim = useRef(new Animated.Value(0)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    Animated.timing(pullAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      // Simulate data refresh
-      setTimeout(() => {
-        setRefreshing(false);
-        Animated.timing(pullAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start();
-      }, 1200);
-    });
-  };
-
   const fetchRewards = async () => {
     try {
       await fetch(`${BASE_URL}customer/user-total-points`, {
@@ -148,20 +133,39 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    Animated.timing(pullAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Simulate data refresh
+      setTimeout(() => {
+        setRefreshing(false);
+        Animated.timing(pullAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+        fetchRewards();
+      }, 1200);
+    });
+  };
+
   useEffect(() => {
-    // onRefresh();
-    // console.log(userDetails, userInfo);
-
     fetchRewards();
+  }, []);
 
-    const setupWebsocket = async () => {
-      await Websockets("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
-        console.info(event);
+  useEffect(() => {
+    const setup = async () => {
+      subscription = await subscribeToChannel("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
+        console.info("📡 Received from HomeScreen");
         fetchRewards();
       });
     };
 
-    setupWebsocket();
+    setup();
   }, []);
 
   return (
@@ -306,7 +310,59 @@ export default function HomeScreen({ navigation }) {
                 </Text>
               </ImageBackground>
             </View>
-            <View style={{ paddingHorizontal: 20 }}>
+            <View style={{ paddingHorizontal: 0 }}>
+              <Text style={[styles.text, styles.text_md, styles.text_bold]}>
+                REWARDS
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}
+              >
+                <Text>We provide best offer rewards</Text>
+                <TouchableOpacity>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={{ fontSize: 12 }}>View Rewards</Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={14}
+                      style={{ marginLeft: 1 }}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                style={{ marginTop: 10, padding: 10, width: "100%" }}
+                data={DATA}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={custom_styles.card} onPress={() => {
+                    navigation.navigate("RewardDetails", {
+                      item: item,
+                    });
+                  }}>
+                    <View>
+                      <Image
+                        source={item.image}
+                        style={custom_styles.coverImage}
+                      />
+                      <View style={custom_styles.content}>
+                        <Text style={custom_styles.title}>{item.title}</Text>
+                        <Text style={custom_styles.description}>
+                          {item.description}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item.id}
+                horizontal
+                ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
+            {/* <View style={{ padding: 20 }}>
               <Text style={[styles.text, styles.text_md, styles.text_bold]}>
                 SERVICES
               </Text>
@@ -327,72 +383,8 @@ export default function HomeScreen({ navigation }) {
                   />
                 </View>
               </View>
-              <FlatList
-                style={{ marginTop: 10, padding: 10 }}
-                data={DATA}
-                renderItem={({ item }) => (
-                  <View style={custom_styles.card}>
-                    <Image
-                      source={item.image}
-                      style={custom_styles.coverImage}
-                    />
-                    <View style={custom_styles.content}>
-                      <Text style={custom_styles.title}>{item.title}</Text>
-                      <Text style={custom_styles.description}>
-                        {item.description}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-            <View style={{ padding: 20 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-              >
-                <Text style={[styles.text, styles.text_md, styles.text_bold]}>
-                  REWARDS
-                </Text>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={{ fontSize: 12 }}>View Rewards</Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={14}
-                    style={{ marginLeft: 1 }}
-                  />
-                </View>
-              </View>
-              <FlatList
-                style={{ marginTop: 10, padding: 10 }}
-                data={REWARDS_DATA}
-                renderItem={({ item }) => (
-                  <View style={custom_styles.rewardcard}>
-                    <Image
-                      source={item.image}
-                      style={custom_styles.coverImage}
-                    />
-                    <View style={custom_styles.content}>
-                      <Text style={custom_styles.title}>{item.title}</Text>
-                      <Text style={custom_styles.description}>
-                        {item.description}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
+            </View> */}
+
           </View>
         </Animated.ScrollView>
       </Animated.View>

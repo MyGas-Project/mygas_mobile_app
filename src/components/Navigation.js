@@ -6,47 +6,46 @@ import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 import BottomNavigation from "./BottomNavigation";
 import ScanScreen from "../screens/dashboard/ScanScreen";
-import RewardDetails from "../screens/RewardDetails";
 import { AuthContext } from "../context/AuthContext";
 import { useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Step1 from "../screens/auth/steps/RegisterStep1";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
-import LoadingPage from "./LoadingState";
+import ConnectionLoss from "../screens/ConnectionLoss";
+import LoadingPage from "../components/LoadingState";
 
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
   const { userInfo, userDetails } = useContext(AuthContext);
-  const [initialRoute, setInitialRoute] = useState("");
-  const [isReady, setIsReady] = useState(false);
+  const [initialRoute, setInitialRoute] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkIfNewUser = async () => {
       try {
         const isNewUser = await AsyncStorage.getItem("newUser");
-        // console.info("AsyncStorage newUser:", isNewUser);
         setInitialRoute(isNewUser);
       } catch (e) {
         await AsyncStorage.removeItem("newUser");
         setInitialRoute(null);
       } finally {
-        setIsReady(true);
+        setLoading(false);
       }
     };
 
     checkIfNewUser();
   }, []);
 
-  if (!isReady) {
+  if (loading) {
     return <LoadingPage />;
   }
 
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {userInfo !== null ? (
+        {userInfo ? (
           <>
             <Stack.Screen
               name="BottomNavigation"
@@ -68,24 +67,16 @@ export default function Navigation() {
               component={ScanScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen
-              name="RewardDetails"
-              component={RewardDetails}
-              options={{ headerShown: false }}
-            />
           </>
         ) : (
           <>
-            {initialRoute ?
-              <>
-              </> : <>
-                <Stack.Screen
-                  name="Welcome"
-                  component={WelcomeScreen}
-                  options={{ headerShown: false }}
-                />
-              </>
-            }
+            {!initialRoute && (
+              <Stack.Screen
+                name="Welcome"
+                component={WelcomeScreen}
+                options={{ headerShown: false }}
+              />
+            )}
             <Stack.Screen
               name="Login"
               component={LoginScreen}
@@ -103,6 +94,11 @@ export default function Navigation() {
             />
           </>
         )}
+        <Stack.Screen
+          name="ConnectionLoss"
+          component={ConnectionLoss}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

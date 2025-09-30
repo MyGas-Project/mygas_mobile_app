@@ -206,24 +206,26 @@ export default function StationsScreeen() {
     }
   };
 
-
   useEffect(() => {
     getStationLists();
+  }, []);
 
-    const setupWebsocket = async () => {
-      await Websockets("station-add", "station-add-event", (event) => {
-        // console.info(event);
-        getStationLists();
-        // sendTestNotification();
-        // console.info("test 1: ", userInfo?.token);
-      });
+  useEffect(() => {
+    let subscription;
+
+    const setup = async () => {
+      subscription = await Websockets("station-add", "station-add-event", (event) => {
+        console.info("📡 Received from StationScreen:");
+        getUserTransactions();
+      }
+      );
     };
 
-    setupWebsocket();
+    setup();
 
-    return () => {
-      Pusher.getInstance().disconnect();
-    };
+    // return () => {
+    //   unsubscribeChannel("station-add");
+    // };
   }, []);
 
   return (
@@ -322,7 +324,7 @@ export default function StationsScreeen() {
             />
           </View>
 
-          {/* map  */}
+          {/* map */}
           {/* {showMap ?
             <>
               <View style={{ height: 200 }}>
@@ -386,10 +388,10 @@ export default function StationsScreeen() {
             <Text style={custom_styles.sectionTitle}>Nearby Gasoline Stations</Text>
 
             {stationsLoading ? (
-              <Loader 
+              <Loader
                 // overlay={false}
                 text="Please wait..."
-                color="#FF6B6B" 
+                color="#FF6B6B"
                 type="dots"
               /> // 👈 show loader while fetching
             ) : stationsLists?.length > 0 ? (

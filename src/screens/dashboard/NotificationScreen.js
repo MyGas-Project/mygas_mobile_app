@@ -16,7 +16,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
 
-const NotificationScreen = () => {
+const NotificationScreen = ({ nav }) => {
   const { userInfo, userData } = useContext(AuthContext);
 
   const { styles } = useTheme();
@@ -78,7 +78,6 @@ const NotificationScreen = () => {
     customer_notification();
   }, [])
 
-
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <ImageBackground
@@ -107,11 +106,22 @@ const NotificationScreen = () => {
           data={notifications}
           renderItem={({ item }) => renderNotification(item)}
           keyExtractor={(item) => item.transaction_number}
-          contentContainerStyle={[
-            notif_styles.notificationList,
-            { paddingBottom: 80 },
-          ]}
+          contentContainerStyle={[notif_styles.notificationList, { paddingBottom: 80 }]}
+          initialNumToRender={5}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}   
+          getItemLayout={(data, index) => ({
+            length: 100,  
+            offset: 100 * index,
+            index,
+          })}
+          ListEmptyComponent={
+            <Text style={{ textAlign: "center", marginTop: 20 }}>No notifications</Text>
+          }
         />
+
       </View>
     </View>
   );

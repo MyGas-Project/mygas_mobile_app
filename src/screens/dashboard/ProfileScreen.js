@@ -21,6 +21,7 @@ import Navbar from "../../components/Navbar";
 import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import DropDownPicker from "react-native-dropdown-picker";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -40,11 +41,17 @@ const isSmallScreen = screenWidth < 375;
 let globalShowDetails = false;
 
 const ProfileScreen = () => {
-  const { userInfo, userDetails, updateUserDetails } = useContext(AuthContext);
+  const { userInfo, userDetails } = useContext(AuthContext);
   const [showDetails, setShowDetails] = useState(globalShowDetails);
   const [editMode, setEditMode] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editedDetails, setEditedDetails] = useState({ ...userDetails });
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([
+    { label: 'Male', value: 'male' },
+    { label: 'Female', value: 'female' },
+    { label: 'Others', value: 'others' },
+  ]);
 
   const { styles } = useTheme();
   const navigation = useNavigation();
@@ -67,6 +74,11 @@ const ProfileScreen = () => {
     }, [userDetails])
   );
 
+  // Handle password change navigation
+  const handleChangePassword = () => {
+    // Navigate to password change screen or show password change modal
+    navigation.navigate('ChangePassword'); // Adjust the route name as needed
+  };
 
   const handleEditProfile = () => {
     setShowDetails(true);
@@ -85,7 +97,7 @@ const ProfileScreen = () => {
 
   const handleCancelEdit = () => {
     setEditMode(false);
-    setEditedDetails({ ...userDetails });
+    // setEditedDetails({ ...userDetails });
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -115,12 +127,12 @@ const ProfileScreen = () => {
     console.log("Settings pressed");
   };
 
-  const handleLogout = (data) => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", onPress: () => logout(data) },
-    ]);
-  };
+  // const handleLogout = (data) => {
+  //   Alert.alert("Logout", "Are you sure you want to logout?", [
+  //     { text: "Cancel", style: "cancel" },
+  //     { text: "Logout", onPress: () => logout(data) },
+  //   ]);
+  // };
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardContainerTranslateY = scrollY.interpolate({
@@ -171,6 +183,21 @@ const ProfileScreen = () => {
         >
           <Text style={profile_styles.myAccountTitle}>My Account</Text>
 
+          {/* Password Change Alert */}
+
+
+          {!editMode && userDetails?.is_pass_change === 0 ? (
+            <View style={profile_styles.alertCard}>
+              <View style={profile_styles.alertHeader}>
+                <Ionicons name="warning" size={wp(5)} color="#ff6b35" />
+                <Text style={profile_styles.alertTitle}>Password Update Required</Text>
+              </View>
+              <Text style={profile_styles.alertMessage}>
+                You are currently using a default password. For your account security, please update your password.
+              </Text>
+            </View>
+          ) : null}
+
           {showDetails ? (
             <View style={profile_styles.card}>
               <View style={profile_styles.headerRow}>
@@ -191,13 +218,23 @@ const ProfileScreen = () => {
                 <View style={profile_styles.col}>
                   <Text style={profile_styles.profileLabel}>Gender</Text>
                   {editMode ? (
-                    <TextInput
+                    <DropDownPicker
+                      open={open}
+                      value={editedDetails?.gender ?? "N/A"}
+                      items={items}
+                      setOpen={setOpen}
+                      setValue={(value) => {
+                        setEditedDetails({ ...editedDetails, gender: value })
+                      }}
+                      setItems={setItems}
+                      placeholder={'Select Gender.'}
+                      listMode="SCROLLVIEW"
                       style={profile_styles.input}
-                      value={editedDetails.gender}
-                      onChangeText={(text) => setEditedDetails({ ...editedDetails, gender: text })}
                     />
                   ) : (
-                    <Text style={profile_styles.profileValue}>{userDetails?.gender || "N/A"}</Text>
+                    <Text style={profile_styles.profileValue}>
+                      {userDetails?.gender || "N/A"}
+                    </Text>
                   )}
                 </View>
                 <View style={profile_styles.col}>
@@ -219,7 +256,7 @@ const ProfileScreen = () => {
                   <Text style={profile_styles.profileLabel}>Birth Date</Text>
                   {showDatePicker && (
                     <DateTimePicker
-                      value={new Date(editedDetails.birthdate || Date.now())}
+                      value={new Date(editedDetails.birth_date || Date.now())}
                       mode="date"
                       display="default"
                       onChange={handleDateChange}
@@ -231,12 +268,12 @@ const ProfileScreen = () => {
                       onPress={handleBirthdayEditAttempt}
                     >
                       <Text style={profile_styles.disabledInputText}>
-                        {editedDetails.birthdate || "Select date"}
+                        {editedDetails.birth_date || "Select date"}
                       </Text>
                       <Ionicons name="information-circle-outline" size={wp(4)} color="#666" style={{ marginLeft: 5 }} />
                     </TouchableOpacity>
                   ) : (
-                    <Text style={profile_styles.profileValue}>{userDetails?.birthdate || "N/A"}</Text>
+                    <Text style={profile_styles.profileValue}>{userDetails?.birth_date || "N/A"}</Text>
                   )}
                 </View>
                 <View style={profile_styles.col}>
@@ -244,11 +281,12 @@ const ProfileScreen = () => {
                   {editMode ? (
                     <TextInput
                       style={profile_styles.input}
-                      value={editedDetails.id_presented}
-                      onChangeText={(text) => setEditedDetails({ ...editedDetails, id_presented: text })}
+                      value={editedDetails.is_presented_id_flag}
+                      onChangeText={(text) => setEditedDetails({ ...editedDetails, is_presented_id_flag: text })}
+                      editable={false}
                     />
                   ) : (
-                    <Text style={profile_styles.profileValue}>{userDetails?.id_presented || "N/A"}</Text>
+                    <Text style={profile_styles.profileValue}>{userDetails?.is_presented_id_flag || "N/A"}</Text>
                   )}
                 </View>
               </View>
@@ -300,6 +338,24 @@ const ProfileScreen = () => {
                 ) : (
                   <Text style={profile_styles.profileValue}>
                     {userDetails?.address || "N/A"}
+                  </Text>
+                )}
+              </View>
+
+              <Text style={profile_styles.sectionTitle}>User Security</Text>
+              <View style={profile_styles.divider} />
+
+              <View style={profile_styles.colFull}>
+                <Text style={profile_styles.profileLabel}>Password</Text>
+                {editMode ? (
+                  <TextInput
+                    style={profile_styles.input}
+                    // value={}
+                    onChangeText={(text) => setEditedDetails({ ...editedDetails, civil_status: text })}
+                  />
+                ) : (
+                  <Text style={profile_styles.profileValue}>
+                    {userDetails?.password ? "**********" : "N/A"}
                   </Text>
                 )}
               </View>
@@ -387,7 +443,7 @@ const ProfileScreen = () => {
 
               <TouchableOpacity
                 style={profile_styles.logoutButton}
-                onPress={() => handleLogout(userInfo)}
+                onPress={() => logout(userInfo)}
               >
                 <Text style={profile_styles.logoutButtonText}>Log Out</Text>
               </TouchableOpacity>
@@ -481,6 +537,49 @@ const profile_styles = StyleSheet.create({
     elevation: 3,
     position: "relative",
     minHeight: isSmallScreen ? hp(8) : hp(6),
+  },
+  // Alert Card Styles
+  alertCard: {
+    backgroundColor: "#fff5f2",
+    borderRadius: wp(2.5),
+    padding: wp(4),
+    marginBottom: hp(2),
+    borderLeftWidth: wp(1),
+    borderLeftColor: "#ff6b35",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  alertHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: hp(1),
+  },
+  alertTitle: {
+    fontSize: isTablet ? wp(3.5) : wp(4.5),
+    fontWeight: "bold",
+    color: "#ff6b35",
+    marginLeft: wp(2),
+  },
+  alertMessage: {
+    fontSize: isTablet ? wp(3) : wp(3.8),
+    color: "#666",
+    lineHeight: hp(2.5),
+    marginBottom: hp(2),
+  },
+  alertButton: {
+    backgroundColor: "#ff6b35",
+    paddingVertical: hp(1.2),
+    paddingHorizontal: wp(6),
+    borderRadius: wp(1.5),
+    alignSelf: "flex-start",
+  },
+  alertButtonText: {
+    color: "white",
+    fontSize: isTablet ? wp(3) : wp(3.8),
+    fontWeight: "600",
   },
   profileName: {
     fontSize: isTablet ? wp(3.5) : wp(5),
