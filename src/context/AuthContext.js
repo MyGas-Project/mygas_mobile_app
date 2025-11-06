@@ -2,12 +2,15 @@ import React, { createContext, useState, useEffect } from "react";
 import { AUTH_URL, BASE_URL, processResponse } from "../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
+import * as Location from "expo-location";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationEnabled, setLocationEnabled] = useState(false);
 
   const registerStep1 = (data) => {
     try {
@@ -20,7 +23,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           first_name: data.firstName,
           last_name: data.lastName,
-          birthday: data.birthDate,
+          birthday: data.birthDate ?? '',
           phone_number: "0" + data.mobileNumber,
         }),
       })
@@ -140,7 +143,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("login response: ", res);
 
           if (statusCode !== 200) {
             Alert.alert("Login Failed", data.message || "Login failed");
@@ -151,12 +153,8 @@ export const AuthProvider = ({ children }) => {
           getUserDetails(data);
           AsyncStorage.setItem("userInfo", JSON.stringify(data));
           AsyncStorage.setItem("newUser", "true");
-
-          pushCodeNotifcation(data.user_id);
         })
         .catch((error) => {
-          // console.error("login error:", error.message);
-          // Alert.alert("Login Failed", error || "Login failed");
           console.error(error);
           alert("Login Catch Error: ", error);
         });
@@ -180,6 +178,8 @@ export const AuthProvider = ({ children }) => {
         const { statusCode, data } = res;
         // console.log("user details: ", data.data);
         setUserDetails(data.data);
+      }).catch(error => {
+        console.error(error);
       });
     } catch (error) {
       // reject(error);
@@ -246,27 +246,78 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await AsyncStorage.getItem("userInfo");
+  const getLocationUser = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
 
-        if (userData) {
-          const parsedData = JSON.parse(userData);
-          setUserInfo(parsedData);
-          getUserDetails(parsedData);
-          // pushCodeNotifcation(parsedData.user_id);
-        }
-      } catch (e) {
-        console.log("Failed to load user from storage", e);
-        setUserInfo(null);
-        setUserDetails(null);
-        AsyncStorage.removeItem("userInfo");
+      if (status !== "granted") {
+        setLocationEnabled(false);
+        return false;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const currentLat = location.coords.latitude;
+      const currentLong = location.coords.longitude;
+
+      await AsyncStorage.setItem("lat_long", JSON.stringify({
+        lat: currentLat,
+        long: currentLong
+      }));
+
+      setUserLocation({ lat: currentLat, long: currentLong });
+      setLocationEnabled(true);
+      return true;
+
+    } catch (error) {
+      console.log("Location error:", error);
+      setLocationEnabled(false);
+      return false;
+    }
+  };
+
+  const checkLocationPermission = async () => {
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+
+      if (status !== "granted") {
+        setLocationEnabled(false);
+        return;
+      }
+
+      // If granted, get location again
+      const location = await Location.getCurrentPositionAsync({});
+      const currentLat = location.coords.latitude;
+      const currentLong = location.coords.longitude;
+
+      await AsyncStorage.setItem("lat_long", JSON.stringify({
+        lat: currentLat,
+        long: currentLong
+      }));
+
+      setUserLocation({ lat: currentLat, long: currentLong });
+      setLocationEnabled(true);
+
+    } catch (error) {
+      console.log("Location re-check error:", error);
+      setLocationEnabled(false);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      await getLocationUser();
+
+      const userData = await AsyncStorage.getItem("userInfo");
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        setUserInfo(parsedData);
+        getUserDetails(parsedData);
       }
     };
 
-    loadUser();
+    init();
   }, []);
+
 
   return (
     <AuthContext.Provider
@@ -275,6 +326,9 @@ export const AuthProvider = ({ children }) => {
         logout,
         userInfo,
         userDetails,
+        locationEnabled,
+        checkLocationPermission,
+        userLocation,
         registerStep1,
         verifyCode,
         registerStep2,

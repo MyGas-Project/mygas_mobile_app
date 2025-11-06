@@ -5,11 +5,12 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "developmentClient": true
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "developmentClient": true
     },
     "preview1": {
       "android": {
@@ -19,10 +20,12 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "buildConfiguration": "Release"
       }
     }
   },

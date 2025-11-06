@@ -31,31 +31,36 @@ const height = Dimensions.get("window").height;
 const Step1 = ({ navigation }) => {
   const { styles } = useTheme();
   const [Batch1Form, setBatch1Form] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [date, setDate] = useState(new Date())
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!Batch1Form?.firstName || Batch1Form.firstName.trim() === "") {
+      newErrors.firstName = "First Name is required";
+    }
+
+    if (!Batch1Form?.lastName || Batch1Form.lastName.trim() === "") {
+      newErrors.lastName = "Last Name is required";
+    }
+
+    // Birth Date is now optional - removed validation
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateForm()) {
+      navigation.navigate("Step2", { Batch1Form });
+    }
+  };
 
   return (
     <>
-      {/* <DatePicker
-        isVisible={showDatePicker}
-        mode="single"
-        // minDate={new Date('1900-01-01')}
-        // initialDate={new Date('2000-01-01')}
-        colorOptions={{
-          headerColor: '#fe0002',
-          weekDaysColor: '#fe0002',
-          selectedDateBackgroundColor: '#fe0002',
-          confirmButtonColor: '#fe0002',
-        }}
-        onCancel={() => { setShowDatePicker(false); }}
-        onConfirm={(e) => {
-          setShowDatePicker(false);
-          setBatch1Form({
-            ...Batch1Form,
-            birthDate: e.dateString
-          })
-        }}
-      /> */}
       <View style={styles.container}>
         <ImageBackground
           resizeMode="stretch"
@@ -66,9 +71,6 @@ const Step1 = ({ navigation }) => {
             colors={["transparent", "rgba(255,255,255,0.5)"]}
             style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
           />
-          {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
         </ImageBackground>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -81,83 +83,101 @@ const Step1 = ({ navigation }) => {
               <Text style={[styles.text, styles.text_lg]}>
                 Complete Your Profile Details
               </Text>
-              <Text style={styles.text}>
-                Finish your profile to get personalized offers, rewards, and a
-                better fueling experience. Update now and start enjoying the
-                perks!
-              </Text>
             </View>
 
             <View style={styles.form_container}>
               <View style={styles.form_section}>
                 <Text style={styles.text}>First Name</Text>
                 <TextInput
-                  style={styles.form_input}
+                  style={[
+                    styles.form_input,
+                    errors.firstName && { borderColor: '#fe0002', borderWidth: 1.5 }
+                  ]}
                   value={Batch1Form?.firstName || ""}
                   onChangeText={(firstName) => {
                     setBatch1Form({
                       ...Batch1Form,
                       firstName: firstName
-                    })
+                    });
+                    // Clear error when user starts typing
+                    if (errors.firstName) {
+                      setErrors({ ...errors, firstName: null });
+                    }
                   }}
                   placeholder="First Name"
                 />
+                {errors.firstName && (
+                  <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
+                    {errors.firstName}
+                  </Text>
+                )}
               </View>
+
               <View style={styles.form_section}>
                 <Text style={styles.text}>Last Name</Text>
                 <TextInput
-                  style={styles.form_input}
+                  style={[
+                    styles.form_input,
+                    errors.lastName && { borderColor: '#fe0002', borderWidth: 1.5 }
+                  ]}
                   value={Batch1Form?.lastName || ""}
                   onChangeText={(lastName) => {
                     setBatch1Form({
                       ...Batch1Form,
                       lastName: lastName
-                    })
+                    });
+                    // Clear error when user starts typing
+                    if (errors.lastName) {
+                      setErrors({ ...errors, lastName: null });
+                    }
                   }}
                   placeholder="Last Name"
                 />
+                {errors.lastName && (
+                  <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
+                    {errors.lastName}
+                  </Text>
+                )}
               </View>
+
               <View style={styles.form_section}>
-                <Text style={styles.text}>Birth Date</Text>
-                {/* <TextInput
-                style={styles.form_input}
-                value={Batch1Form?.birthDate || ""}
-                onChangeText={(birthDate) => {
-                  setBatch1Form({
-                    ...Batch1Form,
-                    birthDate: birthDate
-                  })
-                }}
-                placeholder="Birth Date eg: 1995-01-01"
-              /> */}
-                {/* {showDatePicker && (
-                  // <DateTimePicker
-                  //   value={new Date(Batch1Form?.birthDate || Date.now())}
-                  //   mode="date"
-                  //   display="default"
-                  //   onChange={(event, selectedDate) => {
-                  //     setShowDatePicker(false);
-                  //     setBatch1Form({
-                  //       ...Batch1Form,
-                  //       birthDate: selectedDate.toISOString().split('T')[0]
-                  //     })
-                  //   }}
-                  // />
-                  <DateTimePicker
-                    value={new Date(Batch1Form?.birthDate || Date.now())}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(event, selectedDate) => {
-                      // setShowDatePicker(false);
-                      if (selectedDate) {
-                        setBatch1Form({
-                          ...Batch1Form,
-                          birthDate: selectedDate.toISOString().split("T")[0],
-                        });
-                      }
-                    }}
-                  />
-                )} */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={styles.text}>Birth Date <Text style={{ color: '#999' }}>(Optional)</Text></Text>
+                  <TouchableOpacity
+                    onPress={() => setShowTooltip(!showTooltip)}
+                    style={{ marginLeft: 6 }}
+                  >
+                    <View style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      borderWidth: 1.5,
+                      borderColor: '#666',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Text style={{ fontSize: 12, color: '#666', fontWeight: 'bold' }}>i</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                {showTooltip && (
+                  <View style={{
+                    backgroundColor: '#f0f0f0',
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    borderLeftWidth: 3,
+                    borderLeftColor: '#fe0002'
+                  }}>
+                    <Text style={[styles.text, { fontSize: 13 }]}>
+                      Get ready for exclusive promos in your birth month! By adding your
+                      birthdate, you'll unlock special offers and rewards to make
+                      your celebration even sweeter.
+                    </Text>
+                  </View>
+                )}
+
                 {showDatePicker && (
                   Platform.OS === "ios" ? (
                     <Modal transparent={true} animationType="slide">
@@ -203,39 +223,21 @@ const Step1 = ({ navigation }) => {
                   </View>
                 </TouchableOpacity>
               </View>
-            </View>
 
-            <View style={{ padding: 20 }}>
-              <Text style={styles.text}>
-                Get ready for exclusive promos in your birthmonth! By adding your
-                birthdate, youl'll unlock soecial offeres and rewaards to make
-                your celebration even sweeter.
-              </Text>
+              <View style={[styles.form_section, { flexDirection: "column", gap: 15 }]}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
+                  <Text style={styles.primaryButtonText}>Next</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={styles.secondaryButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-        <View style={styles.footer}>
-          <View style={styles.footer_button_container}>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.footer_button_container}>
-            <TouchableOpacity style={styles.primaryButton} onPress={() => {
-              if (!Batch1Form?.firstName || !Batch1Form?.lastName || !Batch1Form?.birthDate) {
-                Alert.alert("Validation Error", "All fields are required");
-              } else {
-                navigation.navigate("Step2", { Batch1Form });
-              }
-              // navigation.navigate("Step2", { Batch1Form });
-            }}>
-              <Text style={styles.primaryButtonText}>Next</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </View>
     </>
   );
@@ -247,6 +249,39 @@ const Step2 = ({ navigation, route }) => {
   const [batch1Final, setBatch1Final] = useState(Batch1Form);
   const { registerStep1 } = useContext(AuthContext);
   const [loadingState, setLoadingState] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!batch1Final?.mobileNumber || batch1Final.mobileNumber.trim() === "") {
+      newErrors.mobileNumber = "Mobile Number is required";
+    } else if (batch1Final.mobileNumber.length !== 10) {
+      newErrors.mobileNumber = "Mobile Number must be exactly 10 digits";
+    } else if (!/^\d{10}$/.test(batch1Final.mobileNumber)) {
+      newErrors.mobileNumber = "Mobile Number must contain only digits";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoadingState(true);
+    const { statusCode, data } = await registerStep1(batch1Final);
+
+    if (statusCode == 201) {
+      navigation.navigate("Step3", { data: data, batch1form: batch1Final });
+    } else {
+      setLoadingState(false);
+      Alert.alert("Error", data.message);
+    }
+    console.info(data);
+  };
 
   return (
     <View style={styles.container}>
@@ -259,9 +294,6 @@ const Step2 = ({ navigation, route }) => {
           colors={["transparent", "rgba(255,255,255,0.5)"]}
           style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
         />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
       </ImageBackground>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -269,7 +301,7 @@ const Step2 = ({ navigation, route }) => {
       >
         <ProgressIndicator step={2} />
         <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }} onChange>
+          <View style={{ padding: 20 }}>
             <Text style={[styles.text, styles.text_md]}>
               Create Your Account
             </Text>
@@ -281,7 +313,11 @@ const Step2 = ({ navigation, route }) => {
             <View style={styles.form_section}>
               <Text style={styles.country_code}>+63</Text>
               <TextInput
-                style={[styles.form_input, styles.form_input_with_prefix]}
+                style={[
+                  styles.form_input,
+                  styles.form_input_with_prefix,
+                  errors.mobileNumber && { borderColor: '#fe0002', borderWidth: 1.5 }
+                ]}
                 value={batch1Final?.mobileNumber || ""}
                 onChangeText={(mobileNumber) => {
                   const cleanedNumber = mobileNumber.replace(/^0+/, "");
@@ -289,47 +325,48 @@ const Step2 = ({ navigation, route }) => {
                     ...batch1Final,
                     mobileNumber: cleanedNumber,
                   });
+                  // Clear error when user starts typing
+                  if (errors.mobileNumber) {
+                    setErrors({ ...errors, mobileNumber: null });
+                  }
                 }}
                 placeholder="Mobile Number"
                 keyboardType="numeric"
                 maxLength={10}
               />
-              <Text style={styles.form_input_info}>
-                Please enter 10-digit number, excluding 0 at the beginning.
-              </Text>
+              {!errors.mobileNumber && (
+                <Text style={styles.form_input_info}>
+                  Please enter 10-digit number, excluding 0 at the beginning.
+                </Text>
+              )}
+              {errors.mobileNumber && (
+                <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
+                  {errors.mobileNumber}
+                </Text>
+              )}
+            </View>
+          </View>
+          <View style={styles.form_container}>
+            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15 }]}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Text style={styles.secondaryButtonText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                disabled={loadingState}
+                onPress={handleNext}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {loadingState ? "Loading..." : "Next"}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            disabled={loadingState}
-            onPress={async () => {
-              const { statusCode, data } = await registerStep1(batch1Final);
-              setLoadingState(true);
-              if (statusCode == 201) {
-                navigation.navigate("Step3", { data: data, batch1form: batch1Final });
-              } else {
-                setLoadingState(false);
-                Alert.alert("Error", data.message);
-              }
-              console.info(data);
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 };
@@ -422,37 +459,36 @@ const Step3 = ({ navigation, route }) => {
               />
             ))}
           </View>
+          <View style={[styles.codeContainer, { flexDirection: "column-reverse", gap: 15, marginHorizontal: 10, marginTop: 20 }]}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.secondaryButtonText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              disabled={loadingState}
+              style={styles.primaryButton}
+              // onPress={handleVerify}
+              onPress={async () => {
+                console.info(batch1form);
+                const res = await verifyCode(data.data, code.join(""));
+                setLoadingState(true);
+                if (res.statusCode == 200) {
+                  navigation.navigate("Step4", { res });
+                } else {
+                  setLoadingState(false);
+                  Alert.alert("Invalid Code", "Verification failed");
+                }
+              }}
+            >
+              <Text style={styles.primaryButtonText}>Verify</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
       <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            disabled={loadingState}
-            style={styles.primaryButton}
-            // onPress={handleVerify}
-            onPress={async () => {
-              console.info(batch1form);
-              const res = await verifyCode(data.data, code.join(""));
-              setLoadingState(true);
-              if (res.statusCode == 200) {
-                navigation.navigate("Step4", { res });
-              } else {
-                setLoadingState(false);
-                Alert.alert("Invalid Code", "Verification failed");
-              }
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Verify</Text>
-          </TouchableOpacity>
-        </View>
+        
       </View>
     </View>
   );
@@ -502,26 +538,20 @@ const Step4 = ({ navigation, route }) => {
                 value={Batch2Form.email} />
             </View>
           </View>
+          <View style={styles.form_container}>
+            <View style={styles.form_section}>
+              <View >
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={() => navigation.navigate("Step6", { Batch2Form })}
+                >
+                  <Text style={styles.primaryButtonText}>Next</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        {/* <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View> */}
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate("Step6", { Batch2Form })}
-          >
-            <Text style={styles.primaryButtonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 };
@@ -687,48 +717,44 @@ const Step6 = ({ navigation, route }) => {
                   setReconfirmPassword(e);
                 }} />
             </View>
+            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15}]}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Text style={styles.secondaryButtonText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                disabled={loadingState}
+                onPress={async () => {
+                  // console.log(finalForm);
+                  setLoadingState(true);
+
+                  if (reconfirmPassword !== finalForm.password) {
+                    Alert.alert("Password Mismatch", "Passwords do not match");
+                    setLoadingState(false);
+                    return;
+                  }
+
+                  const res = await registerStep2(finalForm);
+                  console.info(res);
+
+                  if (res.statusCode == 201) {
+                    navigation.navigate("Step7", { user_id: res.data.user_id });
+                  } else {
+                    setLoadingState(false);
+                    Alert.alert("Error", res.data.message);
+                  }
+                  // navigation.navigate("Step7");
+                }}
+              >
+                <Text style={styles.primaryButtonText}>Confirm Password</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            disabled={loadingState}
-            onPress={async () => {
-              // console.log(finalForm);
-              setLoadingState(true);
-
-              if (reconfirmPassword !== finalForm.password) {
-                Alert.alert("Password Mismatch", "Passwords do not match");
-                setLoadingState(false);
-                return;
-              }
-
-              const res = await registerStep2(finalForm);
-              console.info(res);
-
-              if (res.statusCode == 201) {
-                navigation.navigate("Step7", { user_id: res.data.user_id });
-              } else {
-                setLoadingState(false);
-                Alert.alert("Error", res.data.message);
-              }
-              // navigation.navigate("Step7");
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Confirm Password</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 };
@@ -809,42 +835,38 @@ const Step7 = ({ navigation, route }) => {
               save="value"
             />
           </View>
+          <View style={[styles.form_container, { flexDirection: "column-reverse", gap: 15, marginTop: 15 }]}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.secondaryButtonText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              disabled={loadingState}
+              onPress={async () => {
+                setLoadingState(true);
+                const data = {
+                  user_id: user_id,
+                  wheel_type_id: selectedWheelType.id
+                }
+                // console.info(data);
+                const res = await registerStep3(data);
+                // console.log(res);
+                if (res.statusCode == 201) {
+                  navigation.navigate("Step8", { user_id: user_id });
+                } else {
+                  setLoadingState(false);
+                  Alert.alert("Error", res.data.message);
+                }
+              }}
+            >
+              <Text style={styles.primaryButtonText}>Confirm Vehicle</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            disabled={loadingState}
-            onPress={async () => {
-              setLoadingState(true);
-              const data = {
-                user_id: user_id,
-                wheel_type_id: selectedWheelType.id
-              }
-              // console.info(data);
-              const res = await registerStep3(data);
-              // console.log(res);
-              if (res.statusCode == 201) {
-                navigation.navigate("Step8", { user_id: user_id });
-              } else {
-                setLoadingState(false);
-                Alert.alert("Error", res.data.message);
-              }
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Confirm Vehicle</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 };
@@ -888,34 +910,32 @@ const Step8 = ({ navigation, route }) => {
       >
         <ProgressIndicator step={8} />
         <ScrollView style={styles.auth_content} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
-          {/* Bell Icon (optional placeholder) */}
-          <Image
-            source={require("../../../assets/bell.png")} // Replace with your bell icon or remove if not needed
-            style={{ width: 80, height: 80, marginBottom: 30 }}
-            resizeMode="contain"
-          />
+          {/* Success/Checkmark Icon */}
+          <View style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: "#4CAF50",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 30
+          }}>
+            <Text style={{ fontSize: 48, color: "white", fontWeight: "bold" }}>✓</Text>
+          </View>
 
           {/* Heading Text */}
           <Text style={[styles.text, styles.text_lg, { textAlign: "center", fontWeight: "bold", marginBottom: 10 }]}>
-            Allow push notifications and{"\n"}never miss the latest offers?
+            Thank You for Registering!
           </Text>
 
           {/* Subtext */}
-          <Text style={[styles.text, styles.text_md, { color: "#666", textAlign: "center", marginBottom: 40 }]}>
-            Turn on push notifications so we can keep you updated.
+          <Text style={[styles.text, styles.text_md, { color: "#666", textAlign: "center", marginBottom: 20, lineHeight: 24 }]}>
+            You can now proceed to the nearest station for your barcode number and verification processing.
           </Text>
         </ScrollView>
 
       </KeyboardAvoidingView>
       <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
         <View style={styles.footer_button_container}>
           <TouchableOpacity
             style={styles.primaryButton}

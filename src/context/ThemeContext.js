@@ -96,6 +96,7 @@ export const ThemeProvider = ({ children }) => {
       width: width,
       bottom: 0,
       position: 'absolute',
+      marginBottom: 50,
       paddingTop: 50
     },
     footer_button_container: {
@@ -219,7 +220,7 @@ export const ThemeProvider = ({ children }) => {
       padding: 20
     },
     form_input_info: {
-      textAlign: 'right',
+      textAlign: 'left',
       fontSize: 12,
       marginTop: 5,
       color: currentTheme.infoColor

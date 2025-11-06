@@ -27,7 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>mygas</string>
           <string>com.mediaone.mygas</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+mygas</string>
         </array>
       </dict>
     </array>
@@ -53,7 +60,9 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Show current location on map.</string>
     <key>NSUserTrackingUsageDescription</key>
-    <string>This identifier will be used to send you personalized notifications.</string>
+    <string>We use your data to provide personalized promotions, offers, and improve your app experience.</string>
+    <key>RCTNewArchEnabled</key>
+    <true/>
     <key>UIBackgroundModes</key>
     <array>
       <string>remote-notification</string>

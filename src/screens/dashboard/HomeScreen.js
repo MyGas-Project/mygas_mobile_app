@@ -26,91 +26,164 @@ import { PointsDetailContext } from "../../context/PointsDetails";
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
+// Skeleton Loader Components
+const SkeletonBox = ({ width, height, style }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E1E9EE",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+const GreetingCardSkeleton = () => (
+  <View style={custom_styles.greetingCard}>
+    <View style={{ flex: 1 }}>
+      <SkeletonBox width={80} height={14} style={{ marginBottom: 8 }} />
+      <SkeletonBox width={200} height={22} style={{ marginBottom: 8 }} />
+      <SkeletonBox width={120} height={13} />
+    </View>
+    <SkeletonBox width={56} height={56} style={{ borderRadius: 28 }} />
+  </View>
+);
+
+const PointsCardSkeleton = () => (
+  <View style={custom_styles.pointsCardWrapper}>
+    <View
+      style={[
+        custom_styles.pointsCard,
+        { backgroundColor: "#E1E9EE", borderRadius: 20 },
+      ]}
+    >
+      <View style={[custom_styles.cardContent, { justifyContent: "space-between" }]}>
+        <View style={custom_styles.pointsSection}>
+          <View style={custom_styles.pointsDisplay}>
+            <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
+            <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
+          </View>
+          <View style={custom_styles.cardDetails}>
+            <SkeletonBox width={140} height={11} style={{ marginBottom: 8 }} />
+            <SkeletonBox width={120} height={11} />
+          </View>
+        </View>
+        <SkeletonBox width={180} height={14} />
+      </View>
+    </View>
+  </View>
+);
+
+const StatsCardSkeleton = () => (
+  <View style={custom_styles.statsContainer}>
+    {[1, 2, 3].map((item) => (
+      <View key={item} style={custom_styles.statCard}>
+        <SkeletonBox width={48} height={48} style={{ borderRadius: 24, marginBottom: 8 }} />
+        <SkeletonBox width={40} height={24} style={{ marginBottom: 4 }} />
+        <SkeletonBox width={60} height={12} />
+      </View>
+    ))}
+  </View>
+);
+
+const RewardCardSkeleton = () => (
+  <View style={[custom_styles.rewardCard, { marginLeft: 20 }]}>
+    <SkeletonBox width={280} height={160} />
+    <View style={custom_styles.rewardContent}>
+      <SkeletonBox width={200} height={18} style={{ marginBottom: 8 }} />
+      <SkeletonBox width={260} height={13} style={{ marginBottom: 4 }} />
+      <SkeletonBox width={240} height={13} style={{ marginBottom: 12 }} />
+      <SkeletonBox width={100} height={13} />
+    </View>
+  </View>
+);
+
 export default function HomeScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
   const [rewards, setRewards] = useState(null);
-  // const { rewards } = useContext(PointsDetailContext);
-  const { rewardsInf } = useRef();
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const DATA = [
     {
       id: "1",
       title: "Oil Change",
       description:
-        "We offer high-quality oil change services with top-brand oils to ensure the best performance of your engine.",
-      image: require("../../../assets/motorista.png")
+        "High-quality oil change services with top-brand oils to ensure the best performance of your engine.",
+      image: require("../../../assets/motorista.png"),
+      color: "#FF6B6B"
     },
     {
       id: "2",
       title: "Tire Replacement",
       description:
-        "Our tire replacement service offers a variety of tire brands and types, ensuring safety and comfort on the road.",
-      image: require("../../../assets/motorista.png")
+        "Variety of tire brands and types, ensuring safety and comfort on the road.",
+      image: require("../../../assets/motorista.png"),
+      color: "#4ECDC4"
     },
     {
       id: "3",
       title: "Brake Service",
       description:
-        "Get your brakes inspected and replaced by our experienced technicians to ensure your safety.",
-      image: require("../../../assets/motorista.png")
+        "Professional brake inspection and replacement for your safety.",
+      image: require("../../../assets/motorista.png"),
+      color: "#FFD93D"
     },
     {
       id: "4",
       title: "Battery Replacement",
       description:
-        "We provide battery replacement services with high-performance, long-lasting batteries to keep your vehicle running smoothly.",
-      image: require("../../../assets/motorista.png")
+        "High-performance, long-lasting batteries to keep your vehicle running smoothly.",
+      image: require("../../../assets/motorista.png"),
+      color: "#95E1D3"
     }
   ];
-
-  const REWARDS_DATA = [
-    {
-      id: "1",
-      title: "Free Car Wash",
-      description:
-        "Exchange your loyalty points for a free car wash and keep your vehicle looking pristine!",
-      image: require("../../../assets/motorista.png")
-    },
-    {
-      id: "2",
-      title: "Discount on Services",
-      description:
-        "Use your points for discounts on future services, such as oil changes, tire replacements, and more.",
-      image: require("../../../assets/motorista.png")
-    },
-    {
-      id: "3",
-      title: "Gift Voucher",
-      description:
-        "Redeem your points for a gift voucher to use on services or products from our store.",
-      image: require("../../../assets/motorista.png")
-    },
-    {
-      id: "4",
-      title: "Fuel Discount",
-      description:
-        "Save on fuel by using your points to receive a discount on premium gasoline or diesel.",
-      image: require("../../../assets/motorista.png")
-    }
-  ];
-
-  const Item = ({ title }) => (
-    <View style={styles.item}>
-      <Text style={styles.title}>{title}</Text>
-    </View>
-  );
 
   const scrollY = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.8],
+    extrapolate: "clamp"
+  });
+
   const cardContainerTranslateY = scrollY.interpolate({
     inputRange: [-50, 0, 50],
     outputRange: [20, 0, -20],
     extrapolate: "clamp"
   });
-
-  const pullAnim = useRef(new Animated.Value(0)).current;
-  const spinAnim = useRef(new Animated.Value(0)).current;
 
   const fetchRewards = async () => {
     try {
@@ -133,28 +206,49 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    Animated.timing(pullAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      // Simulate data refresh
+  const loadAllData = async () => {
+    setIsLoading(true);
+    try {
+      // Wait for all API calls to complete
+      await Promise.all([
+        fetchRewards(),
+        // Add other API calls here if needed
+        // fetchOtherData(),
+      ]);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      // Add a minimum loading time for better UX
       setTimeout(() => {
-        setRefreshing(false);
-        Animated.timing(pullAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start();
-        fetchRewards();
-      }, 1200);
-    });
+        setIsLoading(false);
+      }, 800);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    Animated.sequence([
+      Animated.timing(cardScale, {
+        toValue: 0.95,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    try {
+      await loadAllData();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
-    fetchRewards();
+    loadAllData();
   }, []);
 
   useEffect(() => {
@@ -169,26 +263,29 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={custom_styles.top_bar}
-      >
-        <LinearGradient
-          colors={["rgb(249, 250, 141)", "transparent"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1.4 }}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        <Image
-          source={require("../../../assets/mygas_logo.png")}
-          style={custom_styles.logo}
-        />
-        <View style={{ position: "absolute", right: 0, top: 0 }}>
-          <Navbar hideBack />
-        </View>
-      </ImageBackground>
+    <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+      <Animated.View style={{ opacity: headerOpacity }}>
+        <ImageBackground
+          resizeMode="stretch"
+          source={require("../../../assets/mygas-header.jpeg")}
+          style={custom_styles.top_bar}
+        >
+          <LinearGradient
+            colors={["rgba(249, 250, 141, 0.9)", "transparent"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1.4 }}
+            style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          />
+          <Image
+            source={require("../../../assets/mygas_logo.png")}
+            style={custom_styles.logo}
+          />
+          <View style={{ position: "absolute", right: 0, top: 0 }}>
+            <Navbar hideBack />
+          </View>
+        </ImageBackground>
+      </Animated.View>
+
       <Animated.View
         style={[
           custom_styles.cardContainer,
@@ -197,7 +294,7 @@ export default function HomeScreen({ navigation }) {
       >
         <Animated.ScrollView
           style={{ flex: 1, width: "100%" }}
-          contentContainerStyle={{ paddingTop: 10 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -208,184 +305,273 @@ export default function HomeScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="transparent"
-              colors={["transparent"]}
+              tintColor="#E0B820"
+              colors={["#E0B820"]}
               progressViewOffset={60}
             />
           }
         >
-          <View style={{ marginTop: 10 }}>
-            <View style={styles.greetingsContainer}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.text, styles.text_sm]}>Good Day,</Text>
-                <Text style={[styles.text, styles.text_lg, styles.text_bold]}>
-                  {userDetails?.first_name || ""}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name || ""}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("ScanScreen")}
-                style={{
-                  backgroundColor: "#FFF",
-                  borderRadius: 20,
-                  padding: 8,
-                  marginLeft: 10, // Add some margin
-                }}
-              >
-                <Ionicons name="qr-code-outline" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
-            <View style={{ alignItems: "center", marginVertical: 20 }}>
-              <ImageBackground
-                source={require("../../../assets/Card_New.png")}
-                resizeMode="contain"
-                style={{
-                  width: width - 2,
-                  aspectRatio: 1.58,
-                  elevation: 5,
-                  position: "relative",
-                  padding: 20,
-                  justifyContent: "space-between"
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "flex-end"
-                  }}
-                >
-                  <View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 85,
-                        marginLeft: 5
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#E0B820",
-                          fontWeight: "bold",
-                          fontSize: 30
-                        }}
-                      >
-                        {rewards?.points || 0}
-                      </Text>
-                      <Text
-                        style={{
-                          color: "#000",
-                          fontSize: 18,
-                          marginLeft: 4,
-                          marginTop: 2
-                        }}
-                      >
-                        PTS
-                      </Text>
-                    </View>
+          {isLoading ? (
+            <>
+              {/* Skeleton Loaders */}
+              <GreetingCardSkeleton />
+              <PointsCardSkeleton />
+              <StatsCardSkeleton />
 
-                    <Text
-                      style={{ color: "#000", fontSize: 10, marginLeft: 10 }}
-                    >
-                      {userDetails?.created_at ? new Date(userDetails.created_at).toLocaleDateString("en-US") : ""}
-                    </Text>
-                    <Text
-                      style={{ color: "#000", fontSize: 10, marginLeft: 10 }}
-                    >
-                      Earned Points: {userDetails?.points || 0}pts
-                    </Text>
+              {/* Rewards Section Skeleton */}
+              <View style={custom_styles.sectionContainer}>
+                <View style={custom_styles.sectionHeader}>
+                  <View>
+                    <SkeletonBox width={120} height={20} style={{ marginBottom: 4 }} />
+                    <SkeletonBox width={160} height={13} />
+                  </View>
+                  <SkeletonBox width={80} height={36} style={{ borderRadius: 20 }} />
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 20 }}
+                >
+                  <RewardCardSkeleton />
+                  <View style={{ width: 16 }} />
+                  <RewardCardSkeleton />
+                </ScrollView>
+              </View>
+
+              {/* Promo Banner Skeleton */}
+              <View style={[custom_styles.promoBanner, { backgroundColor: "#E1E9EE" }]}>
+                <View style={{ padding: 20, flexDirection: "row", alignItems: "center" }}>
+                  <SkeletonBox width={40} height={40} style={{ borderRadius: 20 }} />
+                  <View style={{ flex: 1, marginLeft: 16 }}>
+                    <SkeletonBox width={140} height={18} style={{ marginBottom: 6 }} />
+                    <SkeletonBox width={200} height={13} />
                   </View>
                 </View>
-                <Text
-                  style={{
-                    color: "#000",
-                    fontSize: 12,
-                    position: "absolute",
-                    bottom: 35,
-                    left: 20,
-                    marginLeft: 10
-                  }}
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Greeting Section with Enhanced Design */}
+              <View style={custom_styles.greetingCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={custom_styles.greetingText}>Good Day,</Text>
+                  {!userDetails?.first_name ? (
+                    <SkeletonBox width={200} height={22} style={{ marginBottom: 4 }} />
+                  ) : (
+                    <Text style={custom_styles.nameText}>
+                      {userDetails?.first_name}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name}
+                    </Text>
+                  )}
+                  <Text style={custom_styles.subtitleText}>
+                    Welcome back! 🎉
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("ScanScreen")}
+                  style={custom_styles.qrButton}
+                  activeOpacity={0.8}
                 >
-                  {userDetails?.bar_code ? `**** **** *** ${userDetails.bar_code.slice(-3)}` : ""}
-                </Text>
-              </ImageBackground>
-            </View>
-            <View style={{ paddingHorizontal: 0 }}>
-              <Text style={[styles.text, styles.text_md, styles.text_bold]}>
-                REWARDS
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-              >
-                <Text>We provide best offer rewards</Text>
-                <TouchableOpacity>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={{ fontSize: 12 }}>View Rewards</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={14}
-                      style={{ marginLeft: 1 }}
-                    />
-                  </View>
+                  <LinearGradient
+                    colors={["#FFD93D", "#E0B820"]}
+                    style={custom_styles.qrGradient}
+                  >
+                    <Ionicons name="qr-code-outline" size={28} color="#000" />
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
-              <FlatList
-                style={{ marginTop: 10, padding: 10, width: "100%" }}
-                data={DATA}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={custom_styles.card} onPress={() => {
-                    navigation.navigate("RewardDetails", {
-                      item: item,
-                    });
-                  }}>
-                    <View>
-                      <Image
-                        source={item.image}
-                        style={custom_styles.coverImage}
-                      />
-                      <View style={custom_styles.content}>
-                        <Text style={custom_styles.title}>{item.title}</Text>
-                        <Text style={custom_styles.description}>
-                          {item.description}
-                        </Text>
+
+              {/* Enhanced Points Card */}
+              <Animated.View
+                style={[
+                  custom_styles.pointsCardWrapper,
+                  { transform: [{ scale: cardScale }] }
+                ]}
+              >
+                <ImageBackground
+                  source={require("../../../assets/Card_New.png")}
+                  resizeMode="contain"
+                  style={custom_styles.pointsCard}
+                >
+                  {/* Floating Particles Effect Overlay */}
+                  <View style={custom_styles.cardOverlay}>
+                    <View style={custom_styles.floatingDot1} />
+                    <View style={custom_styles.floatingDot2} />
+                  </View>
+
+                  <View style={custom_styles.cardContent}>
+                    <View style={custom_styles.pointsSection}>
+                      <View style={custom_styles.pointsDisplay}>
+                        {rewards?.points !== undefined && rewards?.points !== null ? (
+                          <>
+                            <Text style={custom_styles.pointsNumber}>
+                              {rewards.points}
+                            </Text>
+                            <View style={custom_styles.ptsLabel}>
+                              <Text style={custom_styles.ptsText}>PTS</Text>
+                            </View>
+                          </>
+                        ) : (
+                          <>
+                            <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
+                            <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
+                          </>
+                        )}
+                      </View>
+
+                      <View style={custom_styles.cardDetails}>
+                        <View style={custom_styles.detailRow}>
+                          <Ionicons name="calendar-outline" size={12} color="#666" />
+                          {userDetails?.created_at ? (
+                            <Text style={custom_styles.detailText}>
+                              {new Date(userDetails.created_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </Text>
+                          ) : (
+                            <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                          )}
+                        </View>
+                        <View style={custom_styles.detailRow}>
+                          <Ionicons name="trophy-outline" size={12} color="#666" />
+                          {userDetails?.points !== undefined && userDetails?.points !== null ? (
+                            <Text style={custom_styles.detailText}>
+                              Earned: {userDetails.points} pts
+                            </Text>
+                          ) : (
+                            <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                          )}
+                        </View>
                       </View>
                     </View>
-                  </TouchableOpacity>
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-            {/* <View style={{ padding: 20 }}>
-              <Text style={[styles.text, styles.text_md, styles.text_bold]}>
-                SERVICES
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-              >
-                <Text>We provide best offer services</Text>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={{ fontSize: 12 }}>View Services</Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={14}
-                    style={{ marginLeft: 1 }}
-                  />
+
+                    {userDetails?.bar_code ? (
+                      <Text style={custom_styles.cardNumber}>
+                        •••• •••• ••• {userDetails.bar_code.slice(-3)}
+                      </Text>
+                    ) : (
+                      <SkeletonBox width={180} height={14} />
+                    )}
+                  </View>
+                </ImageBackground>
+              </Animated.View>
+
+              {/* Quick Stats Section */}
+              <View style={custom_styles.statsContainer}>
+                <View style={custom_styles.statCard}>
+                  <View style={[custom_styles.statIcon, { backgroundColor: '#FFE5E5' }]}>
+                    <Ionicons name="gift-outline" size={24} color="#FF6B6B" />
+                  </View>
+                  <Text style={custom_styles.statValue}>12</Text>
+                  <Text style={custom_styles.statLabel}>Rewards</Text>
+                </View>
+
+                <View style={custom_styles.statCard}>
+                  <View style={[custom_styles.statIcon, { backgroundColor: '#E5F5FF' }]}>
+                    <Ionicons name="location-outline" size={24} color="#4ECDC4" />
+                  </View>
+                  <Text style={custom_styles.statValue}>8</Text>
+                  <Text style={custom_styles.statLabel}>Stations</Text>
+                </View>
+
+                <View style={custom_styles.statCard}>
+                  <View style={[custom_styles.statIcon, { backgroundColor: '#FFF5E5' }]}>
+                    <Ionicons name="time-outline" size={24} color="#FFD93D" />
+                  </View>
+                  <Text style={custom_styles.statValue}>24</Text>
+                  <Text style={custom_styles.statLabel}>Activities</Text>
                 </View>
               </View>
-            </View> */}
 
-          </View>
+              {/* Rewards Section with Enhanced Header */}
+              <View style={custom_styles.sectionContainer}>
+                <View style={custom_styles.sectionHeader}>
+                  <View>
+                    <Text style={custom_styles.sectionTitle}>REWARDS</Text>
+                    <Text style={custom_styles.sectionSubtitle}>
+                      Exclusive offers for you ✨
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={custom_styles.viewAllButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={custom_styles.viewAllText}>View All</Text>
+                    <Ionicons name="chevron-forward" size={18} color="#E0B820" />
+                  </TouchableOpacity>
+                </View>
+
+                <FlatList
+                  style={custom_styles.rewardsList}
+                  data={DATA}
+                  renderItem={({ item, index }) => (
+                    <TouchableOpacity
+                      style={[
+                        custom_styles.rewardCard,
+                        { marginLeft: index === 0 ? 20 : 0 }
+                      ]}
+                      onPress={() => {
+                        navigation.navigate("RewardDetails", { item: item });
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <View style={custom_styles.rewardImageContainer}>
+                        <Image
+                          source={item.image}
+                          style={custom_styles.rewardImage}
+                        />
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.7)']}
+                          style={custom_styles.imageGradient}
+                        />
+                        <View style={[custom_styles.categoryBadge, { backgroundColor: item.color }]}>
+                          <Ionicons name="star" size={12} color="#FFF" />
+                        </View>
+                      </View>
+                      <View style={custom_styles.rewardContent}>
+                        <Text style={custom_styles.rewardTitle} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                        <Text style={custom_styles.rewardDescription} numberOfLines={2}>
+                          {item.description}
+                        </Text>
+                        <View style={custom_styles.rewardFooter}>
+                          <Text style={custom_styles.learnMore}>Learn More</Text>
+                          <Ionicons name="arrow-forward" size={16} color="#E0B820" />
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 20 }}
+                />
+              </View>
+
+              {/* Promotional Banner */}
+              <View style={custom_styles.promoBanner}>
+                <LinearGradient
+                  colors={['#FFD93D', '#E0B820']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={custom_styles.promoGradient}
+                >
+                  <View style={custom_styles.promoContent}>
+                    <Ionicons name="gift" size={40} color="#FFF" />
+                    <View style={{ flex: 1, marginLeft: 16 }}>
+                      <Text style={custom_styles.promoTitle}>
+                        Special Offer!
+                      </Text>
+                      <Text style={custom_styles.promoText}>
+                        Get 2x points on your next visit
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color="#FFF" />
+                  </View>
+                </LinearGradient>
+              </View>
+            </>
+          )}
         </Animated.ScrollView>
       </Animated.View>
       <View style={{ height: 70 }}></View>
@@ -394,91 +580,6 @@ export default function HomeScreen({ navigation }) {
 }
 
 const custom_styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginBottom: 16,
-    marginRight: 2,
-    width: 300,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    overflow: "hidden"
-  },
-  rewardcard: {
-    backgroundColor: "#fff",
-    width: 300,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    overflow: "hidden"
-  },
-  coverImagePlaceholder: {
-    width: "100%",
-    height: 200,
-    backgroundColor: "#D3D3D3"
-  },
-  content: {
-    padding: 16
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#222",
-    marginBottom: 6
-  },
-  description: {
-    fontSize: 14,
-    color: "#555",
-    lineHeight: 20
-  },
-  coverImage: {
-    width: "100%",
-    height: 150,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    resizeMode: "cover"
-  },
-  rightIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10
-  },
-  headerLogo: {
-    width: 100,
-    height: 50,
-    position: "absolute",
-    top: 20,
-    left: 10
-  },
-  topRightIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    position: "absolute",
-    top: 10,
-    right: 10
-  },
-  iconCircle: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 5
-  },
-  singleIconWrapper: {
-    backgroundColor: "white",
-    borderRadius: 25,
-    padding: 6,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4
-  },
   top_bar: {
     height: 150,
     width: "100%",
@@ -494,23 +595,317 @@ const custom_styles = StyleSheet.create({
     resizeMode: "contain",
     zIndex: 2
   },
-  headerRight: {
+  cardContainer: {
+    flex: 1,
+    alignItems: "center",
+    marginTop: -30,
+    backgroundColor: "#F8F9FA",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    position: "relative",
+    zIndex: 1
+  },
+  greetingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8
+  },
+  greetingText: {
+    fontSize: 14,
+    color: "#999",
+    marginBottom: 4
+  },
+  nameText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#222",
+    marginBottom: 4
+  },
+  subtitleText: {
+    fontSize: 13,
+    color: "#666"
+  },
+  qrButton: {
+    marginLeft: 16
+  },
+  qrGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#E0B820",
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8
+  },
+  pointsCardWrapper: {
+    alignItems: "center",
+    marginVertical: 24,
+    paddingHorizontal: 20
+  },
+  pointsCard: {
+    width: width - 15,
+    aspectRatio: 1.58,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12
+  },
+  cardOverlay: {
     position: "absolute",
-    right: 16,
-    top: 50,
-    zIndex: 3,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  },
+  floatingDot1: {
+    position: "absolute",
+    top: 30,
+    right: 40,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(224, 184, 32, 0.3)"
+  },
+  floatingDot2: {
+    position: "absolute",
+    bottom: 60,
+    left: 40,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(255, 217, 61, 0.2)"
+  },
+  cardContent: {
+    flex: 1,
+    padding: 24,
+    justifyContent: "space-between"
+  },
+  pointsSection: {
+    marginTop: 70
+  },
+  pointsDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12
+  },
+  pointsNumber: {
+    color: "#966919",
+    fontWeight: "900",
+    fontSize: 42,
+    letterSpacing: -1
+  },
+  ptsLabel: {
+    backgroundColor: "#000",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8
+  },
+  ptsText: {
+    color: "#E0B820",
+    fontSize: 14,
+    fontWeight: "500"
+  },
+  cardDetails: {
+    marginTop: 8
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4
+  },
+  detailText: {
+    color: "#666",
+    fontSize: 11,
+    marginLeft: 6
+  },
+  cardNumber: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 2
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 24
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    padding: 16,
+    borderRadius: 16,
+    marginHorizontal: 4,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#222",
+    marginBottom: 2
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#999"
+  },
+  sectionContainer: {
+    marginBottom: 24
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 16
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#222",
+    marginBottom: 2
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#999"
+  },
+  viewAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF5E5",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20
+  },
+  viewAllText: {
+    fontSize: 13,
+    color: "#E0B820",
+    fontWeight: "600",
+    marginRight: 4
+  },
+  rewardsList: {
+    marginBottom: 8
+  },
+  rewardCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    width: 280,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    overflow: "hidden"
+  },
+  rewardImageContainer: {
+    position: "relative",
+    height: 160
+  },
+  rewardImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover"
+  },
+  imageGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80
+  },
+  categoryBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2
+  },
+  rewardContent: {
+    padding: 16
+  },
+  rewardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#222",
+    marginBottom: 6
+  },
+  rewardDescription: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+    marginBottom: 12
+  },
+  rewardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  learnMore: {
+    fontSize: 13,
+    color: "#E0B820",
+    fontWeight: "600"
+  },
+  promoBanner: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 24,
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#E0B820",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8
+  },
+  promoGradient: {
+    padding: 20
+  },
+  promoContent: {
     flexDirection: "row",
     alignItems: "center"
   },
-  cardContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    marginTop: -20,
-    backgroundColor: "#F5F5F5",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    position: "relative",
-    zIndex: 1
+  promoTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 4
+  },
+  promoText: {
+    fontSize: 13,
+    color: "#FFF",
+    opacity: 0.9
   }
 });

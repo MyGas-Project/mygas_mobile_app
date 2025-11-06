@@ -14,6 +14,14 @@ import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import ConnectionLoss from "../screens/ConnectionLoss";
 import LoadingPage from "../components/LoadingState";
+import { BASE_URL } from "../config";
+import ServerMaintenance from "../screens/ServerBusy";
+import PrivacyPolicy from "../screens/PrivacyPolicy";
+import TermsCondition from "../screens/TermsCondition";
+import SpecificStationScreen from "../screens/dashboard/SpecificStationScreen";
+import CartScreens from "../screens/dashboard/CartScreens";
+import RedemptionTransactionScreens from "../screens/dashboard/RedemptionTransactionScreens";
+import TransactionDetailsPopup from "../screens/dashboard/components/TransactionDetailsPopup";
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +31,8 @@ export default function Navigation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(false);
+
     const checkIfNewUser = async () => {
       try {
         const isNewUser = await AsyncStorage.getItem("newUser");
@@ -67,6 +77,26 @@ export default function Navigation() {
               component={ScanScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="SpecificStationScreen"
+              component={SpecificStationScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="CartScreens"
+              component={CartScreens}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="RedemptionTransactionScreens"
+              component={RedemptionTransactionScreens}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="TransactionDetailsPopup"
+              component={TransactionDetailsPopup}
+              options={{ headerShown: false }}
+            />
           </>
         ) : (
           <>
@@ -77,6 +107,11 @@ export default function Navigation() {
                 options={{ headerShown: false }}
               />
             )}
+            {/* <Stack.Screen
+                name="Welcome"
+                component={WelcomeScreen}
+                options={{ headerShown: false }}
+              /> */}
             <Stack.Screen
               name="Login"
               component={LoginScreen}
@@ -97,6 +132,21 @@ export default function Navigation() {
         <Stack.Screen
           name="ConnectionLoss"
           component={ConnectionLoss}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ServerMaintenance"
+          component={ServerMaintenance}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TermsCondition"
+          component={TermsCondition}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicy}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

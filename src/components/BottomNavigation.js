@@ -13,8 +13,8 @@ import { useTheme } from "../context/ThemeContext";
 import HomeScreen from "../screens/dashboard/HomeScreen";
 import StationsScreeen from "../screens/dashboard/StationsScreeen";
 import ActivityScreen from "../screens/dashboard/ActivityScreen";
-import RewardsScreen from "../screens/dashboard/RewardsScreen";
-import ServicesScreen from "../screens/dashboard/ServicesScreen";
+import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
+import NewsScreen from "../screens/dashboard/NewsScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import RewardDetails from "../screens/dashboard/RewardDetails";
@@ -49,7 +49,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { styles } = useTheme();
 
   // Define the visual order you want
-  const orderedRoutes = ["Services", "Rewards", "Home", "Stations", "Activity"];
+  const orderedRoutes = ["News", "Redemption", "Home", "Stations", "Activity"];
 
   return (
     <View style={styles.tabBar}>
@@ -72,9 +72,9 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         }
 
         const iconName =
-          route.name === "Services"
+          route.name === "News"
             ? icons.services
-            : route.name === "Rewards"
+            : route.name === "Redemption"
               ? icons.rewards
               : route.name === "Stations"
                 ? icons.station
@@ -96,8 +96,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                 height: 25,
               }}
             />
-            <Text style={{ color: isFocused ? "#E63946" : "#555" }}>
-              {route.name}
+            <Text style={{ fontSize: 9, color: isFocused ? "#E63946" : "#555" }}>
+              My {route.name}
             </Text>
           </TouchableOpacity>
         );
@@ -115,8 +115,8 @@ const BottomTabNavigator = () => {
       initialRouteName="Home"
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="Services" component={ServicesScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="Rewards" component={RewardsScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="News" component={NewsScreen} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Redemption" component={RedemptionScreen} options={{ unmountOnBlur: true }} />
       <Tab.Screen name="Stations" component={StationsScreeen} options={{ unmountOnBlur: true }} />
       <Tab.Screen name="Activity" component={ActivityScreen} options={{ unmountOnBlur: true }} />
       <Tab.Screen name="RewardDetails" component={RewardDetails} options={{ tabBarButton: () => null, unmountOnBlur: true }} />

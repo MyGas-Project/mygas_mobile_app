@@ -35,8 +35,8 @@ yarn-error.*
 !.env.example
 
 # Android configs
-android/app/google-services.json
-android/app/mygas-dev-mode-6b1c874cc039.json
+# android/app/google-services.json
+# android/app/mygas-dev-mode-6b1c874cc039.json
 
 # typescript
 *.tsbuildinfo

@@ -2,6 +2,7 @@
   "expo": {
     "name": "mygas",
     "slug": "mygas",
+    "scheme": "mygas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.jpg",
@@ -13,12 +14,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.mediaone.mygas",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "This identifier will be used to send you personalized notifications.",
-        "UIBackgroundModes": ["remote-notification"]
+        "NSUserTrackingUsageDescription": "We use your data to provide personalized promotions, offers, and improve your app experience.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "runtimeVersion": {
         "policy": "appVersion"
@@ -35,7 +38,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.POST_NOTIFICATIONS", 
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE"
       ],
       "intentFilters": [],
@@ -47,13 +50,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsImpl": "mapbox",
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoicnVpbnplIiwiYSI6ImNsbTA4YmtjZTB4YWYza21oNzh5bTkycG0ifQ.2JN6bogkaT84ho7-VuAgFA"
-        }
-      ],
       [
         "expo-location",
         {
@@ -67,7 +63,8 @@
           "icon": "./assets/mygas_adaptive_icon.png",
           "color": "#ffffff"
         }
-      ]
+      ],
+      "expo-tracking-transparency"
     ],
     "extra": {
       "eas": {
