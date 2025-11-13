@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: data.data.user_id,
+          user_id: data.user_id,
           password: data.password,
           email: data.email
         }),
@@ -152,6 +152,10 @@ export const AuthProvider = ({ children }) => {
           setUserInfo(data);
           getUserDetails(data);
           AsyncStorage.setItem("userInfo", JSON.stringify(data));
+          AsyncStorage.setItem("login_credentials", JSON.stringify({
+            email: email,
+            password: password
+          }));
           AsyncStorage.setItem("newUser", "true");
         })
         .catch((error) => {
@@ -187,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = (navigation) => {
+  const logout = async (navigation) => {
     let res;
     if (!navigation) {
       res = AsyncStorage.getItem("userInfo");
@@ -197,7 +201,10 @@ export const AuthProvider = ({ children }) => {
 
     setUserInfo(null);
     setUserDetails(null);
-    AsyncStorage.removeItem("userInfo");
+    // AsyncStorage.clear();
+    const allKeys = await AsyncStorage.getAllKeys();
+    const keysToRemove = allKeys.filter(key => !['newUser'].includes(key));
+    await AsyncStorage.multiRemove(keysToRemove);
 
     try {
       // console.log(navigation);
@@ -310,6 +317,7 @@ export const AuthProvider = ({ children }) => {
       const userData = await AsyncStorage.getItem("userInfo");
       if (userData) {
         const parsedData = JSON.parse(userData);
+        console.log(parsedData);
         setUserInfo(parsedData);
         getUserDetails(parsedData);
       }
@@ -318,6 +326,33 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
+  // useEffect(() => {
+  //   const tokenValidation = async () => {
+  //     fetch(`${BASE_URL}customer/check-account-status`, {
+  //       method: "GET",
+  //       headers: {
+  //         Accept: "application/json",
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${userInfo.token}`,
+  //       },
+  //     })
+  //       .then(processResponse)
+  //       .then(async (res) => {
+  //         const { statusCode, data } = res;
+  //         const getUser = await AsyncStorage.getItem("login_credentials");
+  //         const parsedUser = JSON.parse(getUser);
+  //         console.log("userinfo", parsedUser);
+
+  //         if (statusCode === 403) {
+  //           login(parsedUser.email, parsedUser.password);
+  //         }
+  //       }).catch(error => {
+  //         console.error(error);
+  //       });
+  //   }
+
+  //   tokenValidation();
+  // }, []);
 
   return (
     <AuthContext.Provider

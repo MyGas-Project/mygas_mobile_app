@@ -88,6 +88,7 @@ export const ThemeProvider = ({ children }) => {
       marginTop: 10,
       marginBottom: 100,
       width: width,
+      height: height,
       backgroundColor: currentTheme.backgroundColor,
     },
     footer: {
@@ -96,8 +97,7 @@ export const ThemeProvider = ({ children }) => {
       width: width,
       bottom: 0,
       position: 'absolute',
-      marginBottom: 50,
-      paddingTop: 50
+      // marginBottom: 50
     },
     footer_button_container: {
       flex: 1,

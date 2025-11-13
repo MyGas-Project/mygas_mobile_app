@@ -23,7 +23,7 @@ export function PointsDetailsProvider({ children }) {
                 .then(processResponse)
                 .then((res) => {
                     const { statusCode, data } = res;
-                    console.log("🔄 Points updated:", data);
+                    // console.log("🔄 Points updated:", data);
                     setRewards(data);
                 })
                 .catch((error) => console.error(error));

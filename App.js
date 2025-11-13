@@ -45,10 +45,10 @@ export default function App() {
         }
 
         const data = await response.json();
-        console.log(data);
+        // console.log(data);
 
         if (data.status === "UP") {
-          console.log("Server is healthy, stopping interval check.");
+          // console.log("Server is healthy, stopping interval check.");
           setServerUp(true);
 
           if (intervalId) {
@@ -127,7 +127,6 @@ export default function App() {
     requestTracking();
   }, []);
 
-
   // Conditional rendering
   let ScreenToRender = <Navigation />;
 
@@ -144,7 +143,7 @@ export default function App() {
       />
     );
   } else if (!serverUp) {
-    ScreenToRender = <ServerMaintenance />;
+    // ScreenToRender = <ServerMaintenance />;
   }
 
   return (

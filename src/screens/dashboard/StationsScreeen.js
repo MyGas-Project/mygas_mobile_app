@@ -22,6 +22,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Websockets } from "../../lib/Websockets";
+import GetStationsLists from "../../service/Stations";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -205,27 +206,19 @@ export default function StationsScreen() {
     });
   };
 
-  const getStationLists = (value = "") => {
+  const getStationLists = async (value = "") => {
     try {
       setStationsLoading(true);
-      fetch(`${BASE_URL}customer/station-list?filter=${value}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        }
-      })
-        .then(processResponse)
-        .then((res) => {
-          const { statusCode, data } = res;
-          if (statusCode === 200) {
-            setStationsLists(data.result);
-          }
-        })
-        .catch((err) => console.log(err))
-        .finally(() => setStationsLoading(false));
+      const result = await GetStationsLists(userInfo.token, value);
+
+      if (result.success) {
+        setStationsLists(result.data);
+      } else {
+        console.log("Failed to fetch stations:", result.message || result.error);
+      }
     } catch (error) {
-      console.log(error);
+      console.log("Error fetching stations:", error);
+    } finally {
       setStationsLoading(false);
     }
   };
@@ -418,7 +411,7 @@ export default function StationsScreen() {
             )}
           </View>
 
-          <View style={{ flex: 1, paddingTop: moderateScale(8) }}>
+          <View style={{ flex: 1, paddingTop: moderateScale(8), marginBottom: 45 }}>
             <View style={custom_styles.sectionHeader}>
               <Text style={custom_styles.sectionTitle}>
                 {searchQuery ? 'Search Results' : 'Nearby Stations'}
@@ -571,6 +564,7 @@ const custom_styles = StyleSheet.create({
     paddingBottom: moderateScale(50),
     flexGrow: 1,
     paddingHorizontal: moderateScale(16),
+    // marginBottom: 80,
   },
   scrollableContentArea: {
     flex: 1,

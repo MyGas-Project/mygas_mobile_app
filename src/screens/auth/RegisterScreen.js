@@ -25,11 +25,14 @@ import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Stack = createNativeStackNavigator();
-const width = Dimensions.get("window").width;
-const height = Dimensions.get("window").height;
+const { width, height } = Dimensions.get("window");
+
+// Responsive sizing helper
+const scale = (size) => (width / 375) * size;
+const verticalScale = (size) => (height / 812) * size;
 
 const Step1 = ({ navigation }) => {
-  const { styles } = useTheme();
+  const { styles, currentTheme, mainTheme } = useTheme();
   const [Batch1Form, setBatch1Form] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [date, setDate] = useState(new Date());
@@ -47,8 +50,6 @@ const Step1 = ({ navigation }) => {
       newErrors.lastName = "Last Name is required";
     }
 
-    // Birth Date is now optional - removed validation
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,117 +61,109 @@ const Step1 = ({ navigation }) => {
   };
 
   return (
-    <>
-      <View style={styles.container}>
-        <ImageBackground
-          resizeMode="stretch"
-          source={require("../../../assets/mygas-header.jpeg")}
-          style={styles.top_bar}
-        >
-          <LinearGradient
-            colors={["transparent", "rgba(255,255,255,0.5)"]}
-            style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-          />
-        </ImageBackground>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <View style={styles.container}>
+      <ImageBackground
+        resizeMode="stretch"
+        source={require("../../../assets/mygas-header.jpeg")}
+        style={responsiveStyles.header}
+      >
+        <LinearGradient
+          colors={["transparent", "rgba(255,255,255,0.5)"]}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </ImageBackground>
+
+      <KeyboardAvoidingView
+        style={responsiveStyles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <ScrollView
+          style={responsiveStyles.scrollView}
+          contentContainerStyle={responsiveStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
           <ProgressIndicator step={1} />
-          <ScrollView style={styles.auth_content}>
-            <View style={{ padding: 20 }}>
-              <Text style={[styles.text]}>Create Your Account</Text>
-              <Text style={[styles.text, styles.text_lg]}>
+
+          <View style={responsiveStyles.contentContainer}>
+            <View style={responsiveStyles.headerSection}>
+              <Text style={[styles.text, responsiveStyles.subtitle]}>
+                Create Your Account
+              </Text>
+              <Text style={[styles.text, responsiveStyles.title]}>
                 Complete Your Profile Details
               </Text>
             </View>
 
-            <View style={styles.form_container}>
-              <View style={styles.form_section}>
-                <Text style={styles.text}>First Name</Text>
+            <View style={responsiveStyles.formWrapper}>
+              <View style={responsiveStyles.inputGroup}>
+                <Text style={[styles.text, responsiveStyles.label]}>First Name</Text>
                 <TextInput
                   style={[
                     styles.form_input,
-                    errors.firstName && { borderColor: '#fe0002', borderWidth: 1.5 }
+                    responsiveStyles.input,
+                    errors.firstName && responsiveStyles.inputError
                   ]}
                   value={Batch1Form?.firstName || ""}
                   onChangeText={(firstName) => {
-                    setBatch1Form({
-                      ...Batch1Form,
-                      firstName: firstName
-                    });
-                    // Clear error when user starts typing
+                    setBatch1Form({ ...Batch1Form, firstName });
                     if (errors.firstName) {
                       setErrors({ ...errors, firstName: null });
                     }
                   }}
                   placeholder="First Name"
+                  placeholderTextColor={currentTheme.infoColor}
                 />
                 {errors.firstName && (
-                  <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
+                  <Text style={responsiveStyles.errorText}>
                     {errors.firstName}
                   </Text>
                 )}
               </View>
 
-              <View style={styles.form_section}>
-                <Text style={styles.text}>Last Name</Text>
+              <View style={responsiveStyles.inputGroup}>
+                <Text style={[styles.text, responsiveStyles.label]}>Last Name</Text>
                 <TextInput
                   style={[
                     styles.form_input,
-                    errors.lastName && { borderColor: '#fe0002', borderWidth: 1.5 }
+                    responsiveStyles.input,
+                    errors.lastName && responsiveStyles.inputError
                   ]}
                   value={Batch1Form?.lastName || ""}
                   onChangeText={(lastName) => {
-                    setBatch1Form({
-                      ...Batch1Form,
-                      lastName: lastName
-                    });
-                    // Clear error when user starts typing
+                    setBatch1Form({ ...Batch1Form, lastName });
                     if (errors.lastName) {
                       setErrors({ ...errors, lastName: null });
                     }
                   }}
                   placeholder="Last Name"
+                  placeholderTextColor={currentTheme.infoColor}
                 />
                 {errors.lastName && (
-                  <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
+                  <Text style={responsiveStyles.errorText}>
                     {errors.lastName}
                   </Text>
                 )}
               </View>
 
-              <View style={styles.form_section}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Text style={styles.text}>Birth Date <Text style={{ color: '#999' }}>(Optional)</Text></Text>
+              <View style={responsiveStyles.inputGroup}>
+                <View style={responsiveStyles.labelRow}>
+                  <Text style={[styles.text, responsiveStyles.label]}>
+                    Birth Date <Text style={responsiveStyles.optionalText}>(Optional)</Text>
+                  </Text>
                   <TouchableOpacity
                     onPress={() => setShowTooltip(!showTooltip)}
-                    style={{ marginLeft: 6 }}
+                    style={responsiveStyles.infoButton}
                   >
-                    <View style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 9,
-                      borderWidth: 1.5,
-                      borderColor: '#666',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Text style={{ fontSize: 12, color: '#666', fontWeight: 'bold' }}>i</Text>
+                    <View style={responsiveStyles.infoIcon}>
+                      <Text style={responsiveStyles.infoIconText}>i</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
 
                 {showTooltip && (
-                  <View style={{
-                    backgroundColor: '#f0f0f0',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 12,
-                    borderLeftWidth: 3,
-                    borderLeftColor: '#fe0002'
-                  }}>
-                    <Text style={[styles.text, { fontSize: 13 }]}>
+                  <View style={responsiveStyles.tooltip}>
+                    <Text style={[styles.text, responsiveStyles.tooltipText]}>
                       Get ready for exclusive promos in your birth month! By adding your
                       birthdate, you'll unlock special offers and rewards to make
                       your celebration even sweeter.
@@ -181,8 +174,8 @@ const Step1 = ({ navigation }) => {
                 {showDatePicker && (
                   Platform.OS === "ios" ? (
                     <Modal transparent={true} animationType="slide">
-                      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-                        <View style={{ backgroundColor: "#fff", padding: 16 }}>
+                      <View style={responsiveStyles.modalOverlay}>
+                        <View style={responsiveStyles.modalContent}>
                           <DateTimePicker
                             value={new Date(Batch1Form?.birthDate || Date.now())}
                             mode="date"
@@ -196,7 +189,12 @@ const Step1 = ({ navigation }) => {
                               }
                             }}
                           />
-                          <Button title="Done" onPress={() => setShowDatePicker(false)} />
+                          <TouchableOpacity
+                            style={[styles.primaryButton, { marginTop: 16 }]}
+                            onPress={() => setShowDatePicker(false)}
+                          >
+                            <Text style={styles.primaryButtonText}>Done</Text>
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </Modal>
@@ -218,33 +216,39 @@ const Step1 = ({ navigation }) => {
                   )
                 )}
                 <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                  <View style={styles.form_input}>
-                    <Text style={styles.text}>{Batch1Form?.birthDate || "Birth Date"}</Text>
+                  <View style={[styles.form_input, responsiveStyles.input, responsiveStyles.dateInput]}>
+                    <Text style={[styles.text, !Batch1Form?.birthDate && { color: currentTheme.infoColor }]}>
+                      {Batch1Form?.birthDate || "Select Birth Date"}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.form_section, { flexDirection: "column", gap: 15 }]}>
-                <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
-                  <Text style={styles.primaryButtonText}>Next</Text>
-                </TouchableOpacity>
+              <View style={responsiveStyles.buttonGroup}>
                 <TouchableOpacity
-                  style={styles.secondaryButton}
+                  style={[styles.primaryButton, responsiveStyles.button]}
+                  onPress={handleNext}
+                >
+                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>Next</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.secondaryButton, responsiveStyles.button]}
                   onPress={() => navigation.goBack()}
                 >
-                  <Text style={styles.secondaryButtonText}>Cancel</Text>
+                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
-    </>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const Step2 = ({ navigation, route }) => {
-  const { styles } = useTheme();
+  const { styles, currentTheme } = useTheme();
   const { Batch1Form } = route.params;
   const [batch1Final, setBatch1Final] = useState(Batch1Form);
   const { registerStep1 } = useContext(AuthContext);
@@ -280,7 +284,6 @@ const Step2 = ({ navigation, route }) => {
       setLoadingState(false);
       Alert.alert("Error", data.message);
     }
-    console.info(data);
   };
 
   return (
@@ -288,81 +291,91 @@ const Step2 = ({ navigation, route }) => {
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={responsiveStyles.header}
       >
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          style={StyleSheet.absoluteFillObject}
         />
       </ImageBackground>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={responsiveStyles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={2} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Enter Your Mobile Number
-            </Text>
-          </View>
-          <View style={styles.form_container}>
-            <View style={styles.form_section}>
-              <Text style={styles.country_code}>+63</Text>
-              <TextInput
-                style={[
-                  styles.form_input,
-                  styles.form_input_with_prefix,
-                  errors.mobileNumber && { borderColor: '#fe0002', borderWidth: 1.5 }
-                ]}
-                value={batch1Final?.mobileNumber || ""}
-                onChangeText={(mobileNumber) => {
-                  const cleanedNumber = mobileNumber.replace(/^0+/, "");
-                  setBatch1Final({
-                    ...batch1Final,
-                    mobileNumber: cleanedNumber,
-                  });
-                  // Clear error when user starts typing
-                  if (errors.mobileNumber) {
-                    setErrors({ ...errors, mobileNumber: null });
-                  }
-                }}
-                placeholder="Mobile Number"
-                keyboardType="numeric"
-                maxLength={10}
-              />
-              {!errors.mobileNumber && (
-                <Text style={styles.form_input_info}>
-                  Please enter 10-digit number, excluding 0 at the beginning.
-                </Text>
-              )}
-              {errors.mobileNumber && (
-                <Text style={{ color: '#fe0002', fontSize: 12, marginTop: 4 }}>
-                  {errors.mobileNumber}
-                </Text>
-              )}
+        <ScrollView
+          style={responsiveStyles.scrollView}
+          contentContainerStyle={responsiveStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProgressIndicator step={2} />
+
+          <View style={responsiveStyles.contentContainer}>
+            <View style={responsiveStyles.headerSection}>
+              <Text style={[styles.text, responsiveStyles.subtitle]}>
+                Create Your Account
+              </Text>
+              <Text style={[styles.text, responsiveStyles.title]}>
+                Enter Your Mobile Number
+              </Text>
             </View>
-          </View>
-          <View style={styles.form_container}>
-            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15 }]}>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                disabled={loadingState}
-                onPress={handleNext}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {loadingState ? "Loading..." : "Next"}
-                </Text>
-              </TouchableOpacity>
+
+            <View style={responsiveStyles.formWrapper}>
+              <View style={responsiveStyles.inputGroup}>
+                <Text style={[styles.text, responsiveStyles.label]}>Mobile Number</Text>
+                <View style={responsiveStyles.phoneInputContainer}>
+                  <Text style={responsiveStyles.countryCode}>+63</Text>
+                  <TextInput
+                    style={[
+                      styles.form_input,
+                      responsiveStyles.input,
+                      responsiveStyles.phoneInput,
+                      errors.mobileNumber && responsiveStyles.inputError
+                    ]}
+                    value={batch1Final?.mobileNumber || ""}
+                    onChangeText={(mobileNumber) => {
+                      const cleanedNumber = mobileNumber.replace(/^0+/, "");
+                      setBatch1Final({ ...batch1Final, mobileNumber: cleanedNumber });
+                      if (errors.mobileNumber) {
+                        setErrors({ ...errors, mobileNumber: null });
+                      }
+                    }}
+                    placeholder="9XX XXX XXXX"
+                    placeholderTextColor={currentTheme.infoColor}
+                    keyboardType="numeric"
+                    maxLength={10}
+                  />
+                </View>
+                {!errors.mobileNumber && (
+                  <Text style={responsiveStyles.helperText}>
+                    Please enter 10-digit number, excluding 0 at the beginning.
+                  </Text>
+                )}
+                {errors.mobileNumber && (
+                  <Text style={responsiveStyles.errorText}>
+                    {errors.mobileNumber}
+                  </Text>
+                )}
+              </View>
+
+              <View style={responsiveStyles.buttonGroup}>
+                <TouchableOpacity
+                  style={[styles.primaryButton, responsiveStyles.button]}
+                  disabled={loadingState}
+                  onPress={handleNext}
+                >
+                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
+                    {loadingState ? "Loading..." : "Next"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.secondaryButton, responsiveStyles.button]}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -372,7 +385,7 @@ const Step2 = ({ navigation, route }) => {
 };
 
 const Step3 = ({ navigation, route }) => {
-  const { styles } = useTheme();
+  const { styles, currentTheme, mainTheme } = useTheme();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const inputs = useRef([]);
   const { data, batch1form } = route.params;
@@ -380,172 +393,225 @@ const Step3 = ({ navigation, route }) => {
   const [loadingState, setLoadingState] = useState(false);
 
   const handleChange = (text, index) => {
+    // console.log(data);
     if (text.length > 1) text = text.charAt(0);
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
 
     if (text && index < 5) {
-      inputs.current[index + 1].focus(); // Move to next input
-    }
-
-    if (newCode.every((digit) => digit !== "")) {
-      // console.log(newCode.join("")); // Call verification function
-      // console.info(data.data.code);
-      // if (newCode.join("") != data.data.code) {
-      //   console.info(data);
-      //   Alert.alert("Validation Error", "Invalid OTP");
-      // }
+      inputs.current[index + 1].focus();
     }
   };
 
   const handleKeyPress = (e, index) => {
-    // console.log(e.nativeEvent.key);
-    if (e.nativeEvent.key === "Backspace" && index > 0) {
+    if (e.nativeEvent.key === "Backspace" && index > 0 && !code[index]) {
       const newIndex = index === 0 ? 0 : index - 1;
       inputs.current[newIndex].focus();
     }
   };
 
+  const handleVerify = async () => {
+    setLoadingState(true);
+    const res = await verifyCode(data.data, code.join(""));
+    // console.log(res);
+
+    if (res.statusCode == 200) {
+      navigation.navigate("Step4", { res: res, data: data.data });
+    } else {
+      setLoadingState(false);
+      Alert.alert("Invalid Code", "Verification failed");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={responsiveStyles.header}
       >
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          style={StyleSheet.absoluteFillObject}
         />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
       </ImageBackground>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={responsiveStyles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={3} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Enter 6-digit Verification Code
-            </Text>
-            <Text style={styles.text}>
-              A one-time passcode has been seent to (+63) {batch1form?.mobileNumber || 0}. Please
-              enter the passcode to verify your phone number.
+        <ScrollView
+          style={responsiveStyles.scrollView}
+          contentContainerStyle={responsiveStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProgressIndicator step={3} />
 
-              {data?.data.code || "empty"}
-            </Text>
-          </View>
-          <View style={styles.codeContainer}>
-            {code.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputs.current[index] = ref)}
-                style={[
-                  styles.code_input,
-                  code[index] !== "" ? { borderColor: "#ffff01" } : {},
-                ]}
-                keyboardType="numeric"
-                maxLength={1}
-                value={digit}
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-              />
-            ))}
-          </View>
-          <View style={[styles.codeContainer, { flexDirection: "column-reverse", gap: 15, marginHorizontal: 10, marginTop: 20 }]}>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={loadingState}
-              style={styles.primaryButton}
-              // onPress={handleVerify}
-              onPress={async () => {
-                console.info(batch1form);
-                const res = await verifyCode(data.data, code.join(""));
-                setLoadingState(true);
-                if (res.statusCode == 200) {
-                  navigation.navigate("Step4", { res });
-                } else {
-                  setLoadingState(false);
-                  Alert.alert("Invalid Code", "Verification failed");
-                }
-              }}
-            >
-              <Text style={styles.primaryButtonText}>Verify</Text>
-            </TouchableOpacity>
+          <View style={responsiveStyles.contentContainer}>
+            <View style={responsiveStyles.headerSection}>
+              <Text style={[styles.text, responsiveStyles.subtitle]}>
+                Create Your Account
+              </Text>
+              <Text style={[styles.text, responsiveStyles.title]}>
+                Enter Verification Code
+              </Text>
+              <Text style={[styles.text, responsiveStyles.description]}>
+                A one-time passcode has been sent to (+63) {batch1form?.mobileNumber || 0}. Please
+                enter the passcode to verify your phone number. (code: {data.data.code})
+              </Text>
+            </View>
+
+            <View style={responsiveStyles.formWrapper}>
+              <View style={responsiveStyles.codeContainer}>
+                {code.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => (inputs.current[index] = ref)}
+                    style={[
+                      responsiveStyles.codeInput,
+                      code[index] !== "" && { borderColor: mainTheme.accent, borderWidth: 2 }
+                    ]}
+                    keyboardType="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChangeText={(text) => handleChange(text, index)}
+                    onKeyPress={(e) => handleKeyPress(e, index)}
+                  />
+                ))}
+              </View>
+
+              <View style={responsiveStyles.buttonGroup}>
+                <TouchableOpacity
+                  style={[styles.primaryButton, responsiveStyles.button]}
+                  disabled={loadingState}
+                  onPress={handleVerify}
+                >
+                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
+                    {loadingState ? "Verifying..." : "Verify"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.secondaryButton, responsiveStyles.button]}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        
-      </View>
     </View>
   );
 };
 
 const Step4 = ({ navigation, route }) => {
-  const { res } = route.params;
-  const { styles } = useTheme();
-  const [Batch2Form, setBatch2Form] = useState(res);
+  const { res, data } = route.params;
+  const { styles, currentTheme } = useTheme();
+  const [Batch2Form, setBatch2Form] = useState(data);
+  const [errors, setErrors] = useState({});
+
+  const validateEmail = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!Batch2Form?.email || Batch2Form.email.trim() === "") {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(Batch2Form.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    // console.log(res, data);
+    if (validateEmail()) {
+      navigation.navigate("Step5", { Batch2Form });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={responsiveStyles.header}
       >
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          style={StyleSheet.absoluteFillObject}
         />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
       </ImageBackground>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={responsiveStyles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={4} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Enter Your Email Addess
-            </Text>
-            <Text style={styles.text}>
-              Updates will be sent on your email address.
-            </Text>
-          </View>
-          <View style={styles.form_container}>
-            <View style={styles.form_section}>
-              <TextInput style={styles.form_input}
-                onChangeText={(e) => { setBatch2Form({ ...Batch2Form, email: e }); }}
-                value={Batch2Form.email} />
+        <ScrollView
+          style={responsiveStyles.scrollView}
+          contentContainerStyle={responsiveStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProgressIndicator step={4} />
+
+          <View style={responsiveStyles.contentContainer}>
+            <View style={responsiveStyles.headerSection}>
+              <Text style={[styles.text, responsiveStyles.subtitle]}>
+                Create Your Account
+              </Text>
+              <Text style={[styles.text, responsiveStyles.title]}>
+                Enter Your Email Address
+              </Text>
+              <Text style={[styles.text, responsiveStyles.description]}>
+                Updates will be sent to your email address.
+              </Text>
             </View>
-          </View>
-          <View style={styles.form_container}>
-            <View style={styles.form_section}>
-              <View >
+
+            <View style={responsiveStyles.formWrapper}>
+              <View style={responsiveStyles.inputGroup}>
+                <Text style={[styles.text, responsiveStyles.label]}>Email Address</Text>
+                <TextInput
+                  style={[
+                    styles.form_input,
+                    responsiveStyles.input,
+                    errors.email && responsiveStyles.inputError
+                  ]}
+                  onChangeText={(e) => {
+                    setBatch2Form({ ...Batch2Form, email: e });
+                    if (errors.email) {
+                      setErrors({ ...errors, email: null });
+                    }
+                  }}
+                  value={Batch2Form.email}
+                  placeholder="your.email@example.com"
+                  placeholderTextColor={currentTheme.infoColor}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                {errors.email && (
+                  <Text style={responsiveStyles.errorText}>
+                    {errors.email}
+                  </Text>
+                )}
+              </View>
+
+              <View style={responsiveStyles.buttonGroup}>
                 <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => navigation.navigate("Step6", { Batch2Form })}
+                  style={[styles.primaryButton, responsiveStyles.button]}
+                  onPress={handleNext}
                 >
-                  <Text style={styles.primaryButtonText}>Next</Text>
+                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>Next</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.secondaryButton, responsiveStyles.button]}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -557,108 +623,6 @@ const Step4 = ({ navigation, route }) => {
 };
 
 const Step5 = ({ navigation, route }) => {
-  const { styles } = useTheme();
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const inputs = useRef([]);
-
-  const handleChange = (text, index) => {
-    if (text.length > 1) text = text.charAt(0); // Allow only one digit
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
-
-    if (text && index < 5) {
-      inputs.current[index + 1].focus(); // Move to next input
-    }
-
-    if (newCode.every((digit) => digit !== "")) {
-      console.log(newCode.join("")); // Call verification function
-    }
-  };
-
-  const handleKeyPress = (e, index) => {
-    console.log(e.nativeEvent.key);
-    if (e.nativeEvent.key === "Backspace" && index > 0) {
-      const newIndex = index === 0 ? 0 : index - 1;
-      inputs.current[newIndex].focus();
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
-      >
-        <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
-      </ImageBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ProgressIndicator step={5} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Enter 6-digit Verification Code
-            </Text>
-            <Text style={styles.text}>
-              A one-time passcode has been seent to example@email.com. Please
-              enter the passcode to verify your phone number.
-            </Text>
-          </View>
-          <View style={styles.codeContainer}>
-            {code.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputs.current[index] = ref)}
-                style={[
-                  styles.code_input,
-                  code[index] !== "" ? { borderColor: "#ffff01" } : {},
-                ]}
-                keyboardType="numeric"
-                maxLength={1}
-                value={digit}
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate("Step6")}
-          >
-            <Text style={styles.primaryButtonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const Step6 = ({ navigation, route }) => {
   const { Batch2Form } = route.params;
   const { styles } = useTheme();
   const [finalForm, setFinalForm] = useState(Batch2Form);
@@ -685,7 +649,7 @@ const Step6 = ({ navigation, route }) => {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={6} />
+        <ProgressIndicator step={5} />
         <ScrollView style={styles.auth_content}>
           <View style={{ padding: 20 }}>
             <Text style={[styles.text, styles.text_md]}>
@@ -717,7 +681,7 @@ const Step6 = ({ navigation, route }) => {
                   setReconfirmPassword(e);
                 }} />
             </View>
-            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15}]}>
+            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15 }]}>
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={() => navigation.goBack()}
@@ -728,20 +692,20 @@ const Step6 = ({ navigation, route }) => {
                 style={styles.primaryButton}
                 disabled={loadingState}
                 onPress={async () => {
-                  // console.log(finalForm);
+                  console.log(finalForm);
                   setLoadingState(true);
 
-                  if (reconfirmPassword !== finalForm.password) {
-                    Alert.alert("Password Mismatch", "Passwords do not match");
-                    setLoadingState(false);
-                    return;
-                  }
+                  // if (reconfirmPassword !== finalForm.password) {
+                  //   Alert.alert("Password Mismatch", "Passwords do not match");
+                  //   setLoadingState(false);
+                  //   return;
+                  // }
 
                   const res = await registerStep2(finalForm);
                   console.info(res);
 
                   if (res.statusCode == 201) {
-                    navigation.navigate("Step7", { user_id: res.data.user_id });
+                    navigation.navigate("Step6", { user_id: res.data.user_id });
                   } else {
                     setLoadingState(false);
                     Alert.alert("Error", res.data.message);
@@ -759,7 +723,7 @@ const Step6 = ({ navigation, route }) => {
   );
 };
 
-const Step7 = ({ navigation, route }) => {
+const Step6 = ({ navigation, route }) => {
   const { user_id } = route.params;
   const { styles } = useTheme();
   const [wheelTypes, setWheelTypes] = useState({});
@@ -814,7 +778,7 @@ const Step7 = ({ navigation, route }) => {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={7} />
+        <ProgressIndicator step={6} />
         <ScrollView style={styles.auth_content}>
           <View style={{ padding: 20 }}>
             <Text style={[styles.text, styles.text_md]}>
@@ -855,7 +819,7 @@ const Step7 = ({ navigation, route }) => {
                 const res = await registerStep3(data);
                 // console.log(res);
                 if (res.statusCode == 201) {
-                  navigation.navigate("Step8", { user_id: user_id });
+                  navigation.navigate("Step7", { user_id: user_id });
                 } else {
                   setLoadingState(false);
                   Alert.alert("Error", res.data.message);
@@ -871,99 +835,89 @@ const Step7 = ({ navigation, route }) => {
   );
 };
 
-const Step8 = ({ navigation, route }) => {
-  const { styles } = useTheme();
-
-  const [showNotification, setShowNotification] = useState(false);
-
-  const handleConfirm = () => {
-    // Show the notification when user confirms
-    setShowNotification(true);
-  };
-
-  const handleNotificationResponse = (response) => {
-    setShowNotification(false);
-    if (response === 'yes') {
-      // Handle "Yes" action
-      navigation.navigate("Welcome"); // Or wherever you want to navigate
-    } else {
-      // Handle "No" action
-      // Maybe stay on this screen or go back
-    }
-  };
+const Step7 = ({ navigation, route }) => {
+  const { styles, mainTheme, currentTheme } = useTheme();
 
   return (
     <View style={styles.container}>
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={responsiveStyles.header}
       >
         <LinearGradient
           colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          style={StyleSheet.absoluteFillObject}
         />
       </ImageBackground>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={responsiveStyles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ProgressIndicator step={8} />
-        <ScrollView style={styles.auth_content} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
-          {/* Success/Checkmark Icon */}
-          <View style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: "#4CAF50",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 30
-          }}>
-            <Text style={{ fontSize: 48, color: "white", fontWeight: "bold" }}>✓</Text>
+        <ScrollView
+          style={responsiveStyles.scrollView}
+          contentContainerStyle={[responsiveStyles.scrollContent, { justifyContent: 'center' }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProgressIndicator step={7} />
+
+          <View style={responsiveStyles.successContainer}>
+            <View style={responsiveStyles.successIconContainer}>
+              <Text style={responsiveStyles.successIcon}>✓</Text>
+            </View>
+
+            <Text style={[styles.text, responsiveStyles.successTitle]}>
+              Thank You for Registering!
+            </Text>
+
+            <Text style={[styles.text, responsiveStyles.successDescription]}>
+              You can now proceed to the nearest station for your barcode number and verification processing.
+            </Text>
+
+            <View style={responsiveStyles.successButtonContainer}>
+              <TouchableOpacity
+                style={[styles.primaryButton, responsiveStyles.button]}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
+                  Complete Registration
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          {/* Heading Text */}
-          <Text style={[styles.text, styles.text_lg, { textAlign: "center", fontWeight: "bold", marginBottom: 10 }]}>
-            Thank You for Registering!
-          </Text>
-
-          {/* Subtext */}
-          <Text style={[styles.text, styles.text_md, { color: "#666", textAlign: "center", marginBottom: 20, lineHeight: 24 }]}>
-            You can now proceed to the nearest station for your barcode number and verification processing.
-          </Text>
         </ScrollView>
-
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        <View style={styles.footer_button_container}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => {
-              handleConfirm();
-              navigation.navigate("Login");
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Complete Registration</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 };
 
-const ProgressIndicator = ({ step }) => (
-  <View style={custom_styles.progressContainer}>
-    <View style={custom_styles.progressBar}>
-      <View
-        style={[
-          custom_styles.progressFill,
-          { width: `${(step / 7) * (width * 0.9)}` },
-        ]}
-      />
+const ProgressIndicator = ({ step }) => {
+  const { mainTheme, currentTheme } = useTheme();
+  const totalSteps = 7;
+  const progress = (step / totalSteps) * 100;
+
+  return (
+    <View style={responsiveStyles.progressContainer}>
+      <View style={responsiveStyles.progressBarContainer}>
+        <View style={[responsiveStyles.progressBar, { backgroundColor: currentTheme.borderColor }]}>
+          <View
+            style={[
+              responsiveStyles.progressFill,
+              {
+                width: `${progress}%`,
+                backgroundColor: mainTheme.accent
+              }
+            ]}
+          />
+        </View>
+        <Text style={[responsiveStyles.progressText, { color: currentTheme.foregroundColor }]}>
+          Step {step} of {totalSteps}
+        </Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default function RegisterScreen() {
   return (
@@ -975,19 +929,273 @@ export default function RegisterScreen() {
       <Stack.Screen name="Step5" component={Step5} />
       <Stack.Screen name="Step6" component={Step6} />
       <Stack.Screen name="Step7" component={Step7} />
-      <Stack.Screen name="Step8" component={Step8} />
     </Stack.Navigator>
   );
 }
 
-const custom_styles = StyleSheet.create({
-  progressContainer: { width: width, alignItems: "center", marginVertical: 20 },
-  progressBar: {
-    width: width * 0.9,
-    height: 10,
-    backgroundColor: "#DDD",
-    borderRadius: 10,
-    overflow: "hidden",
+const responsiveStyles = StyleSheet.create({
+  // Layout containers
+  keyboardView: {
+    flex: 1,
+    width: '100%',
   },
-  progressFill: { height: "100%", backgroundColor: "#ffff01" },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: scale(30),
+  },
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    paddingHorizontal: scale(20),
+  },
+
+  // Header
+  header: {
+    height: verticalScale(120),
+    width: '100%',
+    position: 'relative',
+  },
+
+  // Section headers
+  headerSection: {
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(30),
+  },
+  subtitle: {
+    fontSize: scale(16),
+    marginBottom: verticalScale(8),
+    opacity: 0.7,
+  },
+  title: {
+    fontSize: scale(28),
+    fontWeight: 'bold',
+    marginBottom: verticalScale(12),
+    lineHeight: scale(34),
+  },
+  description: {
+    fontSize: scale(14),
+    lineHeight: scale(20),
+    opacity: 0.8,
+  },
+
+  // Form wrapper
+  formWrapper: {
+    flex: 1,
+  },
+
+  // Input groups
+  inputGroup: {
+    marginBottom: verticalScale(24),
+  },
+  label: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    marginBottom: verticalScale(8),
+  },
+  input: {
+    fontSize: scale(16),
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: scale(16),
+    borderRadius: 8,
+    minHeight: verticalScale(56),
+  },
+  inputError: {
+    borderColor: '#fe0002',
+    borderWidth: 2,
+  },
+  dateInput: {
+    justifyContent: 'center',
+  },
+
+  // Phone input
+  phoneInputContainer: {
+    position: 'relative',
+  },
+  phoneInput: {
+    paddingLeft: scale(60),
+  },
+  countryCode: {
+    position: 'absolute',
+    top: verticalScale(18),
+    left: scale(16),
+    fontSize: scale(16),
+    color: '#666',
+    fontWeight: '600',
+    zIndex: 1,
+  },
+
+  // Helper and error text
+  helperText: {
+    fontSize: scale(12),
+    marginTop: verticalScale(6),
+    color: '#666',
+    lineHeight: scale(16),
+  },
+  errorText: {
+    fontSize: scale(12),
+    marginTop: verticalScale(6),
+    color: '#fe0002',
+    lineHeight: scale(16),
+  },
+
+  // Tooltip
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(8),
+  },
+  optionalText: {
+    color: '#999',
+    fontSize: scale(13),
+  },
+  infoButton: {
+    marginLeft: scale(8),
+  },
+  infoIcon: {
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
+    borderWidth: 1.5,
+    borderColor: '#666',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoIconText: {
+    fontSize: scale(13),
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  tooltip: {
+    backgroundColor: '#f5f5f5',
+    padding: scale(14),
+    borderRadius: 8,
+    marginBottom: verticalScale(16),
+    borderLeftWidth: 3,
+    borderLeftColor: '#fe0002',
+  },
+  tooltipText: {
+    fontSize: scale(13),
+    lineHeight: scale(18),
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: scale(20),
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+
+  // Code input
+  codeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: verticalScale(30),
+    paddingHorizontal: scale(10),
+  },
+  codeInput: {
+    width: scale(48),
+    height: verticalScale(60),
+    borderWidth: 2,
+    borderColor: '#ddd',
+    textAlign: 'center',
+    fontSize: scale(24),
+    fontWeight: '600',
+    borderRadius: 12,
+  },
+
+  // Buttons
+  buttonGroup: {
+    marginTop: verticalScale(20),
+    gap: verticalScale(12),
+  },
+  button: {
+    paddingVertical: verticalScale(16),
+    borderRadius: 8,
+    minHeight: verticalScale(56),
+  },
+  buttonText: {
+    fontSize: scale(16),
+    fontWeight: '600',
+  },
+
+  // Progress indicator
+  progressContainer: {
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(20),
+  },
+  progressBarContainer: {
+    width: '100%',
+  },
+  progressBar: {
+    width: '100%',
+    height: verticalScale(8),
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: scale(13),
+    marginTop: verticalScale(8),
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  // Success screen
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: scale(30),
+    paddingVertical: verticalScale(40),
+  },
+  successIconContainer: {
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: verticalScale(30),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  successIcon: {
+    fontSize: scale(60),
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  successTitle: {
+    fontSize: scale(26),
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: verticalScale(16),
+    lineHeight: scale(32),
+  },
+  successDescription: {
+    fontSize: scale(15),
+    textAlign: 'center',
+    lineHeight: scale(22),
+    opacity: 0.8,
+    marginBottom: verticalScale(40),
+  },
+  successButtonContainer: {
+    width: '100%',
+    maxWidth: scale(400),
+  },
 });

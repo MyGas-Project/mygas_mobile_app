@@ -1,10 +1,18 @@
-import { StyleSheet, Text, View, TouchableOpacity, Platform, Dimensions } from 'react-native';
-import React, { useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import {
+    StyleSheet,
+    Text,
+    View,
+    TouchableOpacity,
+    Dimensions,
+    Platform,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 // Responsive breakpoints
 const isSmallDevice = width < 375;
@@ -17,15 +25,41 @@ const getResponsiveValue = (small, medium, tablet) => {
     return tablet;
 };
 
-export default function CartComponent({ station }) {
+
+const getBottomPosition = () => {
+    // Bottom nav bar is typically 56-80px on mobile, more on tablets
+    const navBarHeight = getResponsiveValue(65, 65, 80);
+    const spacing = getResponsiveValue(16, 20, 24);
+    return navBarHeight + spacing;
+};
+
+export default function CartComponent({ cartCount }) {
     const [cartItemCount, setCartItemCount] = useState(0);
     const navigation = useNavigation();
 
     const handleCartPress = () => {
-        // console.log('Cart pressed');
-        // console.log(station);
-        navigation.navigate("CartScreens", { station: station });
+        navigation.navigate("CartScreens");
     };
+
+    useEffect(() => {
+        const fetchCartCount = async () => {
+            try {
+                if (cartCount !== null && cartCount !== undefined && cartCount > 0) {
+                    await AsyncStorage.setItem("cartCount", cartCount.toString());
+                    setCartItemCount(cartCount);
+                } else {
+                    const storedCount = await AsyncStorage.getItem("cartCount");
+                    setCartItemCount(storedCount ? parseInt(storedCount, 10) : 0);
+                }
+            } catch (error) {
+                console.error("Error fetching cart count:", error);
+            }
+        };
+
+        fetchCartCount();
+    }, [cartCount]);
+
+    const displayCount = cartCount && cartCount > 0 ? cartCount : cartItemCount || 0;
 
     return (
         <View style={styles.container}>
@@ -35,23 +69,27 @@ export default function CartComponent({ station }) {
                 activeOpacity={0.8}
             >
                 <LinearGradient
-                    colors={['#EF4444', '#DC2626']}
+                    colors={["#EF4444", "#DC2626"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.gradient}
                 >
-                    <Ionicons name="cart" size={getResponsiveValue(24, 26, 28)} color="#fff" />
+                    <Ionicons
+                        name="cart"
+                        size={getResponsiveValue(24, 26, 28)}
+                        color="#fff"
+                    />
 
-                    {cartItemCount > 0 && (
+                    {displayCount > 0 && (
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>
-                                {cartItemCount > 99 ? '99+' : cartItemCount}
+                                {displayCount > 99 ? "99+" : displayCount}
                             </Text>
                         </View>
                     )}
                 </LinearGradient>
 
-                {/* Pulsing animation ring */}
+                {/* Optional pulse animation ring */}
                 <View style={styles.pulseRing} />
             </TouchableOpacity>
         </View>
@@ -61,14 +99,14 @@ export default function CartComponent({ station }) {
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: getResponsiveValue(20, 24, 32),
+        bottom: getBottomPosition(),
         right: getResponsiveValue(20, 24, 32),
         zIndex: 999,
     },
     cartButton: {
         width: getResponsiveValue(70, 60, 64),
         height: getResponsiveValue(70, 60, 64),
-        borderRadius: getResponsiveValue(28, 30, 32),
+        borderRadius: getResponsiveValue(58, 30, 32),
         overflow: 'visible',
         ...Platform.select({
             ios: {

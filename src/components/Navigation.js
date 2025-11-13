@@ -18,10 +18,10 @@ import { BASE_URL } from "../config";
 import ServerMaintenance from "../screens/ServerBusy";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
 import TermsCondition from "../screens/TermsCondition";
-import SpecificStationScreen from "../screens/dashboard/SpecificStationScreen";
 import CartScreens from "../screens/dashboard/CartScreens";
 import RedemptionTransactionScreens from "../screens/dashboard/RedemptionTransactionScreens";
 import TransactionDetailsPopup from "../screens/dashboard/components/TransactionDetailsPopup";
+import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -78,13 +78,13 @@ export default function Navigation() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="SpecificStationScreen"
-              component={SpecificStationScreen}
+              name="CartScreens"
+              component={CartScreens}
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="CartScreens"
-              component={CartScreens}
+              name="RedemptionScreen"
+              component={RedemptionScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

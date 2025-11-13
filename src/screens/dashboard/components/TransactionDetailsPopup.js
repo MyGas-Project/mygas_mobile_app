@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
     StyleSheet,
     Text,
@@ -9,10 +9,15 @@ import {
     Image,
     Platform,
     SafeAreaView,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
+import * as MediaLibrary from 'expo-media-library';
+import ViewShot from 'react-native-view-shot';
+import QrRedemption from '../redemption/QrRedemption';
+import QrDownloadTemplate from './QrDownloadTemplate';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,8 +34,9 @@ const getResponsiveValue = (small, medium, tablet, large) => {
 };
 
 export default function TransactionDetailsPopup({ navigation, route }) {
+    const [showQR, setShowQR] = useState(false);
+    const downloadViewShotRef = useRef();
     const transaction = route?.params?.transaction;
-    // console.log(transaction);
 
     if (!transaction) {
         return (
@@ -39,6 +45,28 @@ export default function TransactionDetailsPopup({ navigation, route }) {
             </SafeAreaView>
         );
     }
+
+    const handleDownloadQR = async () => {
+        if (!downloadViewShotRef.current) return;
+
+        try {
+            // Capture the QR template view
+            const uri = await downloadViewShotRef.current.capture();
+
+            // Request permission to access gallery
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status === 'granted') {
+                const asset = await MediaLibrary.createAssetAsync(uri);
+                await MediaLibrary.createAlbumAsync('QR Codes', asset, false);
+                Alert.alert('Success!', 'QR code has been saved to your gallery.');
+            } else {
+                Alert.alert('Permission Denied', 'Cannot save QR code to gallery without permission.');
+            }
+        } catch (err) {
+            console.error('Download error:', err);
+            Alert.alert('Error', 'Failed to save QR code. Please try again.');
+        }
+    };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -82,6 +110,23 @@ export default function TransactionDetailsPopup({ navigation, route }) {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Hidden ViewShot for Download */}
+            <View style={styles.hiddenDownloadContainer}>
+                <ViewShot
+                    ref={downloadViewShotRef}
+                    options={{
+                        format: 'png',
+                        quality: 1.0,
+                        result: 'tmpfile'
+                    }}
+                >
+                    <QrDownloadTemplate
+                        qrCode={transaction.qr_code}
+                        transactionId={transaction.id}
+                    />
+                </ViewShot>
+            </View>
+
             {/* Header */}
             <LinearGradient
                 colors={['#FF0000', '#CC0000']}
@@ -279,12 +324,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                         </View>
 
                         <View style={styles.qrPlaceholder}>
-                            {/* <Ionicons
-                                name="qr-code-outline"
-                                size={getResponsiveValue(120, 140, 160, 180)}
-                                color="#FF0000"
-                            /> */}
-                            <QRCode 
+                            <QRCode
                                 value={transaction.qr_code}
                                 size={getResponsiveValue(120, 140, 160, 180)}
                             />
@@ -299,23 +339,45 @@ export default function TransactionDetailsPopup({ navigation, route }) {
 
                 {/* Action Buttons */}
                 {transaction.status === 'ready' && (
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                            // Navigate to QR scanner or show full QR
-                            console.log('Show full QR code');
-                        }}
-                    >
-                        <Ionicons
-                            name="qr-code-outline"
-                            size={getResponsiveValue(20, 22, 24, 26)}
-                            color="#fff"
-                        />
-                        <Text style={styles.primaryButtonText}>Show Full QR Code</Text>
-                    </TouchableOpacity>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.secondaryButton}
+                            activeOpacity={0.8}
+                            onPress={handleDownloadQR}
+                        >
+                            <Ionicons
+                                name="download-outline"
+                                size={getResponsiveValue(20, 22, 24, 26)}
+                                color="#FF0000"
+                            />
+                            <Text style={styles.secondaryButtonText}>Download QR</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.primaryButton}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                setShowQR(true);
+                            }}
+                        >
+                            <Ionicons
+                                name="expand-outline"
+                                size={getResponsiveValue(20, 22, 24, 26)}
+                                color="#fff"
+                            />
+                            <Text style={styles.primaryButtonText}>View Full Size</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </ScrollView>
+
+            {/* QR Redemption Modal */}
+            <QrRedemption
+                visible={showQR}
+                onClose={() => setShowQR(false)}
+                qrCode={transaction.qr_code}
+                transactionId={transaction.id}
+            />
         </SafeAreaView>
     );
 }
@@ -324,6 +386,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F5F5F5',
+    },
+    hiddenDownloadContainer: {
+        position: 'absolute',
+        left: -9999,
+        top: -9999,
     },
     header: {
         flexDirection: 'row',
@@ -576,15 +643,21 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: getResponsiveValue(18, 20, 22, 24),
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: getResponsiveValue(12, 14, 16, 18),
+        marginTop: getResponsiveValue(4, 6, 8, 10),
+    },
     primaryButton: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: getResponsiveValue(10, 12, 14, 16),
+        gap: getResponsiveValue(8, 10, 12, 14),
         backgroundColor: '#FF0000',
         borderRadius: getResponsiveValue(12, 14, 16, 18),
         paddingVertical: getResponsiveValue(14, 16, 18, 20),
-        paddingHorizontal: getResponsiveValue(24, 28, 32, 36),
+        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
         elevation: 3,
         shadowColor: '#FF0000',
         shadowOffset: { width: 0, height: 2 },
@@ -592,9 +665,32 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     primaryButtonText: {
-        fontSize: getResponsiveValue(14, 16, 18, 20),
+        fontSize: getResponsiveValue(13, 14, 15, 16),
         fontWeight: 'bold',
         color: '#fff',
+    },
+    secondaryButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: getResponsiveValue(8, 10, 12, 14),
+        backgroundColor: '#fff',
+        borderRadius: getResponsiveValue(12, 14, 16, 18),
+        paddingVertical: getResponsiveValue(14, 16, 18, 20),
+        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
+        borderWidth: 2,
+        borderColor: '#FF0000',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+    },
+    secondaryButtonText: {
+        fontSize: getResponsiveValue(13, 14, 15, 16),
+        fontWeight: 'bold',
+        color: '#FF0000',
     },
     errorText: {
         fontSize: getResponsiveValue(16, 18, 20, 22),

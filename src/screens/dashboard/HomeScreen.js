@@ -196,7 +196,8 @@ export default function HomeScreen({ navigation }) {
         },
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
-        console.log("user details: ", data);
+        // console.log("user details: ", data);
+        // console.log(userInfo);
         setRewards(data);
       }).catch(error => {
         console.error(error);

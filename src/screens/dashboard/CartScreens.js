@@ -20,6 +20,8 @@ import { AuthContext } from '../../context/AuthContext';
 import { PointsDetailContext } from '../../context/PointsDetails';
 import Navbar from '../../components/Navbar';
 import { BASE_URL, processResponse } from '../../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import QrRedemption from './redemption/QrRedemption';
 
 const { width, height } = Dimensions.get('window');
 
@@ -219,10 +221,10 @@ export default function CartScreens({ navigation, route }) {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [snackbar, setSnackbar] = useState({ visible: false, message: '', type: 'success' });
-
+    const [showQR, setShowQR] = useState(false);
+    const [transaction, setTransaction] = useState(null);
     const userPoints = rewards?.points || 0;
 
-    // Calculate totals using useMemo
     const totalPoints = useMemo(() => {
         return cartItems.reduce((sum, item) => sum + (item.points * item.quantity), 0);
     }, [cartItems]);
@@ -243,7 +245,6 @@ export default function CartScreens({ navigation, route }) {
         setSnackbar({ visible: false, message: '', type: 'success' });
     };
 
-    // Transform API data to component format
     const transformCartData = (apiData) => {
         if (!apiData || !Array.isArray(apiData)) return [];
 
@@ -303,7 +304,7 @@ export default function CartScreens({ navigation, route }) {
 
             const res = await processResponse(response);
             const { statusCode, data } = res;
-            console.log(userDetails.bar_code);
+            // console.log(userDetails.bar_code);
 
             if (statusCode === 201 && data?.data) {
                 const transformedData = transformCartData(data.data);
@@ -392,14 +393,14 @@ export default function CartScreens({ navigation, route }) {
                             const { statusCode, data } = res;
 
                             if (statusCode === 200) {
-                                // Remove item from local state immediately for better UX
                                 setCartItems(prev => prev.filter(item => item.stationInventoryId !== itemId));
-
-                                // Show success snackbar
                                 showSnackbar(`${itemName} removed from cart`, 'success');
-
-                                // Optionally refresh cart to ensure sync
                                 // await getCartItems();
+
+                                const storedCount = await AsyncStorage.getItem("cartCount");
+                                let newCount = storedCount ? parseInt(storedCount, 10) - 1 : 0;
+                                if (newCount < 0) newCount = 0;
+                                await AsyncStorage.setItem("cartCount", newCount.toString());
                             } else {
                                 showSnackbar('Failed to remove item', 'error');
                             }
@@ -440,6 +441,7 @@ export default function CartScreens({ navigation, route }) {
                             const { statusCode, data } = res;
 
                             if (statusCode === 200) {
+                                AsyncStorage.removeItem('cartCount');
                                 setCartItems([]);
                                 showSnackbar('Cart cleared', 'success');
                                 // await getCartItems();
@@ -501,8 +503,11 @@ export default function CartScreens({ navigation, route }) {
                                     const { statusCode, data } = res;
 
                                     if (statusCode === 201) {
+                                        AsyncStorage.removeItem('cartCount');
                                         setCartItems([]);
                                         showSnackbar(`${data.message}`, 'success');
+                                        setTransaction(referenceNumber);
+                                        setShowQR(true);
                                     } else {
                                         showSnackbar(`${data.message}`, 'error');
                                     }
@@ -596,30 +601,48 @@ export default function CartScreens({ navigation, route }) {
                         )}
                     </View>
 
-                    {/* Points Card */}
-                    <View style={styles.pointsCard}>
-                        <LinearGradient
-                            colors={['#FEF3C7', '#FDE68A']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.pointsGradient}
-                        >
-                            <View style={styles.pointsRow}>
-                                <View>
-                                    <Text style={styles.pointsLabel}>Available Points</Text>
-                                    <View style={styles.pointsValueContainer}>
-                                        <Image
-                                            source={require('../../../assets/my.png')}
-                                            style={styles.pointsIcon}
-                                        />
-                                        <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                    {/* Points Card and My Redemption Button */}
+                    <View style={styles.pointsSection}>
+                        <View style={styles.pointsCard}>
+                            <LinearGradient
+                                colors={['#FEF3C7', '#FDE68A']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.pointsGradient}
+                            >
+                                <View style={styles.pointsRow}>
+                                    <View>
+                                        <Text style={styles.pointsLabel}>Available Points</Text>
+                                        <View style={styles.pointsValueContainer}>
+                                            <Image
+                                                source={require('../../../assets/my.png')}
+                                                style={styles.pointsIcon}
+                                            />
+                                            <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.pointsIconContainer}>
+                                        <Ionicons name="wallet" size={28} color="#F59E0B" />
                                     </View>
                                 </View>
-                                <View style={styles.pointsIconContainer}>
-                                    <Ionicons name="wallet" size={28} color="#F59E0B" />
-                                </View>
-                            </View>
-                        </LinearGradient>
+                            </LinearGradient>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.redemptionButton}
+                            onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+                            activeOpacity={0.7}
+                        >
+                            <LinearGradient
+                                colors={['#EF4444', '#DC2626']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.redemptionButtonGradient}
+                            >
+                                <Ionicons name="receipt-outline" size={20} color="#fff" />
+                                <Text style={styles.redemptionButtonText}>My Redemption</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Cart Items or Empty State */}
@@ -741,6 +764,13 @@ export default function CartScreens({ navigation, route }) {
                 type={snackbar.type}
                 onHide={hideSnackbar}
             />
+
+            <QrRedemption
+                visible={showQR}
+                onClose={() => setShowQR(false)}
+                qrCode={transaction}
+                transactionId={transaction}
+            />
         </View>
     );
 }
@@ -850,9 +880,14 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#DC2626',
     },
-    pointsCard: {
-        borderRadius: getResponsiveValue(16, 20, 24, 28),
+    pointsSection: {
+        flexDirection: 'row',
+        gap: getResponsiveValue(12, 14, 16, 18),
         marginBottom: getResponsiveValue(24, 28, 32, 36),
+    },
+    pointsCard: {
+        flex: 1,
+        borderRadius: getResponsiveValue(16, 20, 24, 28),
         overflow: 'hidden',
         ...Platform.select({
             ios: {
@@ -865,6 +900,35 @@ const styles = StyleSheet.create({
                 elevation: 4,
             },
         }),
+    },
+    redemptionButton: {
+        borderRadius: getResponsiveValue(16, 20, 24, 28),
+        overflow: 'hidden',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#EF4444',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
+    },
+    redemptionButtonGradient: {
+        paddingVertical: getResponsiveValue(23, 24, 28, 32),
+        paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    redemptionButtonText: {
+        fontSize: getResponsiveValue(11, 12, 13, 14),
+        color: "#fff",
+        fontWeight: "700",
+        textAlign: "center",
+        lineHeight: getResponsiveValue(14, 16, 18, 20),
     },
     pointsGradient: {
         padding: getResponsiveValue(20, 24, 28, 32),
@@ -888,8 +952,8 @@ const styles = StyleSheet.create({
         gap: getResponsiveValue(8, 10, 12, 14),
     },
     pointsIcon: {
-        width: getResponsiveValue(24, 28, 32, 36),
-        height: getResponsiveValue(24, 28, 32, 36),
+        width: getResponsiveValue(15, 28, 32, 36),
+        height: getResponsiveValue(15, 28, 32, 36),
         resizeMode: 'contain',
     },
     pointsValue: {
@@ -1107,6 +1171,11 @@ const styles = StyleSheet.create({
     promoPrice: {
         color: '#8B5CF6',
         fontSize: getResponsiveValue(15, 16, 17, 18),
+    },
+    pointsLabel: {
+        fontSize: getResponsiveValue(11, 12, 13, 14),
+        color: '#6B7280',
+        fontWeight: '500',
     },
     savingsRow: {
         flexDirection: 'row',

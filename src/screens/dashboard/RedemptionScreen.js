@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,29 +8,34 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  Animated,
-  TextInput,
-  Platform,
   FlatList,
+  Platform,
+  TextInput,
+  Modal,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import Navbar from "../../components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
-import { AuthContext } from "../../context/AuthContext";
-import { BASE_URL, processResponse } from "../../config";
-import { PointsDetailContext } from "../../context/PointsDetails";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import haversine from "haversine";
+import { AuthContext } from "../../context/AuthContext";
+import { PointsDetailContext } from "../../context/PointsDetails";
+import { BASE_URL, processResponse } from "../../config";
+import SpecificStation from "./redemption/SpecificStation";
+import SpecificProduct from "./redemption/SpecificProduct";
+import CartComponent from "../../components/CartComponent";
+import { useFocusEffect } from "@react-navigation/native";
+import Navbar from "../../components/Navbar";
 
 const { width, height } = Dimensions.get("window");
 
+// Enhanced responsive breakpoints
 const isSmallDevice = width < 375;
 const isMediumDevice = width >= 375 && width < 768;
 const isTablet = width >= 768 && width < 1024;
 const isLargeTablet = width >= 1024;
 
+// Responsive helper functions
 const getResponsiveValue = (small, medium, tablet, large) => {
   if (isSmallDevice) return small;
   if (isMediumDevice) return medium;
@@ -38,643 +43,1667 @@ const getResponsiveValue = (small, medium, tablet, large) => {
   return large;
 };
 
+const getColumnCount = () => {
+  if (isSmallDevice) return 2;
+  if (isMediumDevice) return 2;
+  if (isTablet) return 3;
+  return 4;
+};
+
+const getCardWidth = () => {
+  const columns = getColumnCount();
+  const padding = getResponsiveValue(16, 20, 28, 36);
+  const spacing = getResponsiveValue(12, 16, 20, 24);
+  return (width - padding * 2 - spacing * (columns - 1)) / columns;
+};
+
+// Format date helper
+const formatPromoDate = (dateString) => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    const options = { month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  } catch (error) {
+    return "";
+  }
+};
+
+// Dynamic categories based on products
+const getCategories = (products) => {
+  const categories = new Set(products.map(p => p.category).filter(Boolean));
+  return ["All", ...Array.from(categories).sort()];
+};
+
+// Enhanced Product Card Component
+const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth }) => {
+  const canAfford = userPoints >= product.points;
+  const isOutOfStock = product.quantity === 0;
+  const isLowStock = product.quantity > 0 && product.quantity <= 5;
+
+  const promoDateText = useMemo(() => {
+    if (!product.isWeeklyPromo || !product.promoStartDate || !product.promoEndDate) {
+      return "";
+    }
+
+    const startDate = formatPromoDate(product.promoStartDate);
+    const endDate = formatPromoDate(product.promoEndDate);
+
+    if (startDate === endDate) {
+      return startDate;
+    }
+    return `${startDate} - ${endDate}`;
+  }, [product.isWeeklyPromo, product.promoStartDate, product.promoEndDate]);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.productCard,
+        { width: cardWidth },
+        (!canAfford || isOutOfStock) && styles.productCardDisabled,
+      ]}
+      activeOpacity={0.7}
+      onPress={() => (canAfford && !isOutOfStock) && onProductPress(product)}
+      disabled={!canAfford || isOutOfStock}
+    >
+      <View style={styles.imageContainer}>
+        <Image
+          source={product.image ? { uri: product.image } : require("../../../assets/my.png")}
+          style={styles.productImage}
+        />
+
+        {/* Gradient Overlay */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.3)']}
+          style={styles.imageGradient}
+        />
+
+        {/* Stock Badge */}
+        {isLowStock && (
+          <View style={[styles.stockBadge, styles.lowStockBadge]}>
+            <Ionicons name="alert-circle" size={12} color="#fff" />
+            <Text style={styles.stockBadgeText}>{product.quantity} left</Text>
+          </View>
+        )}
+
+        {isOutOfStock && (
+          <View style={[styles.stockBadge, styles.outOfStockBadge]}>
+            <Text style={styles.stockBadgeText}>Sold Out</Text>
+          </View>
+        )}
+
+        {/* Promo Badge */}
+        {product.isWeeklyPromo && (
+          <View style={styles.promoBadge}>
+            <Ionicons name="flash" size={10} color="#fff" />
+            <Text style={styles.promoBadgeText}>PROMO</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.productContent}>
+        <Text style={styles.productName} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <Text style={styles.productDescription} numberOfLines={2}>
+          {product.description}
+        </Text>
+
+        {/* Promo Date Display */}
+        {product.isWeeklyPromo && promoDateText && (
+          <View style={styles.promoDateContainer}>
+            <Ionicons name="calendar-outline" size={12} color="#8B5CF6" />
+            <Text style={styles.promoDateText}>{promoDateText}</Text>
+          </View>
+        )}
+
+        {/* Promo Description */}
+        {product.isWeeklyPromo && product.promoDescription && (
+          <View style={styles.promoDescriptionContainer}>
+            <Text style={styles.promoDescriptionText} numberOfLines={1}>
+              {product.promoDescription}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.productFooter}>
+          <View style={styles.pointsContainer}>
+            <Image
+              source={require("../../../assets/my.png")}
+              style={styles.miniIcon}
+            />
+
+            {/* Show promo pricing if it's a weekly promo */}
+            {product.isWeeklyPromo && product.originalPoints ? (
+              <View style={styles.priceContainer}>
+                <Text style={styles.originalPoints}>{product.originalPoints}</Text>
+                <Text style={styles.productPoints}>{product.points}</Text>
+              </View>
+            ) : (
+              <Text style={styles.productPoints}>{product.points}</Text>
+            )}
+
+            <Text style={styles.pointsLabel}>pts</Text>
+
+            {/* Promo discount badge */}
+            {product.isWeeklyPromo && product.originalPoints && product.originalPoints > product.points && (
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountText}>
+                  -{Math.round(((product.originalPoints - product.points) / product.originalPoints) * 100)}%
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 export default function RedemptionScreen({ navigation }) {
-  const { userInfo, userDetails, userLocation } = useContext(AuthContext);
+  const { userInfo, userDetails } = useContext(AuthContext);
   const { rewards } = useContext(PointsDetailContext);
-  const [stationLists, setStationLists] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [storedLocation, setStoredLocation] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    priceRange: "all", // all, under1000, 1000to2500, over2500
+    stockStatus: "all", // all, inStock, lowStock
+    promoOnly: false,
+  });
+  const [cartCount, setCartCount] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showStationModal, setShowStationModal] = useState(false);
+  const [selectedStation, setSelectedStation] = useState(null);
+  const [stationFilterProduct, setStationFilterProduct] = useState(null);
 
-  const searchTimeoutRef = useRef(null);
-  const abortControllerRef = useRef(null);
-
-  const getStationLists = useCallback(async (isRefresh = false) => {
+  // Function to refresh cart count
+  const refreshCartCount = useCallback(async () => {
     try {
-      // Cancel previous request if exists
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      const storedCount = await AsyncStorage.getItem("cartCount");
+      const count = storedCount ? parseInt(storedCount, 10) : 0;
+      setCartCount(count);
+    } catch (error) {
+      console.error("Error refreshing cart count:", error);
+      setCartCount(0);
+    }
+  }, []);
 
-      // Create new abort controller
-      abortControllerRef.current = new AbortController();
+  const incrementCartCount = async () => {
+    try {
+      const storedCount = await AsyncStorage.getItem("cartCount");
+      const currentCount = storedCount ? parseInt(storedCount, 10) : 0;
+      const newCount = currentCount + 1;
+      await AsyncStorage.setItem("cartCount", newCount.toString());
+      setCartCount(newCount);
+    } catch (error) {
+      console.error("Error incrementing cart count:", error);
+    }
+  };
 
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+  // Refresh cart count whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshCartCount();
+    }, [refreshCartCount])
+  );
 
-      const response = await fetch(`${BASE_URL}customer/station-list`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-        signal: abortControllerRef.current.signal,
-      });
+  // User points
+  const userPoints = rewards?.points || 0;
+  const cardWidth = useMemo(() => getCardWidth(), []);
+
+  const getAllProducts = async (station) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${BASE_URL}customer/get-products?station_id=${station?.id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
 
       const res = await processResponse(response);
       const { statusCode, data } = res;
-
+      // console.log("getAllProducts: ", data.data);
       if (statusCode === 200) {
-        setStationLists(data.result || []);
+        // Transform API data to match the expected format
+        const transformedProducts = data.data.inventories.map((item) => ({
+          id: item.inventory_id,
+          name: item.name,
+          description: item.description || "No description available",
+          points: item.promo_points || item.points || 0,
+          originalPoints: item.promo_points ? item.points : null,
+          image: item.image_path,
+          category: "Products", // You can add category logic here if available from API
+          quantity: parseFloat(item.total_quantity) || 0,
+          isWeeklyPromo: item.is_weekly_promo === 1 && item.promo_points !== null,
+          promoDescription: item.promo_descriptions,
+          promoStartDate: item.promo_start_date,
+          promoEndDate: item.promo_end_date,
+          sellingPrice: item.unit_cost,
+          stationNames: item.station_names,
+          stationId: item.station_id,
+        }));
+
+        setProducts(transformedProducts);
+      } else {
+        setProducts([]);
+        // console.error("Failed to fetch products:", data);
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.log("Error fetching stations:", error);
-        setStationLists([]);
-      }
+      console.error("getAllProducts error:", error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, [userInfo.token]);
+  };
 
-  useEffect(() => {
-    const loadLocation = async () => {
-      const saved = await AsyncStorage.getItem("lat_long");
-      if (saved) {
-        setStoredLocation(JSON.parse(saved));
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      // Category filter
+      const categoryMatch = selectedCategory === "All" || product.category === selectedCategory;
+
+      // Search filter
+      const searchMatch = searchQuery === "" ||
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Price range filter
+      let priceMatch = true;
+      if (filters.priceRange === "under1000") {
+        priceMatch = product.points < 1000;
+      } else if (filters.priceRange === "1000to2500") {
+        priceMatch = product.points >= 1000 && product.points <= 2500;
+      } else if (filters.priceRange === "over2500") {
+        priceMatch = product.points > 2500;
       }
-    };
 
-    loadLocation();
-  }, []);
+      // Stock status filter
+      let stockMatch = true;
+      if (filters.stockStatus === "inStock") {
+        stockMatch = product.quantity > 5;
+      } else if (filters.stockStatus === "lowStock") {
+        stockMatch = product.quantity > 0 && product.quantity <= 5;
+      }
 
-  const transformedStations = useMemo(() => {
-    return stationLists.map(station => {
+      // Promo filter
+      const promoMatch = !filters.promoOnly || product.isWeeklyPromo;
 
-      const user_current_location = storedLocation
-        ? { latitude: storedLocation.lat, longitude: storedLocation.long }
-        : { latitude: userLocation.lat, longitude: userLocation.long };
-
-      const station_location = { latitude: station.station_lat, longitude: station.station_long };
-      const distance = haversine(user_current_location, station_location, { unit: "km" });
-      const rating = (Math.random() * 1.5 + 3.5).toFixed(1);
-      const rewards = Math.floor(Math.random() * 15 + 1);
-      const isOpen = Math.random() > 0.3;
-
-      return {
-        ...station,
-        name: station.station_name,
-        address: station.station_address,
-        image: station.image_path
-          ? { uri: station.image_path }
-          : `${require("../../../assets/mygas.jpg")}`,
-        distance: `${distance.toFixed(2)} km`,
-        rating: rating,
-        rewards: rewards,
-        isOpen: isOpen,
-        distanceValue: distance.toFixed(2),
-        rewardsValue: rewards,
-      };
+      return categoryMatch && searchMatch && priceMatch && stockMatch && promoMatch;
     });
-  }, [stationLists]);
+  }, [products, selectedCategory, searchQuery, filters]);
 
+  const promoProducts = useMemo(() => {
+    return products.filter(p => p.isWeeklyPromo);
+  }, [products]);
 
-  const filteredStations = useMemo(() => {
-    let filtered = [...transformedStations];
+  const categories = useMemo(() => getCategories(products), [products]);
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (station) =>
-          station.name?.toLowerCase().includes(query) ||
-          station.address?.toLowerCase().includes(query) ||
-          station.serial_number?.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [transformedStations, searchQuery]);
-
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      // Search is handled by useMemo, this is just for potential future API search
-    }, 300);
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery]);
-
-  useEffect(() => {
-    getStationLists();
-
-    return () => {
-      // Cleanup: abort ongoing requests
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
+  const handleShowStationModal = useCallback((product = null) => {
+    setStationFilterProduct(product);
+    setShowStationModal(true);
   }, []);
 
-  const renderStationCard = useCallback(({ item: station }) => (
-    <TouchableOpacity
-      style={styles.stationCard}
-      activeOpacity={0.7}
-      onPress={() => {
-        navigation.navigate("SpecificStationScreen", { station });
-      }}
-    >
-      <Image source={station.image} style={styles.stationImage} />
+  const handleStationModalClose = useCallback(() => {
+    setShowStationModal(false);
+    setStationFilterProduct(null);
+  }, []);
 
-      <View style={styles.stationContent}>
-        <View style={styles.stationHeader}>
-          <View style={styles.stationTitleContainer}>
-            <Text style={styles.stationName} numberOfLines={1}>
-              {station.name}
-            </Text>
-            <View style={styles.statusBadge}>
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: station.isOpen ? "#4CAF50" : "#999" },
-                ]}
-              />
-              <Text style={styles.statusText}>
-                {station.isOpen ? "Open" : "Closed"}
-              </Text>
-            </View>
-          </View>
-        </View>
+  const handleProductPress = useCallback((product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  }, []);
 
-        <View style={styles.stationDetails}>
-          <View style={styles.detailRow}>
-            <Ionicons
-              name="location"
-              size={getResponsiveValue(14, 16, 18, 20)}
-              color="#666"
-            />
-            <Text style={styles.stationAddress} numberOfLines={1}>
-              {station.address}
-            </Text>
-          </View>
+  const clearFilters = useCallback(() => {
+    setFilters({
+      priceRange: "all",
+      stockStatus: "all",
+      promoOnly: false,
+    });
+  }, []);
 
-          <View style={styles.stationMeta}>
-            <View style={styles.metaItem}>
-              <Ionicons
-                name="navigate"
-                size={getResponsiveValue(14, 16, 18, 20)}
-                color="#FF0000"
-              />
-              <Text style={styles.metaText}>{station.distance}</Text>
-            </View>
+  const handleClearStation = useCallback(async () => {
+    try {
+      // Clear the cached station from AsyncStorage
+      await AsyncStorage.removeItem("stationSelected");
 
-            <View style={styles.metaItem}>
-              <Ionicons
-                name="star"
-                size={getResponsiveValue(14, 16, 18, 20)}
-                color="#f39c12"
-              />
-              <Text style={styles.metaText}>{station.rating}</Text>
-            </View>
+      // Clear the local state
+      setSelectedStation(null);
+      // setProducts([]);
+      setLoading(false);
+      getAllProducts();
 
-            <View style={styles.metaItem}>
-              <Image
-                source={require("../../../assets/my.png")}
-                style={styles.miniIcon}
-              />
-              <Text style={styles.rewardsText}>{station.rewards} rewards</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.arrowContainer}>
-        <Ionicons
-          name="chevron-forward"
-          size={getResponsiveValue(20, 24, 28, 32)}
-          color="#999"
-        />
-      </View>
-    </TouchableOpacity>
-  ), [navigation]);
-
-  const keyExtractor = useCallback((item) => item.id?.toString(), []);
-
-  const onRefresh = useCallback(() => {
-    getStationLists(true);
-  }, [getStationLists]);
-
-  const ListHeaderComponent = useMemo(() => (
-    <>
-      {/* Header Section */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Redemption Shop</Text>
-        <Text style={styles.subtitle}>
-          Select a gas station to view and redeem available rewards
-        </Text>
-      </View>
-
-      {/* Points Display */}
-      <View style={styles.pointsBoxContainer}>
-        <View style={styles.pointsBox}>
-          <Text style={styles.pointsLabel}>Available Points</Text>
-          <View style={styles.pointsRow}>
-            <Image
-              source={require("../../../assets/my.png")}
-              style={styles.mygasIcon}
-            />
-            <Text style={styles.pointsValue}>{rewards?.points || 0}</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.cartButton}
-          activeOpacity={0.7}
-          onPress={() => {
-            navigation.navigate("CartScreens");
-          }}
-        >
-          <Ionicons
-            name="cart"
-            size={getResponsiveValue(22, 24, 26, 28)}
-            color="#FF0000"
-          />
-          <Text style={styles.cartButtonText}>My Cart</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.toReceiveButton}
-          activeOpacity={0.7}
-          onPress={() => {
-            navigation.navigate("RedemptionTransactionScreens");
-          }}
-        >
-          <Ionicons
-            name="gift"
-            size={getResponsiveValue(22, 24, 26, 28)}
-            color="#4CAF50"
-          />
-          <Text style={styles.toReceiveButtonText}>My Redeems</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={getResponsiveValue(18, 20, 22, 24)}
-          color="#999"
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search gas stations..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#999"
-        />
-      </View>
-    </>
-  ), [searchQuery, rewards?.points]);
-
-  const ListEmptyComponent = useMemo(() => {
-    if (loading) {
-      return (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color="#FF0000" />
-          <Text style={styles.emptyStateText}>Loading stations...</Text>
-        </View>
-      );
+      console.log("Station cleared successfully");
+    } catch (error) {
+      console.error("Error clearing station:", error);
     }
+  }, []);
 
-    return (
-      <View style={styles.emptyState}>
-        <Ionicons
-          name="location-outline"
-          size={getResponsiveValue(48, 64, 80, 96)}
-          color="#ccc"
-        />
-        <Text style={styles.emptyStateText}>No stations found</Text>
-        <Text style={styles.emptyStateSubtext}>
-          Try adjusting your search
-        </Text>
-      </View>
-    );
-  }, [loading]);
+  const hasActiveFilters = useMemo(() => {
+    return filters.priceRange !== "all" ||
+      filters.stockStatus !== "all" ||
+      filters.promoOnly;
+  }, [filters]);
+
+  const handleStationConfirm = useCallback(async (data) => {
+    await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
+    setSelectedStation(data.station);
+    getAllProducts(data.station);
+  }, []);
+
+  const renderProductItem = useCallback(({ item }) => (
+    <ProductCard
+      product={item}
+      userPoints={userPoints}
+      onProductPress={handleProductPress}
+      cardWidth={cardWidth}
+    />
+  ), [userPoints, handleProductPress, cardWidth]);
+
+  const keyExtractor = useCallback((item) => item.id.toString(), []);
+
+  // Load cached station on mount
+  useEffect(() => {
+    const loadCachedStation = async () => {
+      try {
+        const cachedStationSelected = await AsyncStorage.getItem("stationSelected");
+        if (cachedStationSelected) {
+          const stationSelected = JSON.parse(cachedStationSelected);
+          setSelectedStation(stationSelected);
+          getAllProducts(stationSelected);
+        } else {
+          // No cached station, just stop loading
+          getAllProducts();
+          setLoading(false);
+        }
+        await refreshCartCount();
+      } catch (error) {
+        console.error("Error loading cached station:", error);
+        setLoading(false);
+      }
+    };
+
+    loadCachedStation();
+  }, []);
+  // console.log(cartCount);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
+    <View style={styles.container}>
+      {/* Enhanced Header */}
       <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        style={styles.header}
       >
+
         <LinearGradient
-          colors={["rgb(249, 250, 141)", "transparent"]}
+          colors={["rgba(249, 250, 141, 0.95)", "rgba(249, 250, 141, 0.7)", "transparent"]}
           start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1.4 }}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={styles.headerGradient}
         />
+
         <Image
           source={require("../../../assets/mygas_logo.png")}
           style={styles.logo}
         />
-        <Navbar
-          hideBack
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
+        <View style={{ position: "absolute", right: 0, top: 0 }}>
+          <Navbar hideBack />
+        </View>
       </ImageBackground>
 
-      <View style={styles.cardContainer}>
-        <FlatList
-          data={filteredStations}
-          renderItem={renderStationCard}
-          keyExtractor={keyExtractor}
-          ListHeaderComponent={ListHeaderComponent}
-          ListEmptyComponent={ListEmptyComponent}
-          contentContainerStyle={styles.flatListContent}
-          showsVerticalScrollIndicator={false}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-          removeClippedSubviews={Platform.OS === 'android'}
-          maxToRenderPerBatch={10}
-          updateCellsBatchingPeriod={50}
-          initialNumToRender={10}
-          windowSize={10}
-          getItemLayout={(data, index) => ({
-            length: getResponsiveValue(94, 108, 122, 136),
-            offset: getResponsiveValue(94, 108, 122, 136) * index,
-            index,
-          })}
-        />
-      </View>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.contentContainer}>
+          {/* Enhanced Points Display */}
+          <View style={styles.pointsCardContainer}>
+            <View style={styles.pointsCard}>
+              <LinearGradient
+                colors={["#FEF3C7", "#FDE68A"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.pointsGradient}
+              >
+                <View style={styles.pointsContent}>
+                  <View>
+                    <Text style={styles.pointsTitle}>Available Points</Text>
+                    <View style={styles.pointsValueContainer}>
+                      <Image
+                        source={require("../../../assets/my.png")}
+                        style={styles.pointsIcon}
+                      />
+                      <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.pointsIconContainer}>
+                    <Ionicons name="wallet" size={32} color="#F59E0B" />
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+
+            <TouchableOpacity
+              style={styles.myRedemptionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+            >
+              <LinearGradient
+                colors={["#EF4444", "#DC2626"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.myRedemptionGradient}
+              >
+                <Ionicons name="gift" size={24} color="#fff" />
+                <Text style={styles.myRedemptionText}>My Redemption</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Station Selection Section */}
+          <TouchableOpacity
+            style={styles.stationSelectionCard}
+            onPress={() => setShowStationModal(true)}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={selectedStation ? ["#FEE2E2", "#FEF2F2"] : ["#F3F4F6", "#F9FAFB"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.stationSelectionGradient}
+            >
+              <View style={styles.stationSelectionContent}>
+                <View style={[
+                  styles.stationIconContainer,
+                  selectedStation && styles.stationIconContainerActive
+                ]}>
+                  <Ionicons
+                    name="location"
+                    size={24}
+                    color={selectedStation ? "#EF4444" : "#9CA3AF"}
+                  />
+                </View>
+                <View style={styles.stationTextContainer}>
+                  <Text style={styles.stationLabel}>Redemption Station</Text>
+                  {selectedStation ? (
+                    <View style={styles.selectedStationInfo}>
+                      <Text style={styles.selectedStationName} numberOfLines={1}>
+                        {selectedStation.station_name}
+                      </Text>
+                      <View style={styles.selectedStationBadge}>
+                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                        <Text style={styles.selectedStationBadgeText}>Selected</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={styles.stationPlaceholder}>
+                      Tap to select your preferred station
+                    </Text>
+                  )}
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={selectedStation ? "#EF4444" : "#9CA3AF"}
+                />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Products Section */}
+          <View style={styles.productsSection}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>All Rewards</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Browse and redeem exciting rewards
+                </Text>
+              </View>
+              <View style={styles.productCountBadge}>
+                <Text style={styles.productCountText}>
+                  {filteredProducts.length} items
+                </Text>
+              </View>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInputWrapper}>
+                <Ionicons name="search" size={20} color="#9CA3AF" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search rewards..."
+                  placeholderTextColor="#9CA3AF"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery !== "" && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                    <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+                onPress={() => setShowFilters(true)}
+              >
+                <Ionicons
+                  name="options"
+                  size={20}
+                  color={hasActiveFilters ? "#fff" : "#374151"}
+                />
+                {hasActiveFilters && (
+                  <View style={styles.filterDot} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <View style={styles.activeFiltersContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.activeFiltersScroll}
+                >
+                  {filters.priceRange !== "all" && (
+                    <View style={styles.activeFilterChip}>
+                      <Text style={styles.activeFilterText}>
+                        {filters.priceRange === "under1000" && "Under 1,000 pts"}
+                        {filters.priceRange === "1000to2500" && "1,000-2,500 pts"}
+                        {filters.priceRange === "over2500" && "Over 2,500 pts"}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setFilters({ ...filters, priceRange: "all" })}
+                      >
+                        <Ionicons name="close" size={14} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {filters.stockStatus !== "all" && (
+                    <View style={styles.activeFilterChip}>
+                      <Text style={styles.activeFilterText}>
+                        {filters.stockStatus === "inStock" && "In Stock"}
+                        {filters.stockStatus === "lowStock" && "Low Stock"}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setFilters({ ...filters, stockStatus: "all" })}
+                      >
+                        <Ionicons name="close" size={14} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {filters.promoOnly && (
+                    <View style={styles.activeFilterChip}>
+                      <Text style={styles.activeFilterText}>Promo Items</Text>
+                      <TouchableOpacity
+                        onPress={() => setFilters({ ...filters, promoOnly: false })}
+                      >
+                        <Ionicons name="close" size={14} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.clearFiltersButton}
+                    onPress={clearFilters}
+                  >
+                    <Text style={styles.clearFiltersText}>Clear All</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Enhanced Category Tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScroll}
+              contentContainerStyle={styles.categoriesContainer}
+            >
+              {categories.map((category) => {
+                const categoryCount = products.filter(p =>
+                  category === "All" || p.category === category
+                ).length;
+
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryChip,
+                      selectedCategory === category && styles.categoryChipActive,
+                    ]}
+                    onPress={() => setSelectedCategory(category)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        selectedCategory === category && styles.categoryChipTextActive,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                    <View style={[
+                      styles.categoryCountBadge,
+                      selectedCategory === category && styles.categoryCountBadgeActive
+                    ]}>
+                      <Text style={[
+                        styles.categoryCountText,
+                        selectedCategory === category && styles.categoryCountTextActive
+                      ]}>
+                        {categoryCount}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Products Grid */}
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#EF4444" />
+                <Text style={styles.loadingText}>Loading products...</Text>
+              </View>
+            ) : filteredProducts.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconContainer}>
+                  <Ionicons name="gift-outline" size={64} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyTitle}>No Rewards Available</Text>
+                <Text style={styles.emptySubtitle}>
+                  Check back soon for exciting new rewards!
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredProducts}
+                renderItem={renderProductItem}
+                keyExtractor={keyExtractor}
+                numColumns={getColumnCount()}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.productRow}
+                contentContainerStyle={styles.productsGrid}
+              />
+            )}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilters}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Rewards</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {/* Price Range Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Price Range</Text>
+                <View style={styles.filterOptions}>
+                  {[
+                    { value: "all", label: "All Prices" },
+                    { value: "under1000", label: "Under 1,000 pts" },
+                    { value: "1000to2500", label: "1,000 - 2,500 pts" },
+                    { value: "over2500", label: "Over 2,500 pts" },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.filterOption,
+                        filters.priceRange === option.value && styles.filterOptionActive,
+                      ]}
+                      onPress={() => setFilters({ ...filters, priceRange: option.value })}
+                    >
+                      <View style={[
+                        styles.radioButton,
+                        filters.priceRange === option.value && styles.radioButtonActive,
+                      ]}>
+                        {filters.priceRange === option.value && (
+                          <View style={styles.radioButtonInner} />
+                        )}
+                      </View>
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.priceRange === option.value && styles.filterOptionTextActive,
+                      ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Stock Status Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Stock Status</Text>
+                <View style={styles.filterOptions}>
+                  {[
+                    { value: "all", label: "All Items" },
+                    { value: "inStock", label: "In Stock" },
+                    { value: "lowStock", label: "Low Stock" },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.filterOption,
+                        filters.stockStatus === option.value && styles.filterOptionActive,
+                      ]}
+                      onPress={() => setFilters({ ...filters, stockStatus: option.value })}
+                    >
+                      <View style={[
+                        styles.radioButton,
+                        filters.stockStatus === option.value && styles.radioButtonActive,
+                      ]}>
+                        {filters.stockStatus === option.value && (
+                          <View style={styles.radioButtonInner} />
+                        )}
+                      </View>
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.stockStatus === option.value && styles.filterOptionTextActive,
+                      ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Promo Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Special Offers</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleOption,
+                    filters.promoOnly && styles.toggleOptionActive,
+                  ]}
+                  onPress={() => setFilters({ ...filters, promoOnly: !filters.promoOnly })}
+                >
+                  <View style={styles.toggleContent}>
+                    <Ionicons
+                      name="flash"
+                      size={20}
+                      color={filters.promoOnly ? "#8B5CF6" : "#9CA3AF"}
+                    />
+                    <Text style={[
+                      styles.toggleText,
+                      filters.promoOnly && styles.toggleTextActive,
+                    ]}>
+                      Show Promo Items Only
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.checkbox,
+                    filters.promoOnly && styles.checkboxActive,
+                  ]}>
+                    {filters.promoOnly && (
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={clearFilters}
+              >
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={() => setShowFilters(false)}
+              >
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <CartComponent cartCount={cartCount} />
+
+      <SpecificProduct
+        visible={showProductModal}
+        product={selectedProduct}
+        onClose={() => {
+          setShowProductModal(false);
+          setSelectedProduct(null);
+        }}
+        onCartUpdated={incrementCartCount}
+        userPoints={userPoints}
+        selectedStation={selectedStation}
+        onShowStationModal={handleShowStationModal}
+      />
+
+      <SpecificStation
+        visible={showStationModal}
+        onClose={handleStationModalClose}
+        onConfirm={handleStationConfirm}
+        onClear={handleClearStation}
+        productId={stationFilterProduct?.id || ""}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  top_bar: {
-    height: getResponsiveValue(130, 150, 180, 200),
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+  header: {
+    height: getResponsiveValue(140, 160, 190, 210),
     width: "100%",
-    position: "relative",
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   logo: {
     position: "absolute",
     top: "50%",
     left: "50%",
     transform: [
-      { translateX: getResponsiveValue(-30, -40, -50, -60) },
-      { translateY: getResponsiveValue(-30, -40, -50, -60) }
+      { translateX: getResponsiveValue(-35, -45, -55, -65) },
+      { translateY: getResponsiveValue(-35, -45, -55, -65) }
     ],
-    width: getResponsiveValue(55, 65, 80, 100),
-    height: getResponsiveValue(55, 65, 80, 100),
+    width: getResponsiveValue(65, 75, 90, 110),
+    height: getResponsiveValue(65, 75, 90, 110),
     resizeMode: "contain",
     zIndex: 2,
   },
-  cardContainer: {
+  scrollContainer: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
-    borderTopLeftRadius: getResponsiveValue(16, 20, 24, 28),
-    borderTopRightRadius: getResponsiveValue(16, 20, 24, 28),
-    marginTop: -20,
+    marginTop: -25,
   },
-  flatListContent: {
-    paddingHorizontal: getResponsiveValue(12, 16, 24, 32),
-    paddingTop: getResponsiveValue(16, 20, 24, 28),
-    paddingBottom: getResponsiveValue(80, 100, 120, 140),
+  scrollContent: {
     flexGrow: 1,
+    paddingBottom: getResponsiveValue(40, 50, 60, 70),
   },
-  headerContainer: {
-    alignItems: "center",
-    width: "100%",
-    marginBottom: getResponsiveValue(16, 20, 24, 28),
+  contentContainer: {
+    backgroundColor: "#F9FAFB",
+    borderTopLeftRadius: getResponsiveValue(24, 28, 32, 36),
+    borderTopRightRadius: getResponsiveValue(24, 28, 32, 36),
+    paddingHorizontal: getResponsiveValue(16, 20, 28, 36),
+    paddingTop: getResponsiveValue(24, 28, 32, 36),
   },
-  title: {
-    fontSize: getResponsiveValue(24, 28, 32, 36),
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: getResponsiveValue(6, 8, 10, 12),
-  },
-  subtitle: {
-    fontSize: getResponsiveValue(12, 13, 14, 16),
-    textAlign: "center",
-    color: "#777",
-    paddingHorizontal: getResponsiveValue(16, 20, 24, 32),
-    lineHeight: getResponsiveValue(18, 20, 22, 24),
-  },
-  pointsBoxContainer: {
+  pointsCardContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: getResponsiveValue(10, 12, 14, 16),
-    marginBottom: getResponsiveValue(16, 20, 24, 28),
+    gap: getResponsiveValue(12, 14, 16, 18),
+    marginBottom: getResponsiveValue(16, 18, 20, 22),
+    alignItems: "stretch",
   },
-  pointsBox: {
+  pointsCard: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: getResponsiveValue(10, 12, 14, 16),
-    padding: getResponsiveValue(14, 16, 20, 24),
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderRadius: getResponsiveValue(16, 20, 24, 28),
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  cartButton: {
-    backgroundColor: "#fff",
-    borderRadius: getResponsiveValue(10, 12, 14, 16),
-    padding: getResponsiveValue(17, 22, 24, 28),
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  myRedemptionButton: {
+    borderRadius: getResponsiveValue(16, 20, 24, 28),
+    overflow: "hidden",
+    width: getResponsiveValue(110, 120, 130, 140),
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  myRedemptionGradient: {
+    flex: 1,
+    paddingVertical: getResponsiveValue(16, 18, 20, 22),
+    paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
     alignItems: "center",
     justifyContent: "center",
-    minWidth: getResponsiveValue(80, 75, 85, 95),
+    gap: getResponsiveValue(6, 8, 10, 12),
   },
-  cartButtonText: {
-    fontSize: getResponsiveValue(10, 11, 12, 13),
-    color: "#FF0000",
-    fontWeight: "600",
-    marginTop: getResponsiveValue(4, 5, 6, 7),
-  },
-  toReceiveButton: {
-    backgroundColor: "#fff",
-    borderRadius: getResponsiveValue(10, 12, 14, 16),
-    padding: getResponsiveValue(17, 22, 24, 28),
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: getResponsiveValue(65, 75, 85, 95),
-  },
-  toReceiveButtonText: {
-    fontSize: getResponsiveValue(10, 11, 12, 13),
-    color: "#4CAF50",
-    fontWeight: "600",
-    marginTop: getResponsiveValue(4, 5, 6, 7),
-  },
-  pointsLabel: {
+  myRedemptionText: {
     fontSize: getResponsiveValue(11, 12, 13, 14),
-    color: "#666",
-    marginBottom: getResponsiveValue(4, 6, 8, 10),
-    fontWeight: "500",
+    color: "#fff",
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: getResponsiveValue(14, 16, 18, 20),
   },
-  pointsRow: {
+  pointsGradient: {
+    padding: getResponsiveValue(20, 24, 28, 32),
+  },
+  pointsContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: getResponsiveValue(12, 14, 16, 18),
+  },
+  pointsTitle: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: "#92400E",
+    fontWeight: "600",
+    marginBottom: getResponsiveValue(8, 10, 12, 14),
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  pointsValueContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: getResponsiveValue(8, 10, 12, 14),
   },
-  mygasIcon: {
-    height: getResponsiveValue(20, 24, 28, 32),
-    width: getResponsiveValue(20, 24, 28, 32),
+  pointsIcon: {
+    width: getResponsiveValue(20, 32, 36, 40),
+    height: getResponsiveValue(20, 32, 36, 40),
     resizeMode: "contain",
-    marginRight: getResponsiveValue(6, 8, 10, 12),
   },
   pointsValue: {
-    color: "#f39c12",
-    fontWeight: "bold",
-    fontSize: getResponsiveValue(20, 24, 28, 32),
+    fontSize: getResponsiveValue(18, 32, 36, 40),
+    fontWeight: "800",
+    color: "#92400E",
+    letterSpacing: -1,
+  },
+  pointsIconContainer: {
+    width: getResponsiveValue(25, 64, 72, 80),
+    height: getResponsiveValue(25, 64, 72, 80),
+    borderRadius: getResponsiveValue(28, 32, 36, 40),
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stationSelectionCard: {
+    borderRadius: getResponsiveValue(16, 20, 24, 28),
+    marginBottom: getResponsiveValue(20, 24, 28, 32),
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  stationSelectionGradient: {
+    padding: getResponsiveValue(18, 20, 22, 24),
+  },
+  stationSelectionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getResponsiveValue(14, 16, 18, 20),
+  },
+  stationIconContainer: {
+    width: getResponsiveValue(48, 52, 56, 60),
+    height: getResponsiveValue(48, 52, 56, 60),
+    borderRadius: getResponsiveValue(24, 26, 28, 30),
+    backgroundColor: "#E5E7EB",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stationIconContainerActive: {
+    backgroundColor: "#FEE2E2",
+  },
+  stationTextContainer: {
+    flex: 1,
+  },
+  stationLabel: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#6B7280",
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  selectedStationInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  selectedStationName: {
+    fontSize: getResponsiveValue(15, 16, 17, 18),
+    fontWeight: "700",
+    color: "#111827",
+    flex: 1,
+  },
+  selectedStationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: getResponsiveValue(8, 9, 10, 11),
+    paddingVertical: getResponsiveValue(3, 4, 5, 6),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+  },
+  selectedStationBadgeText: {
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    color: "#059669",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  stationPlaceholder: {
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    color: "#9CA3AF",
+    fontWeight: "500",
+    fontStyle: "italic",
+  },
+  productsSection: {
+    marginBottom: getResponsiveValue(80, 24, 28, 32),
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: getResponsiveValue(20, 24, 28, 32),
+  },
+  sectionTitle: {
+    fontSize: getResponsiveValue(22, 24, 26, 28),
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  sectionSubtitle: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: "#6B7280",
+    lineHeight: getResponsiveValue(18, 20, 22, 24),
+  },
+  productCountBadge: {
+    backgroundColor: "#FEE2E2",
+    paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
+    paddingVertical: getResponsiveValue(6, 8, 10, 12),
+    borderRadius: getResponsiveValue(8, 10, 12, 14),
+  },
+  productCountText: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#DC2626",
+    fontWeight: "600",
   },
   searchContainer: {
     flexDirection: "row",
+    gap: getResponsiveValue(10, 12, 14, 16),
+    marginBottom: getResponsiveValue(16, 20, 24, 28),
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: getResponsiveValue(10, 12, 14, 16),
-    paddingHorizontal: getResponsiveValue(12, 16, 20, 24),
-    paddingVertical: getResponsiveValue(10, 12, 14, 16),
-    marginBottom: getResponsiveValue(12, 16, 20, 24),
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  searchIcon: {
-    marginRight: getResponsiveValue(6, 8, 10, 12),
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    paddingHorizontal: getResponsiveValue(14, 16, 18, 20),
+    paddingVertical: getResponsiveValue(12, 14, 16, 18),
+    gap: getResponsiveValue(10, 12, 14, 16),
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   searchInput: {
     flex: 1,
-    fontSize: getResponsiveValue(13, 15, 16, 18),
-    color: "#333",
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    color: "#111827",
+    padding: 0,
   },
-  stationCard: {
+  filterButton: {
+    width: getResponsiveValue(48, 52, 56, 60),
+    height: getResponsiveValue(48, 52, 56, 60),
     backgroundColor: "#fff",
-    borderRadius: getResponsiveValue(12, 16, 18, 20),
-    marginBottom: getResponsiveValue(12, 16, 20, 24),
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    overflow: "hidden",
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  filterButtonActive: {
+    backgroundColor: "#EF4444",
+    borderColor: "#EF4444",
+  },
+  filterDot: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FBBF24",
+  },
+  activeFiltersContainer: {
+    marginBottom: getResponsiveValue(16, 20, 24, 28),
+  },
+  activeFiltersScroll: {
+    gap: getResponsiveValue(8, 10, 12, 14),
+    paddingRight: getResponsiveValue(16, 20, 24, 28),
+  },
+  activeFilterChip: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
+    paddingVertical: getResponsiveValue(8, 10, 12, 14),
+    borderRadius: getResponsiveValue(8, 10, 12, 14),
+    gap: 8,
   },
-  stationImage: {
-    width: getResponsiveValue(70, 80, 90, 100),
-    height: getResponsiveValue(70, 80, 90, 100),
-    resizeMode: "cover",
-    backgroundColor: "#f9f9f9",
-  },
-  stationContent: {
-    flex: 1,
-    padding: getResponsiveValue(10, 12, 14, 16),
-  },
-  stationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: getResponsiveValue(6, 8, 10, 12),
-  },
-  stationTitleContainer: {
-    flex: 1,
-  },
-  stationName: {
-    fontSize: getResponsiveValue(14, 16, 18, 20),
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: getResponsiveValue(4, 5, 6, 7),
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statusDot: {
-    width: getResponsiveValue(6, 7, 8, 9),
-    height: getResponsiveValue(6, 7, 8, 9),
-    borderRadius: getResponsiveValue(3, 3.5, 4, 4.5),
-    marginRight: getResponsiveValue(4, 5, 6, 7),
-  },
-  statusText: {
-    fontSize: getResponsiveValue(10, 11, 12, 13),
-    color: "#666",
-    fontWeight: "500",
-  },
-  stationDetails: {
-    gap: getResponsiveValue(6, 8, 10, 12),
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: getResponsiveValue(4, 5, 6, 7),
-  },
-  stationAddress: {
-    fontSize: getResponsiveValue(11, 12, 13, 14),
-    color: "#666",
-    flex: 1,
-  },
-  stationMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: getResponsiveValue(10, 12, 14, 16),
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: getResponsiveValue(3, 4, 5, 6),
-  },
-  metaText: {
-    fontSize: getResponsiveValue(11, 12, 13, 14),
-    color: "#666",
-    fontWeight: "500",
-  },
-  miniIcon: {
-    width: getResponsiveValue(14, 16, 18, 20),
-    height: getResponsiveValue(14, 16, 18, 20),
-    resizeMode: "contain",
-  },
-  rewardsText: {
-    fontSize: getResponsiveValue(11, 12, 13, 14),
-    color: "#f39c12",
+  activeFilterText: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#374151",
     fontWeight: "600",
   },
-  arrowContainer: {
-    paddingHorizontal: getResponsiveValue(10, 12, 14, 16),
+  clearFiltersButton: {
+    paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
+    paddingVertical: getResponsiveValue(8, 10, 12, 14),
+    borderRadius: getResponsiveValue(8, 10, 12, 14),
+    backgroundColor: "#FEE2E2",
+  },
+  clearFiltersText: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#DC2626",
+    fontWeight: "600",
+  },
+  categoriesScroll: {
+    marginBottom: getResponsiveValue(20, 24, 28, 32),
+  },
+  categoriesContainer: {
+    paddingRight: getResponsiveValue(16, 20, 24, 28),
+    gap: getResponsiveValue(10, 12, 14, 16),
+  },
+  categoryChip: {
+    paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
+    paddingVertical: getResponsiveValue(10, 12, 14, 16),
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    backgroundColor: "#fff",
+    marginRight: getResponsiveValue(10, 12, 14, 16),
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: "#EF4444",
+    borderColor: "#EF4444",
+  },
+  categoryChipText: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  categoryChipTextActive: {
+    color: "#fff",
+  },
+  categoryCountBadge: {
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
+    paddingVertical: getResponsiveValue(2, 3, 4, 5),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    minWidth: getResponsiveValue(20, 22, 24, 26),
+    alignItems: "center",
+  },
+  categoryCountBadgeActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+  },
+  categoryCountText: {
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    color: "#6B7280",
+    fontWeight: "700",
+  },
+  categoryCountTextActive: {
+    color: "#fff",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: getResponsiveValue(60, 70, 80, 90),
+    gap: getResponsiveValue(16, 18, 20, 22),
+  },
+  loadingText: {
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    color: "#6B7280",
+    fontWeight: "600",
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: getResponsiveValue(40, 60, 80, 100),
+    paddingVertical: getResponsiveValue(60, 70, 80, 90),
   },
-  emptyStateText: {
-    fontSize: getResponsiveValue(16, 18, 20, 22),
-    color: "#999",
-    marginTop: getResponsiveValue(12, 16, 20, 24),
+  emptyIconContainer: {
+    width: getResponsiveValue(100, 110, 120, 130),
+    height: getResponsiveValue(100, 110, 120, 130),
+    borderRadius: getResponsiveValue(50, 55, 60, 65),
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: getResponsiveValue(20, 24, 28, 32),
+  },
+  emptyTitle: {
+    fontSize: getResponsiveValue(18, 20, 22, 24),
+    fontWeight: "700",
+    color: "#374151",
+    marginBottom: getResponsiveValue(8, 10, 12, 14),
+  },
+  emptySubtitle: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  productsGrid: {
+    paddingBottom: getResponsiveValue(20, 24, 28, 32),
+  },
+  productRow: {
+    justifyContent: "space-between",
+    marginBottom: getResponsiveValue(16, 20, 24, 28),
+  },
+  productCard: {
+    backgroundColor: "#fff",
+    borderRadius: getResponsiveValue(16, 18, 20, 22),
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  productCardDisabled: {
+    opacity: 0.6,
+  },
+
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    height: getResponsiveValue(120, 140, 160, 180),
+  },
+  productImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    backgroundColor: "#F9FAFB",
+  },
+  imageGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+  },
+  stockBadge: {
+    position: "absolute",
+    top: getResponsiveValue(8, 10, 12, 14),
+    right: getResponsiveValue(8, 10, 12, 14),
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
+    paddingVertical: getResponsiveValue(4, 5, 6, 7),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    gap: 4,
+  },
+  lowStockBadge: {
+    backgroundColor: "#F97316",
+  },
+  outOfStockBadge: {
+    backgroundColor: "#6B7280",
+  },
+  stockBadgeText: {
+    color: "#fff",
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  promoBadge: {
+    position: "absolute",
+    top: getResponsiveValue(8, 10, 12, 14),
+    left: getResponsiveValue(8, 10, 12, 14),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#8B5CF6",
+    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
+    paddingVertical: getResponsiveValue(4, 5, 6, 7),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    gap: 3,
+  },
+  promoBadgeText: {
+    color: "#fff",
+    fontSize: getResponsiveValue(9, 10, 11, 12),
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  productContent: {
+    padding: getResponsiveValue(12, 14, 16, 18),
+  },
+  productName: {
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: getResponsiveValue(6, 7, 8, 9),
+    minHeight: getResponsiveValue(36, 40, 44, 48),
+    lineHeight: getResponsiveValue(18, 20, 22, 24),
+  },
+  productDescription: {
+    fontSize: getResponsiveValue(11, 12, 13, 14),
+    color: "#6B7280",
+    marginBottom: getResponsiveValue(8, 10, 12, 14),
+    minHeight: getResponsiveValue(32, 36, 40, 44),
+    lineHeight: getResponsiveValue(16, 18, 20, 22),
+  },
+  promoDateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F3FF",
+    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
+    paddingVertical: getResponsiveValue(4, 5, 6, 7),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    marginBottom: getResponsiveValue(8, 10, 12, 14),
+    gap: 4,
+    alignSelf: "flex-start",
+  },
+  promoDateText: {
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    color: "#8B5CF6",
     fontWeight: "600",
   },
-  emptyStateSubtext: {
-    fontSize: getResponsiveValue(12, 14, 15, 16),
-    color: "#bbb",
-    marginTop: getResponsiveValue(6, 8, 10, 12),
+  promoDescriptionContainer: {
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
+    paddingVertical: getResponsiveValue(6, 7, 8, 9),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    marginBottom: getResponsiveValue(8, 10, 12, 14),
+    borderLeftWidth: 3,
+    borderLeftColor: "#F59E0B",
+  },
+  promoDescriptionText: {
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    color: "#92400E",
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
+  productFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: getResponsiveValue(12, 14, 16, 18),
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+    gap: getResponsiveValue(12, 14, 16, 18),
+  },
+  pointsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getResponsiveValue(4, 5, 6, 7),
+    flex: 1,
+    flexWrap: "wrap",
+  },
+  miniIcon: {
+    width: getResponsiveValue(18, 20, 22, 24),
+    height: getResponsiveValue(18, 20, 22, 24),
+    resizeMode: "contain",
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getResponsiveValue(6, 7, 8, 9),
+  },
+  originalPoints: {
+    fontSize: getResponsiveValue(13, 15, 17, 19),
+    fontWeight: "600",
+    color: "#9CA3AF",
+    textDecorationLine: "line-through",
+    textDecorationStyle: "solid",
+  },
+  productPoints: {
+    fontSize: getResponsiveValue(17, 19, 21, 23),
+    fontWeight: "800",
+    color: "#F59E0B",
+  },
+  pointsLabel: {
+    fontSize: getResponsiveValue(11, 12, 13, 14),
+    color: "#9CA3AF",
+    fontWeight: "600",
+  },
+  discountBadge: {
+    backgroundColor: "#DC2626",
+    paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
+    paddingVertical: getResponsiveValue(2, 3, 4, 5),
+    borderRadius: getResponsiveValue(4, 5, 6, 7),
+    marginLeft: getResponsiveValue(4, 5, 6, 7),
+  },
+  discountText: {
+    color: "#fff",
+    fontSize: getResponsiveValue(9, 10, 11, 12),
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: getResponsiveValue(24, 28, 32, 36),
+    borderTopRightRadius: getResponsiveValue(24, 28, 32, 36),
+    maxHeight: "80%",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
+    paddingVertical: getResponsiveValue(20, 24, 28, 32),
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: getResponsiveValue(20, 22, 24, 26),
+    fontWeight: "700",
+    color: "#111827",
+  },
+  modalBody: {
+    paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
+    paddingTop: getResponsiveValue(20, 24, 28, 32),
+  },
+  filterSection: {
+    marginBottom: getResponsiveValue(28, 32, 36, 40),
+  },
+  filterSectionTitle: {
+    fontSize: getResponsiveValue(16, 17, 18, 19),
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: getResponsiveValue(14, 16, 18, 20),
+  },
+  filterOptions: {
+    gap: getResponsiveValue(10, 12, 14, 16),
+  },
+  filterOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: getResponsiveValue(14, 16, 18, 20),
+    backgroundColor: "#F9FAFB",
+    borderRadius: getResponsiveValue(10, 12, 14, 16),
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    gap: getResponsiveValue(12, 14, 16, 18),
+  },
+  filterOptionActive: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#EF4444",
+  },
+  radioButton: {
+    width: getResponsiveValue(20, 22, 24, 26),
+    height: getResponsiveValue(20, 22, 24, 26),
+    borderRadius: getResponsiveValue(10, 11, 12, 13),
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  radioButtonActive: {
+    borderColor: "#EF4444",
+  },
+  radioButtonInner: {
+    width: getResponsiveValue(10, 11, 12, 13),
+    height: getResponsiveValue(10, 11, 12, 13),
+    borderRadius: getResponsiveValue(5, 5.5, 6, 6.5),
+    backgroundColor: "#EF4444",
+  },
+  filterOptionText: {
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  filterOptionTextActive: {
+    color: "#111827",
+  },
+  toggleOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: getResponsiveValue(14, 16, 18, 20),
+    backgroundColor: "#F9FAFB",
+    borderRadius: getResponsiveValue(10, 12, 14, 16),
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+  },
+  toggleOptionActive: {
+    backgroundColor: "#F5F3FF",
+    borderColor: "#8B5CF6",
+  },
+  toggleContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getResponsiveValue(12, 14, 16, 18),
+  },
+  toggleText: {
+    fontSize: getResponsiveValue(14, 15, 16, 17),
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  toggleTextActive: {
+    color: "#111827",
+  },
+  checkbox: {
+    width: getResponsiveValue(24, 26, 28, 30),
+    height: getResponsiveValue(24, 26, 28, 30),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxActive: {
+    backgroundColor: "#8B5CF6",
+    borderColor: "#8B5CF6",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    gap: getResponsiveValue(12, 14, 16, 18),
+    paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
+    paddingVertical: getResponsiveValue(20, 24, 28, 32),
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  clearButton: {
+    flex: 1,
+    paddingVertical: getResponsiveValue(14, 16, 18, 20),
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+  },
+  clearButtonText: {
+    fontSize: getResponsiveValue(15, 16, 17, 18),
+    fontWeight: "700",
+    color: "#374151",
+  },
+  applyButton: {
+    flex: 1,
+    paddingVertical: getResponsiveValue(14, 16, 18, 20),
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+  },
+  applyButtonText: {
+    fontSize: getResponsiveValue(15, 16, 17, 18),
+    fontWeight: "700",
+    color: "#fff",
   },
 });
