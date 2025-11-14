@@ -50,10 +50,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
         if (!downloadViewShotRef.current) return;
 
         try {
-            // Capture the QR template view
             const uri = await downloadViewShotRef.current.capture();
-
-            // Request permission to access gallery
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status === 'granted') {
                 const asset = await MediaLibrary.createAssetAsync(uri);
@@ -139,7 +136,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                 >
                     <Ionicons
                         name="arrow-back"
-                        size={getResponsiveValue(24, 26, 28, 30)}
+                        size={28}
                         color="#fff"
                     />
                 </TouchableOpacity>
@@ -152,139 +149,148 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Status Card */}
-                <View style={styles.statusCard}>
-                    <View
-                        style={[
-                            styles.statusBadgeLarge,
-                            { backgroundColor: getStatusColor(transaction.status) },
-                        ]}
-                    >
-                        <Ionicons
-                            name={
-                                transaction.status === 'ready'
-                                    ? 'time-outline'
-                                    : 'checkmark-circle-outline'
-                            }
-                            size={getResponsiveValue(24, 28, 32, 36)}
-                            color="#fff"
-                        />
-                        <Text style={styles.statusTextLarge}>
-                            {getStatusText(transaction.status)}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Transaction Info Card */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Ionicons
-                            name="document-text-outline"
-                            size={getResponsiveValue(20, 22, 24, 26)}
-                            color="#FF0000"
-                        />
-                        <Text style={styles.cardTitle}>Transaction Information</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Reference Number</Text>
-                        <Text style={styles.infoValue}>{transaction.id}</Text>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Date</Text>
-                        <Text style={styles.infoValue}>
-                            {formatDate(transaction.created_at)}
-                        </Text>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Time</Text>
-                        <Text style={styles.infoValue}>
-                            {formatTime(transaction.created_at)}
-                        </Text>
-                    </View>
-
-                    {transaction.claimed_at && (
-                        <>
-                            <View style={styles.divider} />
-                            <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Claimed On</Text>
-                                <Text style={[styles.infoValue, { color: '#4CAF50' }]}>
-                                    {formatDate(transaction.claimed_at)}
+                {/* QR Code Section - NOW AT TOP */}
+                {transaction.status === 'ready' && (
+                    <View style={styles.qrSection}>
+                        {/* Small Status Badge */}
+                        <View style={styles.statusBadgeContainer}>
+                            <View
+                                style={[
+                                    styles.statusBadge,
+                                    { backgroundColor: getStatusColor(transaction.status) },
+                                ]}
+                            >
+                                <Ionicons
+                                    name="time-outline"
+                                    size={16}
+                                    color="#fff"
+                                />
+                                <Text style={styles.statusBadgeText}>
+                                    {getStatusText(transaction.status)}
                                 </Text>
                             </View>
-                        </>
-                    )}
-                </View>
+                        </View>
 
-                {/* Station Info Card */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Ionicons
-                            name="business-outline"
-                            size={getResponsiveValue(20, 22, 24, 26)}
-                            color="#FF0000"
-                        />
-                        <Text style={styles.cardTitle}>Station Details</Text>
+                        <View style={styles.qrCard}>
+                            <Text style={styles.qrTitle}>Show QR Code at Station</Text>
+
+                            <View style={styles.qrContainer}>
+                                <QRCode
+                                    value={transaction.qr_code}
+                                    size={getResponsiveValue(180, 200, 220, 240)}
+                                />
+                            </View>
+
+                            <Text style={styles.qrCodeText}>{transaction.qr_code}</Text>
+
+                            <Text style={styles.qrInstruction}>
+                                Present this code to the staff to claim your items
+                            </Text>
+
+                            {/* Large Action Buttons */}
+                            <View style={styles.qrButtonContainer}>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    activeOpacity={0.8}
+                                    onPress={() => setShowQR(true)}
+                                >
+                                    <Ionicons
+                                        name="expand-outline"
+                                        size={24}
+                                        color="#fff"
+                                    />
+                                    <Text style={styles.actionButtonText}>View Fullscreen</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.downloadButton}
+                                    activeOpacity={0.8}
+                                    onPress={handleDownloadQR}
+                                >
+                                    <Ionicons
+                                        name="download-outline"
+                                        size={24}
+                                        color="#FF0000"
+                                    />
+                                    <Text style={styles.downloadButtonText}>Save to Photos</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
+                )}
 
-                    <View style={styles.stationInfo}>
-                        <Text style={styles.stationName}>{transaction.station_name}</Text>
-                        <Text style={styles.stationAddress}>
-                            {transaction.station_address}
+                {/* Claimed Status Display */}
+                {transaction.status === 'claimed' && (
+                    <View style={styles.claimedSection}>
+                        <View style={styles.claimedBadge}>
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={48}
+                                color="#4CAF50"
+                            />
+                            <Text style={styles.claimedTitle}>Items Claimed</Text>
+                            <Text style={styles.claimedDate}>
+                                {formatDate(transaction.claimed_at)}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Total Points - Prominent Display */}
+                <View style={styles.pointsCard}>
+                    <Text style={styles.pointsLabel}>Total Points Redeemed</Text>
+                    <View style={styles.pointsValueContainer}>
+                        <Image
+                            source={require('../../../../assets/my.png')}
+                            style={styles.pointsIcon}
+                        />
+                        <Text style={styles.pointsValue}>
+                            {transaction.total_points}
                         </Text>
                     </View>
                 </View>
 
-                {/* Items Card */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
+                {/* Items Section - Simplified */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
                         <Ionicons
-                            name="cube-outline"
-                            size={getResponsiveValue(20, 22, 24, 26)}
+                            name="gift"
+                            size={24}
                             color="#FF0000"
                         />
-                        <Text style={styles.cardTitle}>
-                            Items ({transaction.items_count})
+                        <Text style={styles.sectionTitle}>
+                            Your Items ({transaction.items_count})
                         </Text>
                     </View>
 
                     {transaction.items.map((item, index) => (
-                        <View key={item.id}>
-                            {index > 0 && <View style={styles.divider} />}
-                            <View style={styles.itemRow}>
-                                <View style={styles.itemIconContainer}>
+                        <View key={item.id} style={styles.itemCard}>
+                            <View style={styles.itemContent}>
+                                <View style={styles.itemIconBox}>
                                     <Ionicons
                                         name="gift-outline"
-                                        size={getResponsiveValue(24, 28, 32, 36)}
+                                        size={32}
                                         color="#FF0000"
                                     />
                                 </View>
-                                <View style={styles.itemDetails}>
+                                <View style={styles.itemInfo}>
                                     <Text style={styles.itemName}>
                                         {item.inventory.name}
                                     </Text>
                                     <Text style={styles.itemDescription}>
                                         {item.inventory.description}
                                     </Text>
-                                    <View style={styles.itemMeta}>
-                                        <View style={styles.metaItem}>
-                                            <Text style={styles.metaLabel}>Qty:</Text>
-                                            <Text style={styles.metaValue}>
-                                                {item.quantity}
-                                            </Text>
+                                    <View style={styles.itemFooter}>
+                                        <View style={styles.itemQty}>
+                                            <Text style={styles.qtyLabel}>Quantity:</Text>
+                                            <Text style={styles.qtyValue}>{item.quantity}</Text>
                                         </View>
-                                        <View style={styles.metaItem}>
+                                        <View style={styles.itemPoints}>
                                             <Image
                                                 source={require('../../../../assets/my.png')}
-                                                style={styles.pointsIconSmall}
+                                                style={styles.itemPointsIcon}
                                             />
-                                            <Text style={styles.metaValuePoints}>
+                                            <Text style={styles.itemPointsValue}>
                                                 {item.total_points} pts
                                             </Text>
                                         </View>
@@ -295,80 +301,55 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                     ))}
                 </View>
 
-                {/* Total Points Card */}
-                <View style={styles.totalCard}>
-                    <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>Total Points</Text>
-                        <View style={styles.totalValueContainer}>
-                            <Image
-                                source={require('../../../../assets/my.png')}
-                                style={styles.pointsIconLarge}
-                            />
-                            <Text style={styles.totalValue}>
-                                {transaction.total_points}
+                {/* Station Info - Clean Design */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons
+                            name="location"
+                            size={24}
+                            color="#FF0000"
+                        />
+                        <Text style={styles.sectionTitle}>Station Location</Text>
+                    </View>
+                    <View style={styles.infoCard}>
+                        <Text style={styles.stationName}>{transaction.station_name}</Text>
+                        <Text style={styles.stationAddress}>
+                            {transaction.station_address}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Transaction Info - Clean Design */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons
+                            name="document-text"
+                            size={24}
+                            color="#FF0000"
+                        />
+                        <Text style={styles.sectionTitle}>Transaction Details</Text>
+                    </View>
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Reference Number</Text>
+                            <Text style={styles.infoValue}>{transaction.id}</Text>
+                        </View>
+                        <View style={styles.infoDivider} />
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Date</Text>
+                            <Text style={styles.infoValue}>
+                                {formatDate(transaction.created_at)}
+                            </Text>
+                        </View>
+                        <View style={styles.infoDivider} />
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Time</Text>
+                            <Text style={styles.infoValue}>
+                                {formatTime(transaction.created_at)}
                             </Text>
                         </View>
                     </View>
                 </View>
-
-                {/* QR Code Section (only for ready status) */}
-                {transaction.status === 'ready' && (
-                    <View style={styles.qrCard}>
-                        <View style={styles.qrHeader}>
-                            <Ionicons
-                                name="qr-code"
-                                size={getResponsiveValue(28, 32, 36, 40)}
-                                color="#FF0000"
-                            />
-                            <Text style={styles.qrTitle}>QR Code</Text>
-                        </View>
-
-                        <View style={styles.qrPlaceholder}>
-                            <QRCode
-                                value={transaction.qr_code}
-                                size={getResponsiveValue(120, 140, 160, 180)}
-                            />
-                            <Text style={styles.qrCode}>{transaction.qr_code}</Text>
-                        </View>
-
-                        <Text style={styles.qrInstruction}>
-                            Show this QR code at the station to claim your items
-                        </Text>
-                    </View>
-                )}
-
-                {/* Action Buttons */}
-                {transaction.status === 'ready' && (
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            activeOpacity={0.8}
-                            onPress={handleDownloadQR}
-                        >
-                            <Ionicons
-                                name="download-outline"
-                                size={getResponsiveValue(20, 22, 24, 26)}
-                                color="#FF0000"
-                            />
-                            <Text style={styles.secondaryButtonText}>Download QR</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.primaryButton}
-                            activeOpacity={0.8}
-                            onPress={() => {
-                                setShowQR(true);
-                            }}
-                        >
-                            <Ionicons
-                                name="expand-outline"
-                                size={getResponsiveValue(20, 22, 24, 26)}
-                                color="#fff"
-                            />
-                            <Text style={styles.primaryButtonText}>View Full Size</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
             </ScrollView>
 
             {/* QR Redemption Modal */}
@@ -385,7 +366,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#F8F9FA',
     },
     hiddenDownloadContainer: {
         position: 'absolute',
@@ -396,306 +377,371 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: getResponsiveValue(20, 18, 20, 22),
-        paddingHorizontal: getResponsiveValue(15, 20, 24, 28),
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+        paddingTop: 25,
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        paddingTop: 25
     },
     backButton: {
-        padding: getResponsiveValue(4, 6, 8, 10),
+        padding: 8,
+        marginRight: 8,
     },
     headerTitle: {
-        fontSize: getResponsiveValue(18, 20, 22, 24),
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '700',
         color: '#fff',
+        letterSpacing: 0.3,
     },
     headerSpacer: {
-        width: getResponsiveValue(32, 36, 40, 44),
+        width: 44,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        padding: getResponsiveValue(16, 20, 24, 28),
-        paddingBottom: getResponsiveValue(32, 40, 48, 56),
+        padding: 20,
+        paddingBottom: 40,
     },
-    statusCard: {
-        alignItems: 'center',
-        marginBottom: getResponsiveValue(20, 24, 28, 32),
+
+    // QR Section Styles (Now at top)
+    qrSection: {
+        marginBottom: 24,
     },
-    statusBadgeLarge: {
+    statusBadgeContainer: {
+        alignItems: 'flex-end',
+        marginBottom: 12,
+    },
+    statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: getResponsiveValue(10, 12, 14, 16),
-        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
-        paddingVertical: getResponsiveValue(12, 14, 16, 18),
-        borderRadius: getResponsiveValue(20, 24, 28, 32),
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
     },
-    statusTextLarge: {
-        fontSize: getResponsiveValue(16, 18, 20, 22),
-        fontWeight: 'bold',
+    statusBadgeText: {
+        fontSize: 13,
+        fontWeight: '600',
         color: '#fff',
         textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: getResponsiveValue(12, 16, 18, 20),
-        padding: getResponsiveValue(16, 20, 24, 28),
-        marginBottom: getResponsiveValue(16, 20, 24, 28),
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: getResponsiveValue(8, 10, 12, 14),
-        marginBottom: getResponsiveValue(16, 18, 20, 22),
-    },
-    cardTitle: {
-        fontSize: getResponsiveValue(16, 18, 20, 22),
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: getResponsiveValue(8, 10, 12, 14),
-    },
-    infoLabel: {
-        fontSize: getResponsiveValue(13, 14, 15, 16),
-        color: '#666',
-        fontWeight: '500',
-    },
-    infoValue: {
-        fontSize: getResponsiveValue(13, 14, 15, 16),
-        color: '#333',
-        fontWeight: '600',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#f0f0f0',
-    },
-    stationInfo: {
-        gap: getResponsiveValue(6, 8, 10, 12),
-    },
-    stationName: {
-        fontSize: getResponsiveValue(16, 18, 20, 22),
-        fontWeight: '600',
-        color: '#333',
-    },
-    stationAddress: {
-        fontSize: getResponsiveValue(13, 14, 15, 16),
-        color: '#666',
-        lineHeight: getResponsiveValue(18, 20, 22, 24),
-    },
-    itemRow: {
-        flexDirection: 'row',
-        gap: getResponsiveValue(12, 14, 16, 18),
-        paddingVertical: getResponsiveValue(12, 14, 16, 18),
-    },
-    itemIconContainer: {
-        width: getResponsiveValue(48, 56, 64, 72),
-        height: getResponsiveValue(48, 56, 64, 72),
-        backgroundColor: '#fff5f5',
-        borderRadius: getResponsiveValue(10, 12, 14, 16),
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#ffe0e0',
-    },
-    itemDetails: {
-        flex: 1,
-        gap: getResponsiveValue(4, 6, 8, 10),
-    },
-    itemName: {
-        fontSize: getResponsiveValue(14, 16, 18, 20),
-        fontWeight: '600',
-        color: '#333',
-    },
-    itemDescription: {
-        fontSize: getResponsiveValue(12, 13, 14, 15),
-        color: '#666',
-        lineHeight: getResponsiveValue(16, 18, 20, 22),
-    },
-    itemMeta: {
-        flexDirection: 'row',
-        gap: getResponsiveValue(16, 18, 20, 22),
-        marginTop: getResponsiveValue(4, 6, 8, 10),
-    },
-    metaItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: getResponsiveValue(4, 5, 6, 7),
-    },
-    metaLabel: {
-        fontSize: getResponsiveValue(11, 12, 13, 14),
-        color: '#999',
-        fontWeight: '500',
-    },
-    metaValue: {
-        fontSize: getResponsiveValue(12, 13, 14, 15),
-        color: '#333',
-        fontWeight: '600',
-    },
-    metaValuePoints: {
-        fontSize: getResponsiveValue(12, 13, 14, 15),
-        color: '#f39c12',
-        fontWeight: '700',
-    },
-    pointsIconSmall: {
-        width: getResponsiveValue(14, 16, 18, 20),
-        height: getResponsiveValue(14, 16, 18, 20),
-        resizeMode: 'contain',
-    },
-    totalCard: {
-        backgroundColor: '#fff',
-        borderRadius: getResponsiveValue(12, 16, 18, 20),
-        padding: getResponsiveValue(20, 24, 28, 32),
-        marginBottom: getResponsiveValue(16, 20, 24, 28),
-        borderWidth: 2,
-        borderColor: '#f39c12',
-        elevation: 3,
-        shadowColor: '#f39c12',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    },
-    totalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    totalLabel: {
-        fontSize: getResponsiveValue(16, 18, 20, 22),
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    totalValueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: getResponsiveValue(8, 10, 12, 14),
-    },
-    totalValue: {
-        fontSize: getResponsiveValue(24, 28, 32, 36),
-        fontWeight: 'bold',
-        color: '#f39c12',
-    },
-    pointsIconLarge: {
-        width: getResponsiveValue(24, 28, 32, 36),
-        height: getResponsiveValue(24, 28, 32, 36),
-        resizeMode: 'contain',
+        letterSpacing: 0.5,
     },
     qrCard: {
         backgroundColor: '#fff',
-        borderRadius: getResponsiveValue(12, 16, 18, 20),
-        padding: getResponsiveValue(20, 24, 28, 32),
-        marginBottom: getResponsiveValue(16, 20, 24, 28),
+        borderRadius: 20,
+        padding: 28,
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#FF0000',
-        borderStyle: 'dashed',
-    },
-    qrHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: getResponsiveValue(10, 12, 14, 16),
-        marginBottom: getResponsiveValue(20, 24, 28, 32),
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
     },
     qrTitle: {
-        fontSize: getResponsiveValue(18, 20, 22, 24),
-        fontWeight: 'bold',
-        color: '#FF0000',
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        marginBottom: 24,
+        textAlign: 'center',
+        letterSpacing: 0.3,
     },
-    qrPlaceholder: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: getResponsiveValue(20, 24, 28, 32),
-        backgroundColor: '#fff5f5',
-        borderRadius: getResponsiveValue(12, 16, 18, 20),
-        marginBottom: getResponsiveValue(16, 18, 20, 22),
-        borderWidth: 1,
-        borderColor: '#ffe0e0',
+    qrContainer: {
+        backgroundColor: '#fff',
+        padding: 24,
+        borderRadius: 16,
+        borderWidth: 3,
+        borderColor: '#FF0000',
+        marginBottom: 20,
     },
-    qrCode: {
-        fontSize: getResponsiveValue(14, 16, 18, 20),
-        fontWeight: '600',
+    qrCodeText: {
+        fontSize: 18,
+        fontWeight: '700',
         color: '#FF0000',
-        marginTop: getResponsiveValue(12, 14, 16, 18),
-        letterSpacing: 1,
+        marginBottom: 16,
+        letterSpacing: 2,
     },
     qrInstruction: {
-        fontSize: getResponsiveValue(12, 13, 14, 15),
+        fontSize: 15,
         color: '#666',
         textAlign: 'center',
-        lineHeight: getResponsiveValue(18, 20, 22, 24),
+        lineHeight: 22,
+        marginBottom: 24,
+        paddingHorizontal: 8,
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        gap: getResponsiveValue(12, 14, 16, 18),
-        marginTop: getResponsiveValue(4, 6, 8, 10),
+    qrButtonContainer: {
+        width: '100%',
+        gap: 12,
     },
-    primaryButton: {
-        flex: 1,
+    actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: getResponsiveValue(8, 10, 12, 14),
+        gap: 10,
         backgroundColor: '#FF0000',
-        borderRadius: getResponsiveValue(12, 14, 16, 18),
-        paddingVertical: getResponsiveValue(14, 16, 18, 20),
-        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
-        elevation: 3,
+        borderRadius: 14,
+        paddingVertical: 18,
+        paddingHorizontal: 24,
+        elevation: 2,
         shadowColor: '#FF0000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
     },
-    primaryButtonText: {
-        fontSize: getResponsiveValue(13, 14, 15, 16),
-        fontWeight: 'bold',
+    actionButtonText: {
+        fontSize: 17,
+        fontWeight: '700',
         color: '#fff',
+        letterSpacing: 0.3,
     },
-    secondaryButton: {
-        flex: 1,
+    downloadButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: getResponsiveValue(8, 10, 12, 14),
+        gap: 10,
         backgroundColor: '#fff',
-        borderRadius: getResponsiveValue(12, 14, 16, 18),
-        paddingVertical: getResponsiveValue(14, 16, 18, 20),
-        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
-        borderWidth: 2,
+        borderRadius: 14,
+        paddingVertical: 18,
+        paddingHorizontal: 24,
+        borderWidth: 2.5,
         borderColor: '#FF0000',
-        elevation: 2,
+        elevation: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
     },
-    secondaryButtonText: {
-        fontSize: getResponsiveValue(13, 14, 15, 16),
-        fontWeight: 'bold',
+    downloadButtonText: {
+        fontSize: 17,
+        fontWeight: '700',
         color: '#FF0000',
+        letterSpacing: 0.3,
+    },
+
+    // Claimed Status
+    claimedSection: {
+        marginBottom: 24,
+    },
+    claimedBadge: {
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 32,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#4CAF50',
+        elevation: 2,
+        shadowColor: '#4CAF50',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+    },
+    claimedTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#4CAF50',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    claimedDate: {
+        fontSize: 16,
+        color: '#666',
+        fontWeight: '500',
+    },
+
+    // Points Card
+    pointsCard: {
+        backgroundColor: '#FFF8E1',
+        borderRadius: 16,
+        padding: 24,
+        marginBottom: 24,
+        borderWidth: 2,
+        borderColor: '#f39c12',
+        elevation: 2,
+        shadowColor: '#f39c12',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        alignItems: 'center',
+    },
+    pointsLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#666',
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    pointsValueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    pointsIcon: {
+        width: 36,
+        height: 36,
+        resizeMode: 'contain',
+    },
+    pointsValue: {
+        fontSize: 36,
+        fontWeight: '800',
+        color: '#f39c12',
+        letterSpacing: 0.5,
+    },
+
+    // Section Styles
+    section: {
+        marginBottom: 24,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        letterSpacing: 0.3,
+    },
+
+    // Item Card
+    itemCard: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 12,
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+    },
+    itemContent: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    itemIconBox: {
+        width: 64,
+        height: 64,
+        backgroundColor: '#FFF5F5',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: '#FFE0E0',
+    },
+    itemInfo: {
+        flex: 1,
+        gap: 8,
+    },
+    itemName: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        letterSpacing: 0.2,
+    },
+    itemDescription: {
+        fontSize: 15,
+        color: '#666',
+        lineHeight: 21,
+    },
+    itemFooter: {
+        flexDirection: 'row',
+        gap: 20,
+        marginTop: 8,
+    },
+    itemQty: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    qtyLabel: {
+        fontSize: 14,
+        color: '#999',
+        fontWeight: '500',
+    },
+    qtyValue: {
+        fontSize: 16,
+        color: '#1A1A1A',
+        fontWeight: '700',
+    },
+    itemPoints: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    itemPointsIcon: {
+        width: 18,
+        height: 18,
+        resizeMode: 'contain',
+    },
+    itemPointsValue: {
+        fontSize: 16,
+        color: '#f39c12',
+        fontWeight: '700',
+    },
+
+    // Info Card
+    infoCard: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 20,
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+    },
+    stationName: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        marginBottom: 8,
+        letterSpacing: 0.2,
+    },
+    stationAddress: {
+        fontSize: 15,
+        color: '#666',
+        lineHeight: 22,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    infoLabel: {
+        fontSize: 15,
+        color: '#666',
+        fontWeight: '500',
+    },
+    infoValue: {
+        fontSize: 15,
+        color: '#1A1A1A',
+        fontWeight: '700',
+        textAlign: 'right',
+        flex: 1,
+        marginLeft: 16,
+    },
+    infoDivider: {
+        height: 1,
+        backgroundColor: '#F0F0F0',
     },
     errorText: {
-        fontSize: getResponsiveValue(16, 18, 20, 22),
+        fontSize: 18,
         color: '#999',
         textAlign: 'center',
-        marginTop: getResponsiveValue(40, 50, 60, 70),
+        marginTop: 60,
+        fontWeight: '500',
     },
 });

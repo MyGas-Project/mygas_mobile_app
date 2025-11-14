@@ -10,15 +10,12 @@ import { NotificationContext } from '../../context/ActivityNotif';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Responsive scaling functions
-const scale = (size) => (SCREEN_WIDTH / 375) * size;
-const verticalScale = (size) => (SCREEN_HEIGHT / 812) * size;
-const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+// Improved responsive system
+const isTablet = SCREEN_WIDTH >= 768;
+const MAX_CONTENT_WIDTH = 500;
 
-// Responsive breakpoints
-const isSmallDevice = SCREEN_WIDTH < 375;
-const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
-const isLargeDevice = SCREEN_WIDTH >= 768;
+// Simple responsive function
+const responsive = (mobile, tablet = mobile) => isTablet ? tablet : mobile;
 
 export default function ActivityScreen({ navigation }) {
     const { userInfo, userDetails } = useContext(AuthContext);
@@ -198,126 +195,128 @@ export default function ActivityScreen({ navigation }) {
                 </Animated.View>
 
                 <Animated.View style={[custom_styles.contentContainer, { opacity: fadeAnim }]}>
-                    <View style={custom_styles.headerSection}>
-                        <Text style={custom_styles.title}>Activity</Text>
-                        <Text style={custom_styles.subtitle}>Track your MyGas points history</Text>
-                    </View>
-
-                    {isLoading ? (
-                        <View style={custom_styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#fe0002" />
-                            <Text style={custom_styles.loadingText}>Loading transactions...</Text>
+                    <View style={custom_styles.contentWrapper}>
+                        <View style={custom_styles.headerSection}>
+                            <Text style={custom_styles.title}>Activity</Text>
+                            <Text style={custom_styles.subtitle}>Track your MyGas points history</Text>
                         </View>
-                    ) : (
-                        <Animated.ScrollView
-                            onScroll={Animated.event(
-                                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                                { useNativeDriver: true }
-                            )}
-                            scrollEventThrottle={16}
-                            showsVerticalScrollIndicator={false}
-                            contentContainerStyle={custom_styles.scrollContent}
-                        >
-                            <View style={custom_styles.filterCard}>
-                                <View style={custom_styles.filterRow}>
-                                    <Text style={custom_styles.filterLabel}>Filter by Date</Text>
-                                    <TouchableOpacity
-                                        style={custom_styles.filterBtn}
-                                        onPress={() => { setShowDatePicker(true); }}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={custom_styles.filterBtnText}>
-                                            {selectedRange}
-                                        </Text>
-                                        <Text style={custom_styles.filterIcon}>📅</Text>
-                                    </TouchableOpacity>
-                                </View>
+
+                        {isLoading ? (
+                            <View style={custom_styles.loadingContainer}>
+                                <ActivityIndicator size="large" color="#fe0002" />
+                                <Text style={custom_styles.loadingText}>Loading transactions...</Text>
                             </View>
-
-                            {groupedTransactions && groupedTransactions.length > 0 ? (
-                                groupedTransactions.map((group, index) => (
-                                    <View key={index} style={custom_styles.dateGroup}>
-                                        <View style={custom_styles.dateHeader}>
-                                            <View style={custom_styles.dateBadge}>
-                                                <Text style={custom_styles.dateText}>{group.date}</Text>
-                                            </View>
-                                            <View style={custom_styles.dateLine} />
-                                        </View>
-
-                                        {[...group.items].reverse().map((item, ind) => (
-                                            <View key={ind} style={custom_styles.transactionCard}>
-                                                <View style={custom_styles.cardHeader}>
-                                                    <View style={custom_styles.iconWrapper}>
-                                                        <Image
-                                                            source={require('../../../assets/mygas_logo.png')}
-                                                            style={custom_styles.stationIcon}
-                                                        />
-                                                    </View>
-                                                    <View style={custom_styles.headerInfo}>
-                                                        <Text style={custom_styles.stationName} numberOfLines={1}>
-                                                            {item.station_name}
-                                                        </Text>
-                                                        <Text style={custom_styles.dateTime} numberOfLines={1}>
-                                                            {formatDateTime(item.date, item.time)}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-
-                                                <View style={custom_styles.cardDivider} />
-
-                                                <View style={custom_styles.cardBody}>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Transaction</Text>
-                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
-                                                            {item.transaction_number}
-                                                        </Text>
-                                                    </View>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Service</Text>
-                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
-                                                            {item.service}
-                                                        </Text>
-                                                    </View>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Amount</Text>
-                                                        <Text style={custom_styles.amountValue}>
-                                                            ₱{parseFloat(item.amount).toFixed(2)}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-
-                                                <View style={[
-                                                    custom_styles.pointsBadge,
-                                                    { backgroundColor: item.service === 'Cash Redeem' ? '#FFE5E5' : '#FFF8E1' }
-                                                ]}>
-                                                    <Text style={[
-                                                        custom_styles.pointsValue,
-                                                        { color: item.service === 'Cash Redeem' ? '#D32F2F' : '#F57C00' }
-                                                    ]}>
-                                                        {item.service === 'Cash Redeem' ? '-' : '+'}{item.points}
-                                                    </Text>
-                                                    <Text style={custom_styles.pointsText}>
-                                                        {item.service === 'Cash Redeem' ? 'redeemed' : 'earned'}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                        ))}
+                        ) : (
+                            <Animated.ScrollView
+                                onScroll={Animated.event(
+                                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                                    { useNativeDriver: true }
+                                )}
+                                scrollEventThrottle={16}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={custom_styles.scrollContent}
+                            >
+                                <View style={custom_styles.filterCard}>
+                                    <View style={custom_styles.filterRow}>
+                                        <Text style={custom_styles.filterLabel}>Filter by Date</Text>
+                                        <TouchableOpacity
+                                            style={custom_styles.filterBtn}
+                                            onPress={() => { setShowDatePicker(true); }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={custom_styles.filterBtnText} numberOfLines={1}>
+                                                {selectedRange}
+                                            </Text>
+                                            <Text style={custom_styles.filterIcon}>📅</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                ))
-                            ) : (
-                                <View style={custom_styles.emptyState}>
-                                    <View style={custom_styles.emptyIcon}>
-                                        <Text style={custom_styles.emptyIconText}>📊</Text>
-                                    </View>
-                                    <Text style={custom_styles.emptyTitle}>No Activity Yet</Text>
-                                    <Text style={custom_styles.emptySubtitle}>
-                                        Your transaction history will appear here
-                                    </Text>
                                 </View>
-                            )}
-                            <View style={{ height: verticalScale(100) }} />
-                        </Animated.ScrollView>
-                    )}
+
+                                {groupedTransactions && groupedTransactions.length > 0 ? (
+                                    groupedTransactions.map((group, index) => (
+                                        <View key={index} style={custom_styles.dateGroup}>
+                                            <View style={custom_styles.dateHeader}>
+                                                <View style={custom_styles.dateBadge}>
+                                                    <Text style={custom_styles.dateText}>{group.date}</Text>
+                                                </View>
+                                                <View style={custom_styles.dateLine} />
+                                            </View>
+
+                                            {[...group.items].reverse().map((item, ind) => (
+                                                <View key={ind} style={custom_styles.transactionCard}>
+                                                    <View style={custom_styles.cardHeader}>
+                                                        <View style={custom_styles.iconWrapper}>
+                                                            <Image
+                                                                source={require('../../../assets/mygas_logo.png')}
+                                                                style={custom_styles.stationIcon}
+                                                            />
+                                                        </View>
+                                                        <View style={custom_styles.headerInfo}>
+                                                            <Text style={custom_styles.stationName} numberOfLines={1}>
+                                                                {item.station_name}
+                                                            </Text>
+                                                            <Text style={custom_styles.dateTime} numberOfLines={1}>
+                                                                {formatDateTime(item.date, item.time)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+
+                                                    <View style={custom_styles.cardDivider} />
+
+                                                    <View style={custom_styles.cardBody}>
+                                                        <View style={custom_styles.infoRow}>
+                                                            <Text style={custom_styles.infoLabel}>Transaction</Text>
+                                                            <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                                {item.transaction_number}
+                                                            </Text>
+                                                        </View>
+                                                        <View style={custom_styles.infoRow}>
+                                                            <Text style={custom_styles.infoLabel}>Service</Text>
+                                                            <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                                {item.service}
+                                                            </Text>
+                                                        </View>
+                                                        <View style={custom_styles.infoRow}>
+                                                            <Text style={custom_styles.infoLabel}>Amount</Text>
+                                                            <Text style={custom_styles.amountValue}>
+                                                                ₱{parseFloat(item.amount).toFixed(2)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+
+                                                    <View style={[
+                                                        custom_styles.pointsBadge,
+                                                        { backgroundColor: item.service === 'Cash Redeem' ? '#FFE5E5' : '#FFF8E1' }
+                                                    ]}>
+                                                        <Text style={[
+                                                            custom_styles.pointsValue,
+                                                            { color: item.service === 'Cash Redeem' ? '#D32F2F' : '#F57C00' }
+                                                        ]}>
+                                                            {item.service === 'Cash Redeem' ? '-' : '+'}{item.points}
+                                                        </Text>
+                                                        <Text style={custom_styles.pointsText}>
+                                                            {item.service === 'Cash Redeem' ? 'redeemed' : 'earned'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    ))
+                                ) : (
+                                    <View style={custom_styles.emptyState}>
+                                        <View style={custom_styles.emptyIcon}>
+                                            <Text style={custom_styles.emptyIconText}>📊</Text>
+                                        </View>
+                                        <Text style={custom_styles.emptyTitle}>No Activity Yet</Text>
+                                        <Text style={custom_styles.emptySubtitle}>
+                                            Your transaction history will appear here
+                                        </Text>
+                                    </View>
+                                )}
+                                <View style={{ height: 100 }} />
+                            </Animated.ScrollView>
+                        )}
+                    </View>
                 </Animated.View>
             </View>
         </>
@@ -330,7 +329,7 @@ const custom_styles = StyleSheet.create({
         backgroundColor: '#F8F9FA',
     },
     top_bar: {
-        height: verticalScale(150),
+        height: responsive(140, 160),
         width: '100%',
         position: 'relative',
     },
@@ -346,44 +345,49 @@ const custom_styles = StyleSheet.create({
         top: "50%",
         left: "50%",
         transform: [
-            { translateX: -moderateScale(32.5) },
-            { translateY: -moderateScale(32.5) }
+            { translateX: -32.5 },
+            { translateY: -32.5 }
         ],
-        width: moderateScale(65),
-        height: moderateScale(65),
+        width: 65,
+        height: 65,
         resizeMode: "contain",
         zIndex: 2,
     },
     contentContainer: {
         flex: 1,
-        marginTop: verticalScale(-30),
+        marginTop: -30,
         backgroundColor: '#F8F9FA',
-        borderTopLeftRadius: moderateScale(30),
-        borderTopRightRadius: moderateScale(30),
-        paddingTop: verticalScale(24),
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        paddingTop: 24,
+        alignItems: 'center',
+    },
+    contentWrapper: {
+        width: '100%',
+        maxWidth: MAX_CONTENT_WIDTH,
+        flex: 1,
+        paddingHorizontal: responsive(16, 20),
     },
     headerSection: {
-        paddingHorizontal: scale(20),
-        marginBottom: verticalScale(20),
+        marginBottom: 20,
     },
     title: {
-        fontSize: moderateScale(32),
+        fontSize: responsive(28, 32),
         fontWeight: '800',
         color: '#1A1A1A',
-        marginBottom: verticalScale(4),
+        marginBottom: 4,
         letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: moderateScale(15),
+        fontSize: responsive(14, 15),
         color: '#6B7280',
         fontWeight: '500',
     },
     filterCard: {
         backgroundColor: '#FFFFFF',
-        marginHorizontal: scale(20),
-        borderRadius: moderateScale(16),
-        padding: scale(16),
-        marginBottom: verticalScale(20),
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -391,67 +395,68 @@ const custom_styles = StyleSheet.create({
         elevation: 2,
     },
     filterRow: {
-        flexDirection: isSmallDevice ? 'column' : 'row',
-        alignItems: isSmallDevice ? 'stretch' : 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        gap: isSmallDevice ? verticalScale(12) : 0,
     },
     filterLabel: {
-        fontSize: moderateScale(14),
+        fontSize: 14,
         color: '#6B7280',
         fontWeight: '600',
+        flex: 1,
     },
     filterBtn: {
         backgroundColor: '#F3F4F6',
-        borderRadius: moderateScale(12),
-        paddingHorizontal: scale(16),
-        paddingVertical: verticalScale(10),
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: scale(8),
+        gap: 8,
         borderWidth: 1,
         borderColor: '#E5E7EB',
+        maxWidth: '60%',
     },
     filterBtnText: {
-        fontSize: moderateScale(14),
+        fontSize: 13,
         color: '#1F2937',
         fontWeight: '600',
+        flexShrink: 1,
     },
     filterIcon: {
-        fontSize: moderateScale(16),
+        fontSize: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: verticalScale(80),
+        paddingVertical: 80,
     },
     loadingText: {
-        marginTop: verticalScale(16),
-        fontSize: moderateScale(15),
+        marginTop: 16,
+        fontSize: 15,
         color: '#6B7280',
         fontWeight: '500',
     },
     scrollContent: {
-        paddingHorizontal: scale(20),
-        paddingTop: verticalScale(20),
+        paddingBottom: 20,
     },
     dateGroup: {
-        marginBottom: verticalScale(24),
+        marginBottom: 24,
     },
     dateHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: verticalScale(16),
+        marginBottom: 16,
     },
     dateBadge: {
         backgroundColor: '#1F2937',
-        paddingHorizontal: scale(16),
-        paddingVertical: verticalScale(8),
-        borderRadius: moderateScale(20),
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
     },
     dateText: {
-        fontSize: moderateScale(13),
+        fontSize: 13,
         color: '#FFFFFF',
         fontWeight: '700',
         letterSpacing: 0.3,
@@ -460,13 +465,13 @@ const custom_styles = StyleSheet.create({
         flex: 1,
         height: 1,
         backgroundColor: '#E5E7EB',
-        marginLeft: scale(12),
+        marginLeft: 12,
     },
     transactionCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: moderateScale(20),
-        padding: scale(20),
-        marginBottom: verticalScale(12),
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -478,44 +483,44 @@ const custom_styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: verticalScale(16),
+        marginBottom: 12,
     },
     iconWrapper: {
-        width: moderateScale(48),
-        height: moderateScale(48),
-        borderRadius: moderateScale(12),
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         backgroundColor: '#FEF3C7',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: scale(12),
+        marginRight: 12,
     },
     stationIcon: {
-        width: moderateScale(28),
-        height: moderateScale(28),
+        width: 26,
+        height: 26,
         resizeMode: 'contain',
     },
     headerInfo: {
         flex: 1,
     },
     stationName: {
-        fontSize: moderateScale(16),
+        fontSize: 15,
         fontWeight: '700',
         color: '#1A1A1A',
-        marginBottom: verticalScale(2),
+        marginBottom: 2,
     },
     dateTime: {
-        fontSize: moderateScale(13),
+        fontSize: 12,
         color: '#6B7280',
         fontWeight: '500',
     },
     cardDivider: {
         height: 1,
         backgroundColor: '#F3F4F6',
-        marginBottom: verticalScale(16),
+        marginBottom: 12,
     },
     cardBody: {
-        gap: verticalScale(12),
-        marginBottom: verticalScale(16),
+        gap: 10,
+        marginBottom: 12,
     },
     infoRow: {
         flexDirection: 'row',
@@ -523,20 +528,20 @@ const custom_styles = StyleSheet.create({
         alignItems: 'center',
     },
     infoLabel: {
-        fontSize: moderateScale(13),
+        fontSize: 13,
         color: '#6B7280',
         fontWeight: '600',
     },
     infoValue: {
-        fontSize: moderateScale(13),
+        fontSize: 13,
         color: '#1F2937',
         fontWeight: '600',
         flex: 1,
         textAlign: 'right',
-        marginLeft: scale(8),
+        marginLeft: 8,
     },
     amountValue: {
-        fontSize: moderateScale(16),
+        fontSize: 15,
         color: '#1A1A1A',
         fontWeight: '800',
     },
@@ -544,17 +549,17 @@ const custom_styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: verticalScale(12),
-        paddingHorizontal: scale(16),
-        borderRadius: moderateScale(12),
-        gap: scale(8),
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        gap: 8,
     },
     pointsValue: {
-        fontSize: moderateScale(20),
+        fontSize: 18,
         fontWeight: '800',
     },
     pointsText: {
-        fontSize: moderateScale(13),
+        fontSize: 12,
         color: '#6B7280',
         fontWeight: '600',
         textTransform: 'uppercase',
@@ -563,30 +568,30 @@ const custom_styles = StyleSheet.create({
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: verticalScale(80),
+        paddingVertical: 80,
     },
     emptyIcon: {
-        width: moderateScale(80),
-        height: moderateScale(80),
-        borderRadius: moderateScale(40),
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         backgroundColor: '#F3F4F6',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: verticalScale(20),
+        marginBottom: 20,
     },
     emptyIconText: {
-        fontSize: moderateScale(40),
+        fontSize: 35,
     },
     emptyTitle: {
-        fontSize: moderateScale(20),
+        fontSize: 18,
         fontWeight: '700',
         color: '#1F2937',
-        marginBottom: verticalScale(8),
+        marginBottom: 8,
     },
     emptySubtitle: {
-        fontSize: moderateScale(14),
+        fontSize: 14,
         color: '#6B7280',
         textAlign: 'center',
-        paddingHorizontal: scale(40),
+        paddingHorizontal: 40,
     },
 });

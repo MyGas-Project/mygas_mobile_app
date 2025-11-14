@@ -145,9 +145,9 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
         <Text style={styles.productName} numberOfLines={2}>
           {product.name}
         </Text>
-        <Text style={styles.productDescription} numberOfLines={2}>
+        {/* <Text style={styles.productDescription} numberOfLines={2}>
           {product.description}
-        </Text>
+        </Text> */}
 
         {/* Promo Date Display */}
         {product.isWeeklyPromo && promoDateText && (
@@ -202,7 +202,7 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
 
 export default function RedemptionScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
-  const { rewards } = useContext(PointsDetailContext);
+  const { rewards, refreshPoints } = useContext(PointsDetailContext);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -219,6 +219,7 @@ export default function RedemptionScreen({ navigation }) {
   const [showStationModal, setShowStationModal] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [stationFilterProduct, setStationFilterProduct] = useState(null);
+  const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
   // Function to refresh cart count
   const refreshCartCount = useCallback(async () => {
@@ -239,6 +240,8 @@ export default function RedemptionScreen({ navigation }) {
       const newCount = currentCount + 1;
       await AsyncStorage.setItem("cartCount", newCount.toString());
       setCartCount(newCount);
+
+      setCartUpdateTrigger(prev => prev + 1);
     } catch (error) {
       console.error("Error incrementing cart count:", error);
     }
@@ -248,6 +251,7 @@ export default function RedemptionScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       refreshCartCount();
+      // refreshPoints?.();
     }, [refreshCartCount])
   );
 
@@ -899,6 +903,7 @@ export default function RedemptionScreen({ navigation }) {
         userPoints={userPoints}
         selectedStation={selectedStation}
         onShowStationModal={handleShowStationModal}
+        cartUpdateTrigger={cartUpdateTrigger}
       />
 
       <SpecificStation

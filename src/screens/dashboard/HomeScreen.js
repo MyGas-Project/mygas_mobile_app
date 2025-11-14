@@ -130,7 +130,8 @@ const RewardCardSkeleton = () => (
 
 export default function HomeScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
-  const [rewards, setRewards] = useState(null);
+  const { rewards, refreshPoints } = useContext(PointsDetailContext);
+  // const [rewards, setRewards] = useState(null);
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -185,34 +186,35 @@ export default function HomeScreen({ navigation }) {
     extrapolate: "clamp"
   });
 
-  const fetchRewards = async () => {
-    try {
-      await fetch(`${BASE_URL}customer/user-total-points`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }).then(processResponse).then((res) => {
-        const { statusCode, data } = res;
-        // console.log("user details: ", data);
-        // console.log(userInfo);
-        setRewards(data);
-      }).catch(error => {
-        console.error(error);
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // const fetchRewards = async () => {
+  //   try {
+  //     await fetch(`${BASE_URL}customer/user-total-points`, {
+  //       method: "GET",
+  //       headers: {
+  //         Accept: "application/json",
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${userInfo.token}`,
+  //       },
+  //     }).then(processResponse).then((res) => {
+  //       const { statusCode, data } = res;
+  //       // console.log("user details: ", data);
+  //       // console.log(userInfo);
+  //       // setRewards(data);
+  //     }).catch(error => {
+  //       console.error(error);
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   const loadAllData = async () => {
     setIsLoading(true);
     try {
       // Wait for all API calls to complete
       await Promise.all([
-        fetchRewards(),
+        // fetchRewards(),
+        refreshPoints?.()
         // Add other API calls here if needed
         // fetchOtherData(),
       ]);
@@ -250,17 +252,6 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadAllData();
-  }, []);
-
-  useEffect(() => {
-    const setup = async () => {
-      subscription = await subscribeToChannel("super-admin-dashboard-display", "refresh-dashboard-data", (event) => {
-        console.info("📡 Received from HomeScreen");
-        fetchRewards();
-      });
-    };
-
-    setup();
   }, []);
 
   return (

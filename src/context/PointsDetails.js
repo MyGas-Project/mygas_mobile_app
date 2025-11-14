@@ -1,15 +1,17 @@
+// ============================================
+// Updated PointsDetailsProvider
+// ============================================
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { BASE_URL, processResponse } from '../config';
 import { AuthContext } from './AuthContext';
 import { subscribeToChannel, unsubscribeChannel } from '../lib/Websockets';
 
-
 export const PointsDetailContext = createContext();
 
 export function PointsDetailsProvider({ children }) {
     const { userInfo } = useContext(AuthContext);
-    const [rewards, setRewards] = useState(null);
-    const channelRef = useRef(null); // Track channel subscription
+    const [rewards, setRewards] = useState({ points: 0 });
+    const isSubscribed = useRef(false); // Track subscription status
 
     const fetchPointsDetails = async () => {
         if (!userInfo) return;
@@ -28,9 +30,9 @@ export function PointsDetailsProvider({ children }) {
                     console.log("🔄 Points updated:", data);
                     setRewards(data);
                 })
-                .catch((error) => console.error("❌ Fetch points error:", error));
+                .catch((error) => console.error(error));
         } catch (error) {
-            console.error("❌ Fetch points error:", error);
+            console.error(error);
         }
     };
 
@@ -39,54 +41,38 @@ export function PointsDetailsProvider({ children }) {
         fetchPointsDetails();
     }, [userInfo]);
 
-    // Subscribe to websocket events
+    // Subscribe to websocket events - ONLY ONCE
     useEffect(() => {
-        if (!userInfo) return; // Don't subscribe if no user
+        if (!userInfo || isSubscribed.current) return;
 
         const channelName = "super-admin-dashboard-display";
 
         const setup = async () => {
-            try {
-                // Unsubscribe from previous channel if exists
-                if (channelRef.current) {
-                    await unsubscribeChannel(channelName);
-                    channelRef.current = null;
+            await subscribeToChannel(
+                channelName,
+                "refresh-dashboard-data",
+                (event) => {
+                    console.info("📡 Received from PointsDetails");
+                    fetchPointsDetails();
                 }
-
-                // Subscribe to channel
-                const subscription = await subscribeToChannel(
-                    channelName,
-                    "refresh-dashboard-data",
-                    (event) => {
-                        console.info("📡 Received event from Pusher:", event.eventName);
-                        fetchPointsDetails();
-                    }
-                );
-
-                channelRef.current = subscription;
-                console.log("✅ Subscribed to Pusher channel:", channelName);
-            } catch (error) {
-                console.error("❌ Failed to setup Pusher subscription:", error);
-            }
+            );
+            isSubscribed.current = true;
+            console.log("✅ PointsDetailsProvider subscribed");
         };
 
         setup();
 
-        // Cleanup on unmount or userInfo change
         return () => {
-            if (channelRef.current) {
-                unsubscribeChannel(channelName)
-                    .then(() => {
-                        console.log("🛑 Unsubscribed from Pusher on cleanup");
-                        channelRef.current = null;
-                    })
-                    .catch(err => console.error("❌ Unsubscribe error:", err));
+            if (isSubscribed.current) {
+                unsubscribeChannel(channelName);
+                isSubscribed.current = false;
+                console.log("🛑 PointsDetailsProvider unsubscribed");
             }
         };
-    }, [userInfo]);
+    }, [userInfo?.token]); // Only depend on token
 
     return (
-        <PointsDetailContext.Provider value={{ rewards, fetchPointsDetails }}>
+        <PointsDetailContext.Provider value={{ rewards, refreshPoints: fetchPointsDetails }}>
             {children}
         </PointsDetailContext.Provider>
     );

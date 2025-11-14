@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [userDetails, setUserDetails] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
 
   const registerStep1 = (data) => {
     try {
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          console.log("registerStep1 response: ", res); // Add this
+          console.log("registerStep1 response: ", res);
           return res;
         })
         .catch((err) => {
@@ -58,8 +59,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("verification response: ", res); // Add this
-
           return res;
         })
         .catch((err) => {
@@ -71,7 +70,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerStep2 = (data) => {
-    // console.info(data);
     try {
       return fetch(`${AUTH_URL}register/step-2`, {
         method: "POST",
@@ -88,7 +86,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("registerStep1 response: ", res); // Add this
           return res;
         })
         .catch((err) => {
@@ -100,7 +97,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerStep3 = (data) => {
-    // console.info(data);
     try {
       return fetch(`${AUTH_URL}register/step-3`, {
         method: "POST",
@@ -116,7 +112,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("registerStep1 response: ", res); // Add this
           return res;
         })
         .catch((err) => {
@@ -163,7 +158,6 @@ export const AuthProvider = ({ children }) => {
           alert("Login Catch Error: ", error);
         });
     } catch (error) {
-      // console.error("login error:", error.message);
       alert("Login Error", error);
     }
   };
@@ -180,13 +174,11 @@ export const AuthProvider = ({ children }) => {
         },
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
-        // console.log("user details: ", data.data);
         setUserDetails(data.data);
       }).catch(error => {
         console.error(error);
       });
     } catch (error) {
-      // reject(error);
       console.error("getUserDetails error:", error);
     }
   };
@@ -201,13 +193,11 @@ export const AuthProvider = ({ children }) => {
 
     setUserInfo(null);
     setUserDetails(null);
-    // AsyncStorage.clear();
     const allKeys = await AsyncStorage.getAllKeys();
     const keysToRemove = allKeys.filter(key => !['newUser'].includes(key));
     await AsyncStorage.multiRemove(keysToRemove);
 
     try {
-      // console.log(navigation);
       fetch(`${AUTH_URL}logout`, {
         method: "POST",
         headers: {
@@ -243,7 +233,6 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
-          // console.log("notification code response: ", res);
         })
         .catch((error) => {
           console.error(error);
@@ -291,7 +280,6 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // If granted, get location again
       const location = await Location.getCurrentPositionAsync({});
       const currentLat = location.coords.latitude;
       const currentLong = location.coords.longitude;
@@ -312,47 +300,28 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const init = async () => {
-      await getLocationUser();
+      try {
+        // Get location first (optional, can run in parallel)
+        await getLocationUser();
 
-      const userData = await AsyncStorage.getItem("userInfo");
-      if (userData) {
-        const parsedData = JSON.parse(userData);
-        console.log(parsedData);
-        setUserInfo(parsedData);
-        getUserDetails(parsedData);
+        // Load stored user info
+        const userData = await AsyncStorage.getItem("userInfo");
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          console.log("Loaded user from storage:", parsedData);
+          setUserInfo(parsedData);
+          getUserDetails(parsedData);
+        }
+      } catch (error) {
+        console.error("Init error:", error);
+      } finally {
+        // Always set loading to false, whether user exists or not
+        setIsLoading(false);
       }
     };
 
     init();
   }, []);
-
-  // useEffect(() => {
-  //   const tokenValidation = async () => {
-  //     fetch(`${BASE_URL}customer/check-account-status`, {
-  //       method: "GET",
-  //       headers: {
-  //         Accept: "application/json",
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${userInfo.token}`,
-  //       },
-  //     })
-  //       .then(processResponse)
-  //       .then(async (res) => {
-  //         const { statusCode, data } = res;
-  //         const getUser = await AsyncStorage.getItem("login_credentials");
-  //         const parsedUser = JSON.parse(getUser);
-  //         console.log("userinfo", parsedUser);
-
-  //         if (statusCode === 403) {
-  //           login(parsedUser.email, parsedUser.password);
-  //         }
-  //       }).catch(error => {
-  //         console.error(error);
-  //       });
-  //   }
-
-  //   tokenValidation();
-  // }, []);
 
   return (
     <AuthContext.Provider
@@ -367,7 +336,8 @@ export const AuthProvider = ({ children }) => {
         registerStep1,
         verifyCode,
         registerStep2,
-        registerStep3
+        registerStep3,
+        isLoading
       }}
     >
       {children}

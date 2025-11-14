@@ -26,13 +26,11 @@ import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
-  const { userInfo, userDetails } = useContext(AuthContext);
+  const { userInfo, userDetails, isLoading } = useContext(AuthContext);
   const [initialRoute, setInitialRoute] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [checkingStorage, setCheckingStorage] = useState(true);
 
   useEffect(() => {
-    setLoading(false);
-
     const checkIfNewUser = async () => {
       try {
         const isNewUser = await AsyncStorage.getItem("newUser");
@@ -41,14 +39,15 @@ export default function Navigation() {
         await AsyncStorage.removeItem("newUser");
         setInitialRoute(null);
       } finally {
-        setLoading(false);
+        setCheckingStorage(false);
       }
     };
 
     checkIfNewUser();
   }, []);
 
-  if (loading) {
+  // Wait for both AuthContext and storage check to complete
+  if (isLoading || checkingStorage) {
     return <LoadingPage />;
   }
 
@@ -107,11 +106,6 @@ export default function Navigation() {
                 options={{ headerShown: false }}
               />
             )}
-            {/* <Stack.Screen
-                name="Welcome"
-                component={WelcomeScreen}
-                options={{ headerShown: false }}
-              /> */}
             <Stack.Screen
               name="Login"
               component={LoginScreen}

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -44,9 +44,45 @@ const formatPromoDate = (dateString) => {
     }
 };
 
-export default function SpecificProduct({ visible, product, onClose, onCartUpdated, userPoints, selectedStation, onShowStationModal }) {
+export default function SpecificProduct({ visible, product, onClose, onCartUpdated, userPoints, selectedStation, onShowStationModal, cartUpdateTrigger }) {
     const [quantity, setQuantity] = useState(1);
     const { userInfo, userDetails } = useContext(AuthContext);
+    const [cartInLocalStorage, setCartInLocalStorage] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const getCartinLocalStorage = async () => {
+        try {
+            const getCarts = await AsyncStorage.getItem("carts");
+            let carts = getCarts ? JSON.parse(getCarts) : [];
+            const existingProduct = carts.find(item => item.id === product.id);
+
+            if (existingProduct) {
+                setCartInLocalStorage(existingProduct);
+            } else {
+                setCartInLocalStorage(null);
+            }
+        } catch (error) {
+            console.error("Error getting cart from AsyncStorage:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (visible && product) {
+            getCartinLocalStorage();
+        }
+    }, [visible, product, refreshKey]);
+
+    // Separate effect to watch for cart updates from CartScreens
+    useEffect(() => {
+        if (visible && product && cartUpdateTrigger > 0) {
+            // Add a small delay to ensure AsyncStorage has been updated
+            const timer = setTimeout(() => {
+                getCartinLocalStorage();
+            }, 100);
+
+            return () => clearTimeout(timer);
+        }
+    }, [cartUpdateTrigger]);
 
     if (!product) return null;
 
@@ -54,6 +90,13 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
     const isOutOfStock = product.quantity === 0;
     const maxQuantity = Math.min(product.quantity, 10); // Max 10 items per order
     const totalPoints = product.points * quantity;
+
+    const handleCartUpdatedWithRefresh = () => {
+        setRefreshKey(prev => prev + 1); // Trigger refresh
+        if (onCartUpdated) {
+            onCartUpdated();
+        }
+    };
 
     const handleIncrement = () => {
         if (quantity < maxQuantity) {
@@ -70,12 +113,6 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
     const handleAddToCart = () => {
         // Check if station is selected
         if (!selectedStation) {
-            // Close product modal first
-            // handleCloseProduct();
-            // Then show station selection modal
-            // setTimeout(() => {
-            //     onShowStationModal();
-            // }, 300);
             onShowStationModal(product);
             return;
         }
@@ -112,8 +149,6 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
             return;
         }
 
-        // handleCloseProduct();
-
         try {
             fetch(`${BASE_URL}customer/add-cart`, {
                 method: "POST",
@@ -134,11 +169,30 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                 .then(processResponse)
                 .then(async (res) => {
                     const { statusCode, data } = res;
-                    // console.log(res);
+                    const getCarts = await AsyncStorage.getItem("carts");
+                    let carts = getCarts ? JSON.parse(getCarts) : [];
+
+                    // Check if product already exists in cart
+                    const existingIndex = carts.findIndex(item => item.id === product.id);
+
+                    if (existingIndex !== -1) {
+                        // Product exists → update quantity
+                        carts[existingIndex].quantity = (carts[existingIndex].quantity || 1) + quantity;
+                    } else {
+                        // Product does not exist → add new with quantity
+                        carts.push({ ...product, quantity: quantity });
+                    }
+
+                    // Save back to AsyncStorage
+                    await AsyncStorage.setItem("carts", JSON.stringify(carts));
+
                     if (statusCode == 200 || statusCode == 201) {
                         if (onCartUpdated) {
                             onCartUpdated();
                         }
+
+                        handleCartUpdatedWithRefresh(); // Use updated callback
+                        await getCartinLocalStorage();
 
                         handleCloseProduct();
                     }
@@ -248,11 +302,34 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                                 <Text style={styles.categoryText}>{product.category}</Text>
                             </View>
 
-                            {/* Product Name */}
-                            <Text style={styles.productName}>{product.name}</Text>
+                            {/* Product Name and Points */}
+                            <View style={styles.namePointsRow}>
+                                <Text style={styles.productName}>{product.name}</Text>
+                                <View style={styles.compactPointsDisplay}>
+                                    <Image
+                                        source={require('../../../../assets/my.png')}
+                                        style={styles.compactPointsIcon}
+                                    />
+                                    {product.isWeeklyPromo && product.originalPoints ? (
+                                        <View style={styles.compactPriceContainer}>
+                                            <Text style={styles.compactOriginalPoints}>
+                                                {product.originalPoints.toLocaleString()}
+                                            </Text>
+                                            <Text style={styles.compactProductPoints}>
+                                                {product.points.toLocaleString()}
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.compactProductPoints}>
+                                            {product.points.toLocaleString()}
+                                        </Text>
+                                    )}
+                                    <Text style={styles.compactPointsSuffix}>pts</Text>
+                                </View>
+                            </View>
 
                             {/* Product Description */}
-                            <Text style={styles.productDescription}>{product.description}</Text>
+                            {/* <Text style={styles.productDescription}>{product.description}</Text> */}
 
                             {/* Promo Information */}
                             {product.isWeeklyPromo && (
@@ -284,38 +361,20 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                                 </View>
                             )}
 
-                            {/* Points Display */}
-                            <View style={styles.pointsSection}>
-                                <Text style={styles.pointsLabel}>Points Required</Text>
-                                <View style={styles.pointsDisplay}>
-                                    <Image
-                                        source={require('../../../../assets/my.png')}
-                                        style={styles.pointsIcon}
-                                    />
+                            {/* Cart Quantity Display */}
+                            {cartInLocalStorage && cartInLocalStorage.quantity > 0 && (
+                                <View style={styles.cartInfoSection}>
+                                    <View style={styles.cartInfoHeader}>
+                                        <Ionicons name="cart" size={20} color="#059669" />
+                                        <Text style={styles.cartInfoTitle}>In Your Cart</Text>
+                                    </View>
 
-                                    {product.isWeeklyPromo && product.originalPoints ? (
-                                        <View style={styles.priceContainer}>
-                                            <Text style={styles.originalPoints}>
-                                                {product.originalPoints.toLocaleString()}
-                                            </Text>
-                                            <Text style={styles.productPoints}>
-                                                {product.points.toLocaleString()}
-                                            </Text>
-                                            <View style={styles.discountBadge}>
-                                                <Text style={styles.discountText}>
-                                                    -{Math.round(((product.originalPoints - product.points) / product.originalPoints) * 100)}%
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    ) : (
-                                        <Text style={styles.productPoints}>
-                                            {product.points.toLocaleString()}
-                                        </Text>
-                                    )}
-
-                                    <Text style={styles.pointsSuffix}>pts</Text>
+                                    <View style={styles.cartQuantityContainer}>
+                                        <Text style={styles.cartQuantityLabel}>Quantity:</Text>
+                                        <Text style={styles.cartQuantityValue}>{cartInLocalStorage.quantity}</Text>
+                                    </View>
                                 </View>
-                            </View>
+                            )}
 
                             {/* Quantity Selector */}
                             {!isOutOfStock && (
@@ -595,12 +654,54 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
+    namePointsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: getResponsiveValue(10, 12, 14, 16),
+        gap: getResponsiveValue(12, 14, 16, 18),
+    },
     productName: {
+        flex: 1,
         fontSize: getResponsiveValue(24, 26, 28, 30),
         fontWeight: '800',
         color: '#111827',
-        marginBottom: getResponsiveValue(10, 12, 14, 16),
         lineHeight: getResponsiveValue(30, 32, 34, 36),
+    },
+    compactPointsDisplay: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF3C7',
+        paddingHorizontal: getResponsiveValue(10, 12, 14, 16),
+        paddingVertical: getResponsiveValue(6, 8, 10, 12),
+        borderRadius: getResponsiveValue(8, 10, 12, 14),
+        gap: getResponsiveValue(6, 7, 8, 9),
+    },
+    compactPointsIcon: {
+        width: getResponsiveValue(18, 20, 22, 24),
+        height: getResponsiveValue(18, 20, 22, 24),
+        resizeMode: 'contain',
+    },
+    compactPriceContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: getResponsiveValue(6, 7, 8, 9),
+    },
+    compactOriginalPoints: {
+        fontSize: getResponsiveValue(12, 13, 14, 15),
+        fontWeight: '600',
+        color: '#9CA3AF',
+        textDecorationLine: 'line-through',
+    },
+    compactProductPoints: {
+        fontSize: getResponsiveValue(16, 17, 18, 19),
+        fontWeight: '800',
+        color: '#F59E0B',
+    },
+    compactPointsSuffix: {
+        fontSize: getResponsiveValue(11, 12, 13, 14),
+        color: '#92400E',
+        fontWeight: '600',
     },
     productDescription: {
         fontSize: getResponsiveValue(15, 16, 17, 18),
@@ -641,6 +742,74 @@ const styles = StyleSheet.create({
     promoDateText: {
         fontSize: getResponsiveValue(13, 14, 15, 16),
         color: '#8B5CF6',
+        fontWeight: '600',
+    },
+    cartInfoSection: {
+        backgroundColor: '#ECFDF5',
+        padding: getResponsiveValue(16, 18, 20, 22),
+        borderRadius: getResponsiveValue(12, 14, 16, 18),
+        marginBottom: getResponsiveValue(20, 24, 28, 32),
+        borderLeftWidth: 4,
+        borderLeftColor: '#059669',
+    },
+    cartInfoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: getResponsiveValue(12, 14, 16, 18),
+    },
+    cartInfoTitle: {
+        fontSize: getResponsiveValue(16, 17, 18, 19),
+        fontWeight: '700',
+        color: '#059669',
+    },
+    cartQuantityContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: getResponsiveValue(12, 14, 16, 18),
+    },
+    cartQuantityLabel: {
+        fontSize: getResponsiveValue(14, 15, 16, 17),
+        color: '#047857',
+        fontWeight: '600',
+    },
+    cartQuantityValue: {
+        fontSize: getResponsiveValue(20, 22, 24, 26),
+        fontWeight: '800',
+        color: '#059669',
+    },
+    cartPointsInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: getResponsiveValue(12, 14, 16, 18),
+        borderTopWidth: 1,
+        borderTopColor: '#A7F3D0',
+    },
+    cartPointsLabel: {
+        fontSize: getResponsiveValue(14, 15, 16, 17),
+        color: '#047857',
+        fontWeight: '600',
+    },
+    cartPointsDisplay: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    cartPointsIcon: {
+        width: getResponsiveValue(20, 22, 24, 26),
+        height: getResponsiveValue(20, 22, 24, 26),
+        resizeMode: 'contain',
+    },
+    cartPointsValue: {
+        fontSize: getResponsiveValue(18, 19, 20, 21),
+        fontWeight: '800',
+        color: '#059669',
+    },
+    cartPointsSuffix: {
+        fontSize: getResponsiveValue(13, 14, 15, 16),
+        color: '#047857',
         fontWeight: '600',
     },
     pointsSection: {

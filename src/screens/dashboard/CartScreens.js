@@ -40,7 +40,6 @@ const getResponsiveValue = (small, medium, tablet, large) => {
 
 // Snackbar Component
 const Snackbar = ({ visible, text, type = 'success', onHide }) => {
-    // console.log(visible, text, type);
     const translateY = useRef(new Animated.Value(100)).current;
 
     useEffect(() => {
@@ -86,7 +85,7 @@ const Snackbar = ({ visible, text, type = 'success', onHide }) => {
 const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
     const handleIncrease = () => {
         if (item.quantity < item.maxQuantity) {
-            onQuantityChange(item.stationInventoryId, item.quantity + 1);
+            onQuantityChange(item.stationInventoryId, item.quantity + 1, item.inventoryId);
         } else {
             Alert.alert('Stock Limit', `Only ${item.maxQuantity} items available in stock.`);
         }
@@ -94,7 +93,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 
     const handleDecrease = () => {
         if (item.quantity > 1) {
-            onQuantityChange(item.stationInventoryId, item.quantity - 1);
+            onQuantityChange(item.stationInventoryId, item.quantity - 1, item.inventoryId);
         }
     };
 
@@ -132,7 +131,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 
                     <TouchableOpacity
                         style={styles.removeButton}
-                        onPress={() => onRemove(item.stationInventoryId, item.name)}
+                        onPress={() => onRemove(item.stationInventoryId, item.name, item.inventoryId)}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="trash-outline" size={18} color="#EF4444" />
@@ -216,7 +215,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 
 export default function CartScreens({ navigation, route }) {
     const { userInfo, userDetails } = useContext(AuthContext);
-    const { rewards } = useContext(PointsDetailContext);
+    const { rewards, refreshPoints } = useContext(PointsDetailContext);
     const station = route?.params?.station;
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -224,6 +223,7 @@ export default function CartScreens({ navigation, route }) {
     const [showQR, setShowQR] = useState(false);
     const [transaction, setTransaction] = useState(null);
     const userPoints = rewards?.points || 0;
+    const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
     const totalPoints = useMemo(() => {
         return cartItems.reduce((sum, item) => sum + (item.points * item.quantity), 0);
@@ -304,11 +304,11 @@ export default function CartScreens({ navigation, route }) {
 
             const res = await processResponse(response);
             const { statusCode, data } = res;
-            // console.log(userDetails.bar_code);
 
             if (statusCode === 201 && data?.data) {
                 const transformedData = transformCartData(data.data);
                 setCartItems(transformedData);
+                console.log(transformedData);
             } else {
                 setCartItems([]);
             }
@@ -321,9 +321,10 @@ export default function CartScreens({ navigation, route }) {
         }
     };
 
-    const handleQuantityChange = (itemId, newQuantity) => {
+    // Update the handleQuantityChange function
+    const handleQuantityChange = async (itemId, newQuantity, inventoryId) => {
         try {
-            fetch(`${BASE_URL}customer/adjust-quantity`, {
+            const response = await fetch(`${BASE_URL}customer/adjust-quantity`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -335,37 +336,49 @@ export default function CartScreens({ navigation, route }) {
                     station_inventories_id: itemId,
                     quantity_change: newQuantity
                 })
-            })
-                .then(processResponse)
-                .then(res => {
-                    const { statusCode, data } = res;
-                    // console.log(data.data);
-                    // console.log(itemId, newQuantity);
-                    if (statusCode === 200) {
-                        setCartItems(prev =>
-                            prev.map(item =>
-                                item.stationInventoryId === itemId ? { ...item, quantity: newQuantity } : item
-                            )
-                        );
-                        showSnackbar(`${data.data.message}`, 'success');
+            });
+
+            const res = await processResponse(response);
+            const { statusCode, data } = res;
+
+            if (statusCode === 200) {
+                const getCarts = await AsyncStorage.getItem("carts");
+                let carts = getCarts ? JSON.parse(getCarts) : [];
+
+                const existingIndex = carts.findIndex(item => item.id === inventoryId);
+
+                if (existingIndex !== -1) {
+                    if (newQuantity > 0) {
+                        carts[existingIndex].quantity = newQuantity;
                     } else {
-                        showSnackbar(`${data.data.message}`, 'failure');
+                        carts.splice(existingIndex, 1);
                     }
-                })
-                .catch(error => {
-                    console.error('Error updating quantity:', error);
-                    showSnackbar(`${error}`, 'error');
-                })
-                .finally(() => {
-                    // showSnackbar(``, )
-                });
+
+                    await AsyncStorage.setItem("carts", JSON.stringify(carts));
+                }
+
+                // Update local state first
+                setCartItems(prev =>
+                    prev.map(item =>
+                        item.stationInventoryId === itemId ? { ...item, quantity: newQuantity } : item
+                    )
+                );
+
+                // Then trigger the update for other components
+                setCartUpdateTrigger(prev => prev + 1);
+
+                showSnackbar(`${data.data.message}`, 'success');
+            } else {
+                showSnackbar(`${data.data.message}`, 'failure');
+            }
         } catch (error) {
             console.error('Error updating quantity:', error);
+            showSnackbar(`${error}`, 'error');
         }
-
     };
 
-    const handleRemoveItem = async (itemId, itemName) => {
+    // Update the handleRemoveItem function
+    const handleRemoveItem = async (itemId, itemName, inventoryId) => {
         Alert.alert(
             'Remove Item',
             'Are you sure you want to remove this item from your cart?',
@@ -393,9 +406,21 @@ export default function CartScreens({ navigation, route }) {
                             const { statusCode, data } = res;
 
                             if (statusCode === 200) {
+                                const getCarts = await AsyncStorage.getItem("carts");
+                                let carts = getCarts ? JSON.parse(getCarts) : [];
+
+                                carts = carts.filter(item => item.id !== inventoryId);
+                                await AsyncStorage.setItem("carts", JSON.stringify(carts));
+                                // debugStorage();
+                                // console.log(carts);
+
+                                // Update local state first
                                 setCartItems(prev => prev.filter(item => item.stationInventoryId !== itemId));
+
+                                // Then trigger the update for other components
+                                setCartUpdateTrigger(prev => prev + 1);
+
                                 showSnackbar(`${itemName} removed from cart`, 'success');
-                                // await getCartItems();
 
                                 const storedCount = await AsyncStorage.getItem("cartCount");
                                 let newCount = storedCount ? parseInt(storedCount, 10) - 1 : 0;
@@ -441,16 +466,19 @@ export default function CartScreens({ navigation, route }) {
                             const { statusCode, data } = res;
 
                             if (statusCode === 200) {
-                                AsyncStorage.removeItem('cartCount');
+                                // Clear localStorage
+                                await AsyncStorage.removeItem('carts');
+                                await AsyncStorage.removeItem('cartCount');
+
+                                // Update state
                                 setCartItems([]);
                                 showSnackbar('Cart cleared', 'success');
-                                // await getCartItems();
                             } else {
-                                showSnackbar('Failed to remove item', 'error');
+                                showSnackbar('Failed to clear cart', 'error');
                             }
                         } catch (error) {
-                            console.error('Error removing item:', error);
-                            showSnackbar('Failed to remove item', 'error');
+                            console.error('Error clearing cart:', error);
+                            showSnackbar('Failed to clear cart', 'error');
                         }
                     },
                 },
@@ -477,8 +505,6 @@ export default function CartScreens({ navigation, route }) {
                     text: 'Redeem',
                     onPress: async () => {
                         try {
-                            // console.log(station);
-                            // console.log(cartItems);
                             const now = new Date();
                             const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
                             const randomPart = Math.floor(10000 + Math.random() * 90000);
@@ -507,6 +533,7 @@ export default function CartScreens({ navigation, route }) {
                                         setCartItems([]);
                                         showSnackbar(`${data.message}`, 'success');
                                         setTransaction(referenceNumber);
+                                        refreshPoints?.();
                                         setShowQR(true);
                                     } else {
                                         showSnackbar(`${data.message}`, 'error');
@@ -517,13 +544,8 @@ export default function CartScreens({ navigation, route }) {
                                     showSnackbar('Failed to redeem items', 'error');
                                 });
 
-                            // Call your checkout API
-                            // console.log('Checkout:', cartItems);
-
                         } catch (error) {
                             console.error('Error redeeming items:', error);
-                            // console.error('Checkout error:', error);
-                            // showSnackbar('Failed to complete redemption', 'error');
                         }
                     },
                 },
@@ -688,10 +710,6 @@ export default function CartScreens({ navigation, route }) {
                                 <View style={styles.summaryRow}>
                                     <Text style={styles.summaryLabel}>Total Points</Text>
                                     <View style={styles.summaryPointsValue}>
-                                        {/* <Image
-                                            source={require('../../../assets/my.png')}
-                                            style={styles.miniIcon}
-                                        /> */}
                                         <Text style={styles.summaryPoints}>{totalPoints.toLocaleString()}</Text>
                                         <Text style={styles.pointsLabel}>pts</Text>
                                     </View>
@@ -835,25 +853,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: getResponsiveValue(20, 24, 28, 32),
         gap: getResponsiveValue(12, 14, 16, 18),
-    },
-    backButton: {
-        width: getResponsiveValue(40, 44, 48, 52),
-        height: getResponsiveValue(40, 44, 48, 52),
-        borderRadius: getResponsiveValue(20, 22, 24, 26),
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 3,
-            },
-        }),
     },
     pageHeaderContent: {
         flex: 1,
@@ -1171,11 +1170,6 @@ const styles = StyleSheet.create({
     promoPrice: {
         color: '#8B5CF6',
         fontSize: getResponsiveValue(15, 16, 17, 18),
-    },
-    pointsLabel: {
-        fontSize: getResponsiveValue(11, 12, 13, 14),
-        color: '#6B7280',
-        fontWeight: '500',
     },
     savingsRow: {
         flexDirection: 'row',
