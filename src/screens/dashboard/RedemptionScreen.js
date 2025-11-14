@@ -252,7 +252,7 @@ export default function RedemptionScreen({ navigation }) {
   );
 
   // User points
-  const userPoints = rewards?.points || 0;
+  const userPoints = rewards.points || 0;
   const cardWidth = useMemo(() => getCardWidth(), []);
 
   const getAllProducts = async (station) => {

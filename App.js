@@ -143,7 +143,7 @@ export default function App() {
       />
     );
   } else if (!serverUp) {
-    // ScreenToRender = <ServerMaintenance />;
+    ScreenToRender = <ServerMaintenance />;
   }
 
   return (

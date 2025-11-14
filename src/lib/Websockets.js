@@ -22,7 +22,7 @@ export async function initPusher() {
         }
 
         await pusher.init({
-            apiKey: "520d86ca82ea50c00604",
+            apiKey: "efb45a8d70be75b2c96d",
             cluster: "ap1",
             forceTLS: true,
             onConnectionStateChange: (currentState, prevState) => {
