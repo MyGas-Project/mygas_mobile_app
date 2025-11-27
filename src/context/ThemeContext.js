@@ -293,7 +293,8 @@ export const ThemeProvider = ({ children }) => {
       shadowOpacity: 0.3,
       shadowRadius: 4,
       position: "absolute",
-      bottom: 30
+      // marginBottom: 15
+      bottom: 30,
     },
     greetingsContainer: {
       flexDirection: 'row',

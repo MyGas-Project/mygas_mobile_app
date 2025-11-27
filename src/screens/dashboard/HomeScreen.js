@@ -252,6 +252,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadAllData();
+    console.log(userDetails);
   }, []);
 
   return (
@@ -381,9 +382,9 @@ export default function HomeScreen({ navigation }) {
                 ]}
               >
                 <ImageBackground
-                  source={require("../../../assets/Card_New.png")}
+                  source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.jpeg") : require("../../../assets/regular_card.jpeg")}
                   resizeMode="contain"
-                  style={custom_styles.pointsCard}
+                  style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
                 >
                   {/* Floating Particles Effect Overlay */}
                   <View style={custom_styles.cardOverlay}>

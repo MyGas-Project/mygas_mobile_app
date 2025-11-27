@@ -18,6 +18,7 @@ import NewsScreen from "../screens/dashboard/NewsScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import RewardDetails from "../screens/dashboard/RewardDetails";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -47,14 +48,23 @@ const CenterButton = ({ onPress }) => {
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { styles } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Define the visual order you want
   const orderedRoutes = ["News", "Redemption", "Home", "Stations", "Activity"];
 
   return (
-    <View style={styles.tabBar}>
+    <View
+      style={[
+        styles.tabBar,
+        {
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          height: 70 + (insets.bottom > 0 ? insets.bottom : 10),
+        },
+      ]}
+    >
       {orderedRoutes.map((routeName, index) => {
-        const routeIndex = state.routes.findIndex(r => r.name === routeName);
+        const routeIndex = state.routes.findIndex((r) => r.name === routeName);
         if (routeIndex === -1) return null;
 
         const route = state.routes[routeIndex];
@@ -63,8 +73,16 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         if (route.name === "Home") {
           return (
             <View key={route.name} style={styles.tabButton}>
-              <CenterButton onPress={() => navigation.navigate(route.name)} />
-              <Text style={{ marginTop: 25, color: isFocused ? "#E63946" : "#555" }}>
+              <CenterButton
+                onPress={() => navigation.navigate(route.name)}
+                bottomOffset={insets.bottom > 0 ? insets.bottom : 10}
+              />
+              <Text
+                style={{
+                  marginTop: 25,
+                  color: isFocused ? "#E63946" : "#555",
+                }}
+              >
                 {route.name}
               </Text>
             </View>
@@ -96,7 +114,9 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                 height: 25,
               }}
             />
-            <Text style={{ fontSize: 9, color: isFocused ? "#E63946" : "#555" }}>
+            <Text
+              style={{ fontSize: 9, color: isFocused ? "#E63946" : "#555" }}
+            >
               My {route.name}
             </Text>
           </TouchableOpacity>
@@ -106,20 +126,43 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   );
 };
 
-
 const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, }}
+      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
       initialRouteName="Home"
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="News" component={NewsScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="Redemption" component={RedemptionScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="Stations" component={StationsScreeen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="Activity" component={ActivityScreen} options={{ unmountOnBlur: true }} />
-      <Tab.Screen name="RewardDetails" component={RewardDetails} options={{ tabBarButton: () => null, unmountOnBlur: true }} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="News"
+        component={NewsScreen}
+        options={{ unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="Redemption"
+        component={RedemptionScreen}
+        options={{ unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="Stations"
+        component={StationsScreeen}
+        options={{ unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="Activity"
+        component={ActivityScreen}
+        options={{ unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="RewardDetails"
+        component={RewardDetails}
+        options={{ tabBarButton: () => null, unmountOnBlur: true }}
+      />
       {/* <Tab.Screen
         name="Profile"
         component={ProfileScreen}

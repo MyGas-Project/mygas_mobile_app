@@ -26,6 +26,7 @@ import SpecificProduct from "./redemption/SpecificProduct";
 import CartComponent from "../../components/CartComponent";
 import { useFocusEffect } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
+import { getUniqueCartCount } from "../../lib/CartCountHelper";
 
 const { width, height } = Dimensions.get("window");
 
@@ -221,11 +222,10 @@ export default function RedemptionScreen({ navigation }) {
   const [stationFilterProduct, setStationFilterProduct] = useState(null);
   const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
-  // Function to refresh cart count
+  // Update the refreshCartCount function:
   const refreshCartCount = useCallback(async () => {
     try {
-      const storedCount = await AsyncStorage.getItem("cartCount");
-      const count = storedCount ? parseInt(storedCount, 10) : 0;
+      const count = await getUniqueCartCount();
       setCartCount(count);
     } catch (error) {
       console.error("Error refreshing cart count:", error);
@@ -233,14 +233,11 @@ export default function RedemptionScreen({ navigation }) {
     }
   }, []);
 
+  // Update incrementCartCount (this should now rarely be called):
   const incrementCartCount = async () => {
     try {
-      const storedCount = await AsyncStorage.getItem("cartCount");
-      const currentCount = storedCount ? parseInt(storedCount, 10) : 0;
-      const newCount = currentCount + 1;
-      await AsyncStorage.setItem("cartCount", newCount.toString());
-      setCartCount(newCount);
-
+      const count = await getUniqueCartCount();
+      setCartCount(count);
       setCartUpdateTrigger(prev => prev + 1);
     } catch (error) {
       console.error("Error incrementing cart count:", error);
@@ -469,6 +466,21 @@ export default function RedemptionScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
+          {/* Low Points Alert */}
+          {userPoints < 10 && (
+            <View style={styles.lowPointsAlert}>
+              <LinearGradient
+                colors={["#FEE2E2", "#FECACA"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.lowPointsGradient}
+              >
+                <Ionicons name="warning" size={18} color="#DC2626" />
+                <Text style={styles.lowPointsText}>You have low points</Text>
+              </LinearGradient>
+            </View>
+          )}
+
           {/* Enhanced Points Display */}
           <View style={styles.pointsCardContainer}>
             <View style={styles.pointsCard}>
@@ -969,96 +981,7 @@ const styles = StyleSheet.create({
   },
   pointsCard: {
     flex: 1,
-    borderRadius: getResponsiveValue(16, 20, 24, 28),
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  myRedemptionButton: {
-    borderRadius: getResponsiveValue(16, 20, 24, 28),
-    overflow: "hidden",
-    width: getResponsiveValue(110, 120, 130, 140),
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  myRedemptionGradient: {
-    flex: 1,
-    paddingVertical: getResponsiveValue(16, 18, 20, 22),
-    paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
-    alignItems: "center",
-    justifyContent: "center",
-    gap: getResponsiveValue(6, 8, 10, 12),
-  },
-  myRedemptionText: {
-    fontSize: getResponsiveValue(11, 12, 13, 14),
-    color: "#fff",
-    fontWeight: "700",
-    textAlign: "center",
-    lineHeight: getResponsiveValue(14, 16, 18, 20),
-  },
-  pointsGradient: {
-    padding: getResponsiveValue(20, 24, 28, 32),
-  },
-  pointsContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: getResponsiveValue(12, 14, 16, 18),
-  },
-  pointsTitle: {
-    fontSize: getResponsiveValue(13, 14, 15, 16),
-    color: "#92400E",
-    fontWeight: "600",
-    marginBottom: getResponsiveValue(8, 10, 12, 14),
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  pointsValueContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: getResponsiveValue(8, 10, 12, 14),
-  },
-  pointsIcon: {
-    width: getResponsiveValue(20, 32, 36, 40),
-    height: getResponsiveValue(20, 32, 36, 40),
-    resizeMode: "contain",
-  },
-  pointsValue: {
-    fontSize: getResponsiveValue(18, 32, 36, 40),
-    fontWeight: "800",
-    color: "#92400E",
-    letterSpacing: -1,
-  },
-  pointsIconContainer: {
-    width: getResponsiveValue(25, 64, 72, 80),
-    height: getResponsiveValue(25, 64, 72, 80),
-    borderRadius: getResponsiveValue(28, 32, 36, 40),
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stationSelectionCard: {
-    borderRadius: getResponsiveValue(16, 20, 24, 28),
-    marginBottom: getResponsiveValue(20, 24, 28, 32),
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -1071,6 +994,79 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
     }),
+  },
+  myRedemptionButton: {
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    overflow: "hidden",
+    width: getResponsiveValue(100, 110, 120, 130),
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  myRedemptionGradient: {
+    flex: 1,
+    paddingVertical: getResponsiveValue(12, 14, 16, 18),
+    paddingHorizontal: getResponsiveValue(10, 12, 14, 16),
+    alignItems: "center",
+    justifyContent: "center",
+    gap: getResponsiveValue(4, 6, 8, 10),
+  },
+  myRedemptionText: {
+    fontSize: getResponsiveValue(10, 11, 12, 13),
+    color: "#fff",
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: getResponsiveValue(12, 14, 16, 18),
+  },
+  pointsGradient: {
+    padding: getResponsiveValue(14, 16, 18, 20),
+  },
+  pointsContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: getResponsiveValue(8, 10, 12, 14),
+  },
+  pointsTitle: {
+    fontSize: getResponsiveValue(11, 12, 13, 14),
+    color: "#92400E",
+    fontWeight: "600",
+    marginBottom: getResponsiveValue(4, 6, 8, 10),
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  pointsValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getResponsiveValue(6, 8, 10, 12),
+  },
+  pointsIcon: {
+    width: getResponsiveValue(18, 20, 24, 28),
+    height: getResponsiveValue(18, 20, 24, 28),
+    resizeMode: "contain",
+  },
+  pointsValue: {
+    fontSize: getResponsiveValue(22, 24, 28, 32),
+    fontWeight: "800",
+    color: "#92400E",
+    letterSpacing: -0.5,
+  },
+  pointsIconContainer: {
+    width: getResponsiveValue(40, 44, 48, 52),
+    height: getResponsiveValue(40, 44, 48, 52),
+    borderRadius: getResponsiveValue(20, 22, 24, 26),
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   stationSelectionGradient: {
     padding: getResponsiveValue(18, 20, 22, 24),
@@ -1710,5 +1706,36 @@ const styles = StyleSheet.create({
     fontSize: getResponsiveValue(15, 16, 17, 18),
     fontWeight: "700",
     color: "#fff",
+  },
+  lowPointsAlert: {
+    marginBottom: getResponsiveValue(12, 14, 16, 18),
+    borderRadius: getResponsiveValue(10, 12, 14, 16),
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#DC2626",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  lowPointsGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: getResponsiveValue(14, 16, 18, 20),
+    paddingVertical: getResponsiveValue(10, 12, 14, 16),
+    gap: getResponsiveValue(10, 12, 14, 16),
+    borderLeftWidth: 4,
+    borderLeftColor: "#DC2626",
+  },
+  lowPointsText: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: "#991B1B",
+    fontWeight: "700",
+    flex: 1,
   },
 });

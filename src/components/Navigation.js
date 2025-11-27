@@ -22,6 +22,7 @@ import CartScreens from "../screens/dashboard/CartScreens";
 import RedemptionTransactionScreens from "../screens/dashboard/RedemptionTransactionScreens";
 import TransactionDetailsPopup from "../screens/dashboard/components/TransactionDetailsPopup";
 import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -109,6 +110,11 @@ export default function Navigation() {
             <Stack.Screen
               name="Login"
               component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

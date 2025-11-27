@@ -54,6 +54,7 @@ export default function ActivityScreen({ navigation }) {
                 }
             }).then(processResponse).then((res) => {
                 const { statusCode, data } = res;
+                console.log(data.result);
                 if (statusCode === 200) {
                     const grouped = groupByDate(data.result);
                     setGroupedTransactions(grouped);
@@ -253,7 +254,7 @@ export default function ActivityScreen({ navigation }) {
                                                         </View>
                                                         <View style={custom_styles.headerInfo}>
                                                             <Text style={custom_styles.stationName} numberOfLines={1}>
-                                                                {item.station_name}
+                                                                {item.service === 'Adjustment' ? 'MyGas Credit/Debit Memo' : item.station_name}
                                                             </Text>
                                                             <Text style={custom_styles.dateTime} numberOfLines={1}>
                                                                 {formatDateTime(item.date, item.time)}
@@ -286,16 +287,28 @@ export default function ActivityScreen({ navigation }) {
 
                                                     <View style={[
                                                         custom_styles.pointsBadge,
-                                                        { backgroundColor: item.service === 'Cash Redeem' ? '#FFE5E5' : '#FFF8E1' }
+                                                        {
+                                                            backgroundColor:
+                                                                item.service === 'Cash Redeem' ? '#FFE5E5' :
+                                                                    item.service === 'Adjustment' ? '#E3F2FD' :
+                                                                        '#FFF8E1'
+                                                        }
                                                     ]}>
                                                         <Text style={[
                                                             custom_styles.pointsValue,
-                                                            { color: item.service === 'Cash Redeem' ? '#D32F2F' : '#F57C00' }
+                                                            {
+                                                                color:
+                                                                    item.service === 'Cash Redeem' ? '#D32F2F' :
+                                                                        item.service === 'Adjustment' ? (parseFloat(item.points) >= 0 ? '#1976D2' : '#D32F2F') :
+                                                                            '#F57C00'
+                                                            }
                                                         ]}>
-                                                            {item.service === 'Cash Redeem' ? '-' : '+'}{item.points}
+                                                            {item.service === 'Cash Redeem' || parseFloat(item.points) < 0 ? '' : '+'}{item.points}
                                                         </Text>
                                                         <Text style={custom_styles.pointsText}>
-                                                            {item.service === 'Cash Redeem' ? 'redeemed' : 'earned'}
+                                                            {item.service === 'Cash Redeem' ? 'redeemed' :
+                                                                item.service === 'Adjustment' ? (parseFloat(item.points) >= 0 ? 'credit' : 'debit') :
+                                                                    'earned'}
                                                         </Text>
                                                     </View>
                                                 </View>

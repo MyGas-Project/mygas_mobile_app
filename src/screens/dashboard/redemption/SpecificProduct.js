@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../../context/AuthContext';
 import { BASE_URL, processResponse } from '../../../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateCartItem } from '../../../lib/CartCountHelper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -110,7 +111,8 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
         }
     };
 
-    const handleAddToCart = () => {
+    // Replace the handleAddToCart function with this:
+    const handleAddToCart = async () => {
         // Check if station is selected
         if (!selectedStation) {
             onShowStationModal(product);
@@ -118,39 +120,30 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
         }
 
         try {
-            fetch(`${BASE_URL}customer/check-inventory?inventory_id=${product.id}&station_id=${selectedStation.id}`, {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${userInfo.token}`,
-                }
-            })
-                .then(processResponse)
-                .then(async (res) => {
-                    const { statusCode, data } = res;
-                    if (statusCode == 404) {
-                        Alert.alert(
-                            'Product Not Found',
-                            'The selected product is not available in the selected station.',
-                            [
-                                {
-                                    text: 'OK', onPress: () => {
-                                        onShowStationModal();
-                                    }
-                                },
-                            ]
-                        );
-                        return;
+            const inventoryCheck = await fetch(
+                `${BASE_URL}customer/check-inventory?inventory_id=${product.id}&station_id=${selectedStation.id}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${userInfo.token}`,
                     }
-                })
-                .catch((err) => console.log(err));
-        } catch (error) {
-            return;
-        }
+                }
+            );
 
-        try {
-            fetch(`${BASE_URL}customer/add-cart`, {
+            const inventoryRes = await processResponse(inventoryCheck);
+
+            if (inventoryRes.statusCode === 404) {
+                Alert.alert(
+                    'Product Not Found',
+                    'The selected product is not available in the selected station.',
+                    [{ text: 'OK', onPress: () => onShowStationModal() }]
+                );
+                return;
+            }
+
+            const response = await fetch(`${BASE_URL}customer/add-cart`, {
                 method: "POST",
                 headers: {
                     Accept: "application/json",
@@ -165,42 +158,44 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                     bar_code: userDetails.bar_code,
                     points: product.points
                 })
-            })
-                .then(processResponse)
-                .then(async (res) => {
-                    const { statusCode, data } = res;
-                    const getCarts = await AsyncStorage.getItem("carts");
-                    let carts = getCarts ? JSON.parse(getCarts) : [];
+            });
 
-                    // Check if product already exists in cart
-                    const existingIndex = carts.findIndex(item => item.id === product.id);
+            const res = await processResponse(response);
+            const { statusCode, data } = res;
 
-                    if (existingIndex !== -1) {
-                        // Product exists → update quantity
+            if (statusCode === 200 || statusCode === 201) {
+                const getCarts = await AsyncStorage.getItem("carts");
+                let carts = getCarts ? JSON.parse(getCarts) : [];
+
+                const existingIndex = carts.findIndex(item => item.id === product.id);
+                const isNewItem = existingIndex === -1;
+
+                if (existingIndex !== -1) {
+                    // Update existing item quantity
+                    if (carts[existingIndex].quantity <= 10) {
                         carts[existingIndex].quantity = (carts[existingIndex].quantity || 1) + quantity;
-                    } else {
-                        // Product does not exist → add new with quantity
-                        carts.push({ ...product, quantity: quantity });
                     }
+                } else {
+                    // Add new item
+                    carts.push({ ...product, quantity: quantity });
+                }
 
-                    // Save back to AsyncStorage
-                    await AsyncStorage.setItem("carts", JSON.stringify(carts));
+                await AsyncStorage.setItem("carts", JSON.stringify(carts));
 
-                    if (statusCode == 200 || statusCode == 201) {
-                        if (onCartUpdated) {
-                            onCartUpdated();
-                        }
+                // Update cart count tracking (unique products only)
+                const cartUpdate = await updateCartItem(product.id);
 
-                        handleCartUpdatedWithRefresh(); // Use updated callback
-                        await getCartinLocalStorage();
+                // Only call onCartUpdated if it's a NEW item (not updating quantity)
+                if (cartUpdate.isNewItem && onCartUpdated) {
+                    onCartUpdated();
+                }
 
-                        handleCloseProduct();
-                    }
-                })
-                .catch((err) => console.log(err));
-
+                handleCartUpdatedWithRefresh();
+                await getCartinLocalStorage();
+                handleCloseProduct();
+            }
         } catch (error) {
-            console.error("Error redeeming product:", error);
+            console.error("Error adding to cart:", error);
         }
     };
 
@@ -537,20 +532,21 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         alignItems: 'center',
-        paddingTop: getResponsiveValue(45, 15, 16, 18),
-        paddingHorizontal: getResponsiveValue(10, 24, 28, 32),
+        paddingTop: getResponsiveValue(20, 20, 22, 24),
+        paddingHorizontal: getResponsiveValue(20, 24, 28, 32),
         paddingBottom: getResponsiveValue(8, 10, 12, 14),
     },
     closeButton: {
         position: 'absolute',
         right: getResponsiveValue(20, 24, 28, 32),
-        top: getResponsiveValue(12, 14, 16, 18),
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        top: getResponsiveValue(20, 20, 22, 24),
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#F3F4F6',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 10,
     },
     modalBody: {
         paddingHorizontal: getResponsiveValue(20, 24, 28, 32),

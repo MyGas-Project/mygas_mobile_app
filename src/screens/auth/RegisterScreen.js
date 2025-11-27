@@ -279,6 +279,7 @@ const Step2 = ({ navigation, route }) => {
     const { statusCode, data } = await registerStep1(batch1Final);
 
     if (statusCode == 201) {
+      setLoadingState(false);
       navigation.navigate("Step3", { data: data, batch1form: batch1Final });
     } else {
       setLoadingState(false);
@@ -416,7 +417,7 @@ const Step3 = ({ navigation, route }) => {
     const res = await verifyCode(data.data, code.join(""));
     // console.log(res);
 
-    if (res.statusCode == 200) {
+    if (res.statusCode == 200 || res.statusCode == 201) {
       navigation.navigate("Step4", { res: res, data: data.data });
     } else {
       setLoadingState(false);
@@ -458,7 +459,8 @@ const Step3 = ({ navigation, route }) => {
               </Text>
               <Text style={[styles.text, responsiveStyles.description]}>
                 A one-time passcode has been sent to (+63) {batch1form?.mobileNumber || 0}. Please
-                enter the passcode to verify your phone number. (code: {data.data.code})
+                enter the passcode to verify your phone number. 
+                {/* (code: {data.data.code}) */}
               </Text>
             </View>
 

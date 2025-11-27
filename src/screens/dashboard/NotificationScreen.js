@@ -116,14 +116,15 @@ const NotificationScreen = ({ nav }) => {
       });
       const res = await processResponse(response);
       const { statusCode, data } = res;
+      // console.log(data.result);
       setNotifications(data.result || []);
+
     } catch (error) {
-      console.error(error);
+      // console.error(error);
+      console.log(error);
       setNotifications([]);
     } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 800);
+      setIsLoading(false);
     }
   };
 
@@ -143,6 +144,10 @@ const NotificationScreen = ({ nav }) => {
         return { name: "add-circle", color: "#22C55E", bg: "#DCFCE7" };
       case "Redeem":
         return { name: "gift", color: "#EF4444", bg: "#FEE2E2" };
+      case "Credit":
+        return { name: "arrow-up-circle", color: "#8B5CF6", bg: "#EDE9FE" };
+      case "Debit":
+        return { name: "arrow-down-circle", color: "#F59E0B", bg: "#FEF3C7" };
       default:
         return { name: "notifications", color: "#3B82F6", bg: "#DBEAFE" };
     }
@@ -166,8 +171,8 @@ const NotificationScreen = ({ nav }) => {
 
   const filteredNotifications = notifications.filter(item => {
     if (filter === "all") return true;
-    if (filter === "earn") return item.type === "Earn";
-    if (filter === "redeem") return item.type === "Redeem";
+    if (filter === "earn") return item.type === "Earn" || item.type === "Credit";
+    if (filter === "redeem") return item.type === "Redeem" || item.type === "Debit";
     return true;
   });
 
@@ -217,13 +222,23 @@ const NotificationScreen = ({ nav }) => {
             <Text style={custom_styles.notificationTitle} numberOfLines={2}>
               {item.type === "Earn"
                 ? `Earned points from fuel purchase`
-                : `Redeemed ${item.points} points`}
+                : item.type === "Redeem"
+                  ? `Redeemed ${item.points} points`
+                  : item.type === "Credit"
+                    ? `Credit Memo + Adjustment`
+                    : item.type === "Debit"
+                      ? `Credit Memo - Adjustment`
+                      : "Transaction"}
             </Text>
 
             <Text style={custom_styles.notificationDescription} numberOfLines={2}>
               {item.type === "Earn"
                 ? `PHP ${item.amount} ${item.service || 'fuel'} at ${item.station_name}`
-                : `Redemption at ${item.station_name}`}
+                : item.type === "Redeem"
+                  ? `${item.description}${item.station_name ? ` at ${item.station_name}` : ''}`
+                  : item.type === "Credit" || item.type === "Debit"
+                    ? item.description
+                    : `Transaction${item.station_name ? ` at ${item.station_name}` : ''}`}
             </Text>
 
             <View style={custom_styles.notificationFooter}>
@@ -233,7 +248,7 @@ const NotificationScreen = ({ nav }) => {
                   style={custom_styles.pointsIcon}
                 />
                 <Text style={custom_styles.pointsText}>
-                  {item.type === "Earn" ? "+" : "-"}{item.points} pts
+                  {item.type === "Earn" || item.type === "Credit" ? "+" : "-"}{item.points} pts
                 </Text>
               </View>
               <Text style={custom_styles.timeText}>
@@ -308,7 +323,7 @@ const NotificationScreen = ({ nav }) => {
               custom_styles.filterBadgeText,
               filter === "earn" && custom_styles.filterBadgeTextActive
             ]}>
-              {notifications.filter(n => n.type === "Earn").length}
+              {notifications.filter(n => n.type === "Earn" || n.type === "Credit").length}
             </Text>
           </View>
         </TouchableOpacity>
@@ -335,7 +350,7 @@ const NotificationScreen = ({ nav }) => {
               custom_styles.filterBadgeText,
               filter === "redeem" && custom_styles.filterBadgeTextActive
             ]}>
-              {notifications.filter(n => n.type === "Redeem").length}
+              {notifications.filter(n => n.type === "Redeem" || n.type === "Debit").length}
             </Text>
           </View>
         </TouchableOpacity>
@@ -403,7 +418,8 @@ const NotificationScreen = ({ nav }) => {
           <Animated.FlatList
             data={filteredNotifications}
             renderItem={renderNotification}
-            keyExtractor={(item) => item.transaction_number}
+            // keyExtractor={(item) => item.transaction_number}
+            keyExtractor={(item, index) => `${item.transaction_number}-${index}`}
             ListHeaderComponent={renderHeader}
             ListEmptyComponent={renderEmpty}
             contentContainerStyle={[
@@ -688,4 +704,4 @@ const custom_styles = StyleSheet.create({
   },
 });
 
-export default NotificationScreen;
+export default NotificationScreen

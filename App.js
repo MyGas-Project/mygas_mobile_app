@@ -15,6 +15,7 @@ import { initPusher, disconnectPusher } from "./src/lib/Websockets";
 import { PATH_URL } from "./src/config";
 import { CheckServerMaintenance } from "./src/lib/CheckServerMaintenance";
 import * as TrackingTransparency from 'expo-tracking-transparency';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
@@ -147,17 +148,19 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <StatusBar hidden={true} />
-      <AuthProvider>
-        {/* <LocationGate> */}
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <StatusBar hidden={true} />
+        <AuthProvider>
+          {/* <LocationGate> */}
           <NotificationProvider>
             <PointsDetailsProvider>
               {ScreenToRender}
             </PointsDetailsProvider>
           </NotificationProvider>
-        {/* </LocationGate> */}
-      </AuthProvider>
-    </ThemeProvider>
+          {/* </LocationGate> */}
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

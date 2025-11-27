@@ -11,6 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getUniqueCartCount } from "../lib/CartCountHelper";
 
 const { width } = Dimensions.get("window");
 
@@ -25,31 +27,24 @@ const getResponsiveValue = (small, medium, tablet) => {
     return tablet;
 };
 
-
-const getBottomPosition = () => {
-    // Bottom nav bar is typically 56-80px on mobile, more on tablets
-    const navBarHeight = getResponsiveValue(65, 65, 80);
-    const spacing = getResponsiveValue(16, 20, 24);
-    return navBarHeight + spacing;
-};
-
 export default function CartComponent({ cartCount }) {
     const [cartItemCount, setCartItemCount] = useState(0);
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
 
     const handleCartPress = () => {
         navigation.navigate("CartScreens");
     };
 
+    // Update the useEffect:
     useEffect(() => {
         const fetchCartCount = async () => {
             try {
                 if (cartCount !== null && cartCount !== undefined && cartCount > 0) {
-                    await AsyncStorage.setItem("cartCount", cartCount.toString());
                     setCartItemCount(cartCount);
                 } else {
-                    const storedCount = await AsyncStorage.getItem("cartCount");
-                    setCartItemCount(storedCount ? parseInt(storedCount, 10) : 0);
+                    const count = await getUniqueCartCount();
+                    setCartItemCount(count);
                 }
             } catch (error) {
                 console.error("Error fetching cart count:", error);
@@ -61,8 +56,11 @@ export default function CartComponent({ cartCount }) {
 
     const displayCount = cartCount && cartCount > 0 ? cartCount : cartItemCount || 0;
 
+    // Calculate bottom position dynamically based on safe area insets
+    const bottomPosition = insets.bottom + getResponsiveValue(85, 85, 100);
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { bottom: bottomPosition }]}>
             <TouchableOpacity
                 style={styles.cartButton}
                 onPress={handleCartPress}
@@ -99,7 +97,6 @@ export default function CartComponent({ cartCount }) {
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: getBottomPosition(),
         right: getResponsiveValue(20, 24, 32),
         zIndex: 999,
     },

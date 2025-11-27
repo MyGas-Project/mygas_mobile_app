@@ -22,6 +22,8 @@ import Navbar from '../../components/Navbar';
 import { BASE_URL, processResponse } from '../../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import QrRedemption from './redemption/QrRedemption';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { clearAllCartItems, removeCartItem } from '../../lib/CartCountHelper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -377,7 +379,7 @@ export default function CartScreens({ navigation, route }) {
         }
     };
 
-    // Update the handleRemoveItem function
+    // Update handleRemoveItem:
     const handleRemoveItem = async (itemId, itemName, inventoryId) => {
         Alert.alert(
             'Remove Item',
@@ -403,29 +405,23 @@ export default function CartScreens({ navigation, route }) {
                             });
 
                             const res = await processResponse(response);
-                            const { statusCode, data } = res;
+                            const { statusCode } = res;
 
                             if (statusCode === 200) {
+                                // Remove from carts
                                 const getCarts = await AsyncStorage.getItem("carts");
                                 let carts = getCarts ? JSON.parse(getCarts) : [];
-
                                 carts = carts.filter(item => item.id !== inventoryId);
                                 await AsyncStorage.setItem("carts", JSON.stringify(carts));
-                                // debugStorage();
-                                // console.log(carts);
 
-                                // Update local state first
+                                // Remove from unique cart items
+                                const newCount = await removeCartItem(inventoryId);
+
+                                // Update local state
                                 setCartItems(prev => prev.filter(item => item.stationInventoryId !== itemId));
-
-                                // Then trigger the update for other components
                                 setCartUpdateTrigger(prev => prev + 1);
 
                                 showSnackbar(`${itemName} removed from cart`, 'success');
-
-                                const storedCount = await AsyncStorage.getItem("cartCount");
-                                let newCount = storedCount ? parseInt(storedCount, 10) - 1 : 0;
-                                if (newCount < 0) newCount = 0;
-                                await AsyncStorage.setItem("cartCount", newCount.toString());
                             } else {
                                 showSnackbar('Failed to remove item', 'error');
                             }
@@ -439,6 +435,7 @@ export default function CartScreens({ navigation, route }) {
         );
     };
 
+    // Update handleClearCart:
     const handleClearCart = () => {
         Alert.alert(
             'Clear Cart',
@@ -463,12 +460,12 @@ export default function CartScreens({ navigation, route }) {
                             });
 
                             const res = await processResponse(response);
-                            const { statusCode, data } = res;
+                            const { statusCode } = res;
 
                             if (statusCode === 200) {
                                 // Clear localStorage
                                 await AsyncStorage.removeItem('carts');
-                                await AsyncStorage.removeItem('cartCount');
+                                await clearAllCartItems();
 
                                 // Update state
                                 setCartItems([]);
@@ -486,6 +483,7 @@ export default function CartScreens({ navigation, route }) {
         );
     };
 
+    // Update handleCheckout to clear cart items on success:
     const handleCheckout = () => {
         if (!canAfford) {
             Alert.alert(
@@ -509,7 +507,8 @@ export default function CartScreens({ navigation, route }) {
                             const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
                             const randomPart = Math.floor(10000 + Math.random() * 90000);
                             const referenceNumber = `${datePart}-${randomPart}`;
-                            fetch(`${BASE_URL}customer/checkout`, {
+
+                            const response = await fetch(`${BASE_URL}customer/checkout`, {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
@@ -523,29 +522,27 @@ export default function CartScreens({ navigation, route }) {
                                     total_points: totalPoints,
                                     station_id: station ? station.id : null
                                 })
-                            })
-                                .then(processResponse)
-                                .then((res) => {
-                                    const { statusCode, data } = res;
+                            });
 
-                                    if (statusCode === 201) {
-                                        AsyncStorage.removeItem('cartCount');
-                                        setCartItems([]);
-                                        showSnackbar(`${data.message}`, 'success');
-                                        setTransaction(referenceNumber);
-                                        refreshPoints?.();
-                                        setShowQR(true);
-                                    } else {
-                                        showSnackbar(`${data.message}`, 'error');
-                                    }
-                                })
-                                .catch((error) => {
-                                    console.error('Error redeeming items:', error);
-                                    showSnackbar('Failed to redeem items', 'error');
-                                });
+                            const res = await processResponse(response);
+                            const { statusCode, data } = res;
 
+                            if (statusCode === 201) {
+                                // Clear all cart data
+                                await AsyncStorage.removeItem('carts');
+                                await clearAllCartItems();
+
+                                setCartItems([]);
+                                showSnackbar(`${data.message}`, 'success');
+                                setTransaction(referenceNumber);
+                                refreshPoints?.();
+                                setShowQR(true);
+                            } else {
+                                showSnackbar(`${data.message}`, 'error');
+                            }
                         } catch (error) {
                             console.error('Error redeeming items:', error);
+                            showSnackbar('Failed to redeem items', 'error');
                         }
                     },
                 },
@@ -576,220 +573,222 @@ export default function CartScreens({ navigation, route }) {
     }
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
-            <ImageBackground
-                resizeMode="stretch"
-                source={require('../../../assets/mygas-header.jpeg')}
-                style={styles.header}
-            >
-                <LinearGradient
-                    colors={['rgba(249, 250, 141, 0.95)', 'rgba(249, 250, 141, 0.7)', 'transparent']}
-                    start={{ x: 0.5, y: 0 }}
-                    end={{ x: 0.5, y: 1 }}
-                    style={styles.headerGradient}
-                />
-                <Image
-                    source={require('../../../assets/mygas_logo.png')}
-                    style={styles.logo}
-                />
-                <Navbar
-                    onProfilePress={() => console.log('Profile tapped')}
-                    onNotifPress={() => console.log('Notifications tapped')}
-                />
-            </ImageBackground>
-            <ScrollView
-                style={styles.scrollContainer}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.contentContainer}>
-                    {/* Page Header */}
-                    <View style={styles.pageHeader}>
-                        <View style={styles.pageHeaderContent}>
-                            <Text style={styles.pageTitle}>My Cart</Text>
-                            <Text style={styles.pageSubtitle}>
-                                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
-                            </Text>
+        <SafeAreaProvider>
+            <View style={styles.container}>
+                {/* Header */}
+                <ImageBackground
+                    resizeMode="stretch"
+                    source={require('../../../assets/mygas-header.jpeg')}
+                    style={styles.header}
+                >
+                    <LinearGradient
+                        colors={['rgba(249, 250, 141, 0.95)', 'rgba(249, 250, 141, 0.7)', 'transparent']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.headerGradient}
+                    />
+                    <Image
+                        source={require('../../../assets/mygas_logo.png')}
+                        style={styles.logo}
+                    />
+                    <Navbar
+                        onProfilePress={() => console.log('Profile tapped')}
+                        onNotifPress={() => console.log('Notifications tapped')}
+                    />
+                </ImageBackground>
+                <ScrollView
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.contentContainer}>
+                        {/* Page Header */}
+                        <View style={styles.pageHeader}>
+                            <View style={styles.pageHeaderContent}>
+                                <Text style={styles.pageTitle}>My Cart</Text>
+                                <Text style={styles.pageSubtitle}>
+                                    {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+                                </Text>
+                            </View>
+                            {cartItems.length > 0 && (
+                                <TouchableOpacity
+                                    style={styles.clearButton}
+                                    onPress={handleClearCart}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={styles.clearButtonText}>Clear</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
-                        {cartItems.length > 0 && (
-                            <TouchableOpacity
-                                style={styles.clearButton}
-                                onPress={handleClearCart}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.clearButtonText}>Clear</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
 
-                    {/* Points Card and My Redemption Button */}
-                    <View style={styles.pointsSection}>
-                        <View style={styles.pointsCard}>
-                            <LinearGradient
-                                colors={['#FEF3C7', '#FDE68A']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.pointsGradient}
-                            >
-                                <View style={styles.pointsRow}>
-                                    <View>
-                                        <Text style={styles.pointsLabel}>Available Points</Text>
-                                        <View style={styles.pointsValueContainer}>
-                                            <Image
-                                                source={require('../../../assets/my.png')}
-                                                style={styles.pointsIcon}
-                                            />
-                                            <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                        {/* Points Card and My Redemption Button */}
+                        <View style={styles.pointsSection}>
+                            <View style={styles.pointsCard}>
+                                <LinearGradient
+                                    colors={['#FEF3C7', '#FDE68A']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.pointsGradient}
+                                >
+                                    <View style={styles.pointsRow}>
+                                        <View>
+                                            <Text style={styles.pointsLabel}>Available Points</Text>
+                                            <View style={styles.pointsValueContainer}>
+                                                <Image
+                                                    source={require('../../../assets/my.png')}
+                                                    style={styles.pointsIcon}
+                                                />
+                                                <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                                            </View>
+                                        </View>
+                                        <View style={styles.pointsIconContainer}>
+                                            <Ionicons name="wallet" size={28} color="#F59E0B" />
                                         </View>
                                     </View>
-                                    <View style={styles.pointsIconContainer}>
-                                        <Ionicons name="wallet" size={28} color="#F59E0B" />
-                                    </View>
-                                </View>
-                            </LinearGradient>
+                                </LinearGradient>
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.redemptionButton}
+                                onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+                                activeOpacity={0.7}
+                            >
+                                <LinearGradient
+                                    colors={['#EF4444', '#DC2626']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.redemptionButtonGradient}
+                                >
+                                    <Ionicons name="receipt-outline" size={20} color="#fff" />
+                                    <Text style={styles.redemptionButtonText}>My Redemption</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
                         </View>
 
+                        {/* Cart Items or Empty State */}
+                        {cartItems.length === 0 ? (
+                            <View style={styles.emptyState}>
+                                <View style={styles.emptyIconContainer}>
+                                    <Ionicons name="cart-outline" size={64} color="#D1D5DB" />
+                                </View>
+                                <Text style={styles.emptyTitle}>Your cart is empty</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    Add some rewards to get started!
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.shopButton}
+                                    onPress={() => navigation.goBack()}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.shopButtonText}>Browse Rewards</Text>
+                                    <Ionicons name="arrow-forward" size={18} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <>
+                                <FlatList
+                                    data={cartItems}
+                                    renderItem={renderCartItem}
+                                    keyExtractor={keyExtractor}
+                                    scrollEnabled={false}
+                                    contentContainerStyle={styles.cartList}
+                                />
+
+                                {/* Summary Card */}
+                                <View style={styles.summaryCard}>
+                                    <Text style={styles.summaryTitle}>Order Summary</Text>
+
+                                    <View style={styles.summaryRow}>
+                                        <Text style={styles.summaryLabel}>Total Items</Text>
+                                        <Text style={styles.summaryValue}>{totalItems}</Text>
+                                    </View>
+
+                                    <View style={styles.summaryDivider} />
+
+                                    <View style={styles.summaryRow}>
+                                        <Text style={styles.summaryLabel}>Total Points</Text>
+                                        <View style={styles.summaryPointsValue}>
+                                            <Text style={styles.summaryPoints}>{totalPoints.toLocaleString()}</Text>
+                                            <Text style={styles.pointsLabel}>pts</Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.summaryRow}>
+                                        <Text style={styles.summaryLabel}>Points After</Text>
+                                        <View style={styles.summaryPointsValue}>
+                                            <Text style={[styles.summaryPoints, !canAfford && styles.insufficientPoints]}>
+                                                {pointsRemaining.toLocaleString()}
+                                            </Text>
+                                            <Text style={styles.pointsLabel}>pts</Text>
+                                        </View>
+                                    </View>
+
+                                    {!canAfford && (
+                                        <View style={styles.warningBanner}>
+                                            <Ionicons name="alert-circle" size={16} color="#DC2626" />
+                                            <Text style={styles.warningText}>
+                                                You need {Math.abs(pointsRemaining).toLocaleString()} more points
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </ScrollView>
+
+                {/* Checkout Button */}
+                {cartItems.length > 0 && (
+                    <View style={styles.checkoutContainer}>
                         <TouchableOpacity
-                            style={styles.redemptionButton}
-                            onPress={() => navigation.navigate("RedemptionTransactionScreens")}
-                            activeOpacity={0.7}
+                            style={[styles.checkoutButton, !canAfford && styles.checkoutButtonDisabled]}
+                            onPress={handleCheckout}
+                            disabled={!canAfford}
+                            activeOpacity={0.8}
                         >
                             <LinearGradient
-                                colors={['#EF4444', '#DC2626']}
+                                colors={canAfford ? ['#EF4444', '#DC2626'] : ['#9CA3AF', '#6B7280']}
                                 start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.redemptionButtonGradient}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.checkoutGradient}
                             >
-                                <Ionicons name="receipt-outline" size={20} color="#fff" />
-                                <Text style={styles.redemptionButtonText}>My Redemption</Text>
+                                <View style={styles.checkoutContent}>
+                                    <View>
+                                        <Text style={styles.checkoutLabel}>Redeem Now</Text>
+                                        <View style={styles.checkoutPointsContainer}>
+                                            <Image
+                                                source={require('../../../assets/my.png')}
+                                                style={styles.miniIcon}
+                                            />
+                                            <Text style={styles.checkoutPoints}>{totalPoints.toLocaleString()}</Text>
+                                            <Text style={styles.checkoutPointsLabel}>points</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.checkoutArrow}>
+                                        <Ionicons name="arrow-forward" size={24} color="#fff" />
+                                    </View>
+                                </View>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
+                )}
 
-                    {/* Cart Items or Empty State */}
-                    {cartItems.length === 0 ? (
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyIconContainer}>
-                                <Ionicons name="cart-outline" size={64} color="#D1D5DB" />
-                            </View>
-                            <Text style={styles.emptyTitle}>Your cart is empty</Text>
-                            <Text style={styles.emptySubtitle}>
-                                Add some rewards to get started!
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.shopButton}
-                                onPress={() => navigation.goBack()}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.shopButtonText}>Browse Rewards</Text>
-                                <Ionicons name="arrow-forward" size={18} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <>
-                            <FlatList
-                                data={cartItems}
-                                renderItem={renderCartItem}
-                                keyExtractor={keyExtractor}
-                                scrollEnabled={false}
-                                contentContainerStyle={styles.cartList}
-                            />
+                {/* Snackbar */}
+                <Snackbar
+                    visible={snackbar.visible}
+                    text={snackbar.message}
+                    type={snackbar.type}
+                    onHide={hideSnackbar}
+                />
 
-                            {/* Summary Card */}
-                            <View style={styles.summaryCard}>
-                                <Text style={styles.summaryTitle}>Order Summary</Text>
-
-                                <View style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>Total Items</Text>
-                                    <Text style={styles.summaryValue}>{totalItems}</Text>
-                                </View>
-
-                                <View style={styles.summaryDivider} />
-
-                                <View style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>Total Points</Text>
-                                    <View style={styles.summaryPointsValue}>
-                                        <Text style={styles.summaryPoints}>{totalPoints.toLocaleString()}</Text>
-                                        <Text style={styles.pointsLabel}>pts</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>Points After</Text>
-                                    <View style={styles.summaryPointsValue}>
-                                        <Text style={[styles.summaryPoints, !canAfford && styles.insufficientPoints]}>
-                                            {pointsRemaining.toLocaleString()}
-                                        </Text>
-                                        <Text style={styles.pointsLabel}>pts</Text>
-                                    </View>
-                                </View>
-
-                                {!canAfford && (
-                                    <View style={styles.warningBanner}>
-                                        <Ionicons name="alert-circle" size={16} color="#DC2626" />
-                                        <Text style={styles.warningText}>
-                                            You need {Math.abs(pointsRemaining).toLocaleString()} more points
-                                        </Text>
-                                    </View>
-                                )}
-                            </View>
-                        </>
-                    )}
-                </View>
-            </ScrollView>
-
-            {/* Checkout Button */}
-            {cartItems.length > 0 && (
-                <View style={styles.checkoutContainer}>
-                    <TouchableOpacity
-                        style={[styles.checkoutButton, !canAfford && styles.checkoutButtonDisabled]}
-                        onPress={handleCheckout}
-                        disabled={!canAfford}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={canAfford ? ['#EF4444', '#DC2626'] : ['#9CA3AF', '#6B7280']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.checkoutGradient}
-                        >
-                            <View style={styles.checkoutContent}>
-                                <View>
-                                    <Text style={styles.checkoutLabel}>Redeem Now</Text>
-                                    <View style={styles.checkoutPointsContainer}>
-                                        <Image
-                                            source={require('../../../assets/my.png')}
-                                            style={styles.miniIcon}
-                                        />
-                                        <Text style={styles.checkoutPoints}>{totalPoints.toLocaleString()}</Text>
-                                        <Text style={styles.checkoutPointsLabel}>points</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.checkoutArrow}>
-                                    <Ionicons name="arrow-forward" size={24} color="#fff" />
-                                </View>
-                            </View>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {/* Snackbar */}
-            <Snackbar
-                visible={snackbar.visible}
-                text={snackbar.message}
-                type={snackbar.type}
-                onHide={hideSnackbar}
-            />
-
-            <QrRedemption
-                visible={showQR}
-                onClose={() => setShowQR(false)}
-                qrCode={transaction}
-                transactionId={transaction}
-            />
-        </View>
+                <QrRedemption
+                    visible={showQR}
+                    onClose={() => setShowQR(false)}
+                    qrCode={transaction}
+                    transactionId={transaction}
+                />
+            </View>
+        </SafeAreaProvider>
     );
 }
 
@@ -920,7 +919,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: getResponsiveValue(23, 23, 18, 15),
     },
     redemptionButtonText: {
         fontSize: getResponsiveValue(11, 12, 13, 14),
@@ -1338,6 +1337,7 @@ const styles = StyleSheet.create({
         }),
     },
     checkoutButton: {
+        marginBottom: getResponsiveValue(38, 30, 27, 21),
         borderRadius: getResponsiveValue(14, 16, 18, 20),
         overflow: 'hidden',
     },
