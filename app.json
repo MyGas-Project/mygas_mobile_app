@@ -18,7 +18,6 @@
       "bundleIdentifier": "com.mediaone.mygas",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "We use your data to provide personalized promotions, offers, and improve your app experience.",
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -60,8 +59,7 @@
           "icon": "./assets/mygas_adaptive_icon.png",
           "color": "#ffffff"
         }
-      ],
-      "expo-tracking-transparency"
+      ]
     ],
     "extra": {
       "eas": {

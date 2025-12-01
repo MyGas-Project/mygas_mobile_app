@@ -310,7 +310,7 @@ export default function CartScreens({ navigation, route }) {
             if (statusCode === 201 && data?.data) {
                 const transformedData = transformCartData(data.data);
                 setCartItems(transformedData);
-                console.log(transformedData);
+                // console.log(transformedData);
             } else {
                 setCartItems([]);
             }
@@ -502,6 +502,12 @@ export default function CartScreens({ navigation, route }) {
                 {
                     text: 'Redeem',
                     onPress: async () => {
+                        // console.log(cartItems);
+                        // console.log(station);
+                        const stored_station = await AsyncStorage.getItem("stationSelected");
+                        const parsed_station = stored_station ? JSON.parse(stored_station) : null;
+                        // console.log(parsed_station);
+
                         try {
                             const now = new Date();
                             const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
@@ -520,7 +526,7 @@ export default function CartScreens({ navigation, route }) {
                                     bar_code: userDetails.bar_code,
                                     quantity: cartItems.quantity,
                                     total_points: totalPoints,
-                                    station_id: station ? station.id : null
+                                    station_id: station ? station.id : parsed_station.id
                                 })
                             });
 
@@ -539,6 +545,7 @@ export default function CartScreens({ navigation, route }) {
                                 setShowQR(true);
                             } else {
                                 showSnackbar(`${data.message}`, 'error');
+                                console.log('Error redeeming items:', data.message);
                             }
                         } catch (error) {
                             console.error('Error redeeming items:', error);

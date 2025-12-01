@@ -193,6 +193,12 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                 handleCartUpdatedWithRefresh();
                 await getCartinLocalStorage();
                 handleCloseProduct();
+            }else{
+                Alert.alert(
+                    'Failed',
+                    data.message,
+                    [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+                );
             }
         } catch (error) {
             console.error("Error adding to cart:", error);

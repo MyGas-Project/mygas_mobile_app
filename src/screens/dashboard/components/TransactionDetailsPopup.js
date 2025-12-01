@@ -37,7 +37,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
     const [showQR, setShowQR] = useState(false);
     const downloadViewShotRef = useRef();
     const transaction = route?.params?.transaction;
-
+    console.log(transaction);
     if (!transaction) {
         return (
             <SafeAreaView style={styles.container}>

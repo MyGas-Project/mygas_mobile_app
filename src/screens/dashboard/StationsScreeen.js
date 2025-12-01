@@ -464,8 +464,18 @@ export default function StationsScreen() {
                       <TouchableOpacity
                         style={custom_styles.directionButton}
                         onPress={() => {
-                          const url = `https://www.google.com/maps/dir/?api=1&destination=${item.station_lat},${item.station_long}`;
-                          Linking.openURL(url);
+                          const lat = item.station_lat;
+                          const long = item.station_long;
+
+                          if (Platform.OS === "ios") {
+                            // Apple Maps built-in
+                            const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${long}`;
+                            Linking.openURL(appleMapsUrl);
+                          } else {
+                            // Android → Google Maps
+                            const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${long}`;
+                            Linking.openURL(gmapsUrl);
+                          }
                         }}
                       >
                         <Ionicons

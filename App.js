@@ -14,7 +14,7 @@ import { Alert, AppState } from "react-native";
 import { initPusher, disconnectPusher } from "./src/lib/Websockets";
 import { PATH_URL } from "./src/config";
 import { CheckServerMaintenance } from "./src/lib/CheckServerMaintenance";
-import * as TrackingTransparency from 'expo-tracking-transparency';
+// import * as TrackingTransparency from 'expo-tracking-transparency';
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function App() {
@@ -23,7 +23,7 @@ export default function App() {
   const [appState, setAppState] = useState(AppState.currentState);
   const [maintenance, setMaintenance] = useState(null);
 
-  useNotifications();
+  // useNotifications();
 
   useEffect(() => {
     let intervalId = null;
@@ -117,16 +117,16 @@ export default function App() {
     checkMaintenance();
   }, []);
 
-  useEffect(() => {
-    const requestTracking = async () => {
-      const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
-      if (status === 'undetermined') {
-        await TrackingTransparency.requestTrackingPermissionsAsync();
-      }
-    };
+  // useEffect(() => {
+  //   const requestTracking = async () => {
+  //     const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
+  //     if (status === 'undetermined') {
+  //       await TrackingTransparency.requestTrackingPermissionsAsync();
+  //     }
+  //   };
 
-    requestTracking();
-  }, []);
+  //   requestTracking();
+  // }, []);
 
   // Conditional rendering
   let ScreenToRender = <Navigation />;

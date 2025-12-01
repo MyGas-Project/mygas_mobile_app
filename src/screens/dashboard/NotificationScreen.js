@@ -118,7 +118,6 @@ const NotificationScreen = ({ nav }) => {
       const { statusCode, data } = res;
       // console.log(data.result);
       setNotifications(data.result || []);
-
     } catch (error) {
       // console.error(error);
       console.log(error);

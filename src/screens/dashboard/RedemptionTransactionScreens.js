@@ -54,21 +54,22 @@ export default function RedemptionTransactionScreens({ navigation }) {
                 },
             });
             const { statusCode, data } = await processResponse(response);
-            // console.info("API Response:", data);
-
+            // console.log(data);
             if (statusCode === 200) {
-                const transformedData = data.data.map((transaction) => ({
-                    id: transaction.reference_number,
-                    station_name: "MyGas Station",
-                    station_address: "Station Address",
-                    status: transaction.status.toLowerCase() === "reserved" ? "ready" : transaction.status.toLowerCase(),
-                    items_count: transaction.items.length,
-                    total_points: transaction.total_points,
-                    created_at: transaction.created_at,
-                    qr_code: transaction.reference_number,
-                    claimed_at: transaction.claimed_at || null,
-                    items: transaction.items
-                }));
+                const transformedData = data.data.map((transaction) => {
+                    return {
+                        id: transaction.reference_number,
+                        station_name: transaction.items[0].station_name,
+                        station_address: transaction.items[0].station_address,
+                        status: transaction.status.toLowerCase() === "reserved" ? "ready" : transaction.status.toLowerCase(),
+                        items_count: transaction.items.length,
+                        total_points: transaction.total_points,
+                        created_at: transaction.created_at,
+                        qr_code: transaction.reference_number,
+                        claimed_at: transaction.claimed_at || null,
+                        items: transaction.items
+                    };
+                });
 
                 setTransactions(transformedData);
             } else {

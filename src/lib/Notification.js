@@ -49,13 +49,13 @@ export default function useNotifications() {
 
         notificationListener.current =
             Notifications.addNotificationReceivedListener(notification => {
-                // console.log("Notification received:", notification);
+                console.log("Notification received:", notification);
             });
 
         responseListener.current =
             Notifications.addNotificationResponseReceivedListener(response => {
-                // console.log("User interacted with notification:", response.trigger);
-                // console.log("User interacted with notification:", response);
+                console.log("User interacted with notification:", response.trigger);
+                console.log("User interacted with notification:", response);
             });
 
         return () => {
