@@ -308,6 +308,7 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
       animationType="slide"
       transparent={true}
       onRequestClose={handleClose}
+      presentationStyle="overFullScreen"
     >
       <View style={styles.modalOverlay}>
         <TouchableOpacity

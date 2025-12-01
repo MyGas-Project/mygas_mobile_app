@@ -10,13 +10,16 @@ import {
   RefreshControl,
   Platform,
   StatusBar,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import Navbar from "../../components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
+import { BASE_URL, processResponse } from "../../config";
+import { AuthContext } from "../../context/AuthContext";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -32,6 +35,9 @@ const scale = (size) => {
 };
 
 export default function NewsScreen() {
+  const { userInfo, userDetails } = useContext(AuthContext);
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { styles } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -50,43 +56,44 @@ export default function NewsScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    getBlogs();
   };
 
-  const newsData = [
-    {
-      id: "1",
-      title: "Lubes and Engine Oil",
-      description:
-        "Premium lubrication services to maintain and extend your vehicle's engine life with top-quality products.",
-      image: require("../../../assets/lubes-engine.jpg"),
-      tag: "Maintenance",
-      color: "#FF6B6B",
-      date: "Nov 10, 2024"
-    },
-    {
-      id: "2",
-      title: "Fleet Card",
-      description:
-        "Get exclusive fuel discounts, 24/7 expense tracking, and seamless fleet management with our digital solution.",
-      image: require("../../../assets/fleet-cards.png"),
-      tag: "Savings",
-      color: "#4ECDC4",
-      date: "Nov 8, 2024"
-    },
-    {
-      id: "3",
-      title: "Winter Maintenance Tips",
-      description:
-        "Essential tips to keep your vehicle running smoothly during the cold season. From tire pressure to battery health.",
-      image: require("../../../assets/lubes-engine.jpg"),
-      tag: "Tips",
-      color: "#FFD93D",
-      date: "Nov 5, 2024"
-    }
-  ];
+  // Helper function to get random tag and color
+  const getRandomTagAndColor = () => {
+    const tags = [
+      { tag: "Maintenance", color: "#FF6B6B" },
+      { tag: "Savings", color: "#4ECDC4" },
+      { tag: "Tips", color: "#FFD93D" },
+      { tag: "News", color: "#A78BFA" },
+      { tag: "Updates", color: "#FB923C" }
+    ];
+    return tags[Math.floor(Math.random() * tags.length)];
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  // Transform API data to match component structure
+  const newsData = blogs.map(blog => {
+    const { tag, color } = getRandomTagAndColor();
+    return {
+      id: blog.id.toString(),
+      title: blog.title,
+      description: blog.description || blog.content,
+      image: blog.image_path
+        ? { uri: blog.image_path }
+        : require("../../../assets/lubes-engine.jpg"), // Fallback image
+      tag: tag,
+      color: color,
+      date: formatDate(blog.created_at),
+      author: blog.author
+    };
+  });
 
   const renderNewsCard = (item, index) => {
     const inputRange = [
@@ -171,6 +178,40 @@ export default function NewsScreen() {
     );
   };
 
+  const getBlogs = () => {
+    try {
+      fetch(`${BASE_URL}customer/get-blogs`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      })
+        .then(processResponse)
+        .then((res) => {
+          const { statusCode, data } = res;
+          setBlogs(data.data);
+          console.log(data);
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          setRefreshing(false);
+          setLoading(false);
+        });
+    } catch (error) {
+      console.error("getBlogs error:", error);
+      setRefreshing(false);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getBlogs();
+  }, []);
+
   return (
     <View style={custom_styles.container}>
       <StatusBar barStyle="light-content" />
@@ -242,7 +283,7 @@ export default function NewsScreen() {
               <View style={[custom_styles.statIcon, { backgroundColor: '#FFE5E5' }]}>
                 <Ionicons name="newspaper-outline" size={20} color="#FF6B6B" />
               </View>
-              <Text style={custom_styles.statValue}>{newsData.length}</Text>
+              <Text style={custom_styles.statValue}>{blogs.length}</Text>
               <Text style={custom_styles.statLabel}>Articles</Text>
             </View>
 
@@ -265,14 +306,29 @@ export default function NewsScreen() {
 
           {/* News Cards */}
           <View style={custom_styles.newsContainer}>
-            {newsData.map((item, index) => renderNewsCard(item, index))}
+            {loading ? (
+              <View style={custom_styles.loadingState}>
+                <ActivityIndicator size="large" color="#E0B820" />
+                <Text style={custom_styles.loadingText}>Loading articles...</Text>
+              </View>
+            ) : blogs.length === 0 ? (
+              <View style={custom_styles.emptyState}>
+                <Ionicons name="document-text-outline" size={64} color="#CCC" />
+                <Text style={custom_styles.emptyText}>No articles available</Text>
+                <Text style={custom_styles.emptySubtext}>Check back later for updates</Text>
+              </View>
+            ) : (
+              newsData.map((item, index) => renderNewsCard(item, index))
+            )}
           </View>
 
           {/* Load More Button */}
-          <TouchableOpacity style={custom_styles.loadMoreButton} activeOpacity={0.8}>
-            <Text style={custom_styles.loadMoreText}>Load More Articles</Text>
-            <Ionicons name="refresh-outline" size={18} color="#E0B820" />
-          </TouchableOpacity>
+          {!loading && blogs.length > 0 && (
+            <TouchableOpacity style={custom_styles.loadMoreButton} activeOpacity={0.8}>
+              <Text style={custom_styles.loadMoreText}>Load More Articles</Text>
+              <Ionicons name="refresh-outline" size={18} color="#E0B820" />
+            </TouchableOpacity>
+          )}
         </Animated.ScrollView>
       </Animated.View>
 
@@ -548,5 +604,32 @@ const custom_styles = StyleSheet.create({
     fontSize: scale(14),
     fontWeight: "600",
     color: "#E0B820"
+  },
+  loadingState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: scale(60)
+  },
+  loadingText: {
+    marginTop: scale(16),
+    fontSize: scale(14),
+    color: "#666",
+    fontWeight: "500"
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: scale(60)
+  },
+  emptyText: {
+    fontSize: scale(18),
+    fontWeight: "600",
+    color: "#666",
+    marginTop: scale(16)
+  },
+  emptySubtext: {
+    fontSize: scale(14),
+    color: "#999",
+    marginTop: scale(8)
   }
 });

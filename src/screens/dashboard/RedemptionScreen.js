@@ -273,7 +273,7 @@ export default function RedemptionScreen({ navigation }) {
 
       const res = await processResponse(response);
       const { statusCode, data } = res;
-      // console.log("getAllProducts: ", data.data);
+      console.log("getAllProducts: ", statusCode);
       if (statusCode === 200) {
         // Transform API data to match the expected format
         const transformedProducts = data.data.inventories.map((item) => ({
@@ -297,7 +297,7 @@ export default function RedemptionScreen({ navigation }) {
         setProducts(transformedProducts);
       } else {
         setProducts([]);
-        // console.error("Failed to fetch products:", data);
+        console.error("Failed to fetch products:", data);
       }
     } catch (error) {
       console.error("getAllProducts error:", error);

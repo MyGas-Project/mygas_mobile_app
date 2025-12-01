@@ -36,7 +36,6 @@ export default function CartComponent({ cartCount }) {
         navigation.navigate("CartScreens");
     };
 
-    // Update the useEffect:
     useEffect(() => {
         const fetchCartCount = async () => {
             try {
@@ -77,17 +76,18 @@ export default function CartComponent({ cartCount }) {
                         size={getResponsiveValue(24, 26, 28)}
                         color="#fff"
                     />
-
-                    {displayCount > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>
-                                {displayCount > 99 ? "99+" : displayCount}
-                            </Text>
-                        </View>
-                    )}
                 </LinearGradient>
 
-                {/* Optional pulse animation ring */}
+                {/* Badge positioned outside gradient */}
+                {displayCount > 0 && (
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>
+                            {displayCount > 99 ? "99+" : displayCount}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Pulse animation ring */}
                 <View style={styles.pulseRing} />
             </TouchableOpacity>
         </View>
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     cartButton: {
         width: getResponsiveValue(70, 60, 64),
         height: getResponsiveValue(70, 60, 64),
-        borderRadius: getResponsiveValue(58, 30, 32),
-        overflow: 'visible',
+        borderRadius: getResponsiveValue(35, 30, 32),
+        position: 'relative',
         ...Platform.select({
             ios: {
                 shadowColor: '#EF4444',
@@ -120,29 +120,38 @@ const styles = StyleSheet.create({
     gradient: {
         width: '100%',
         height: '100%',
-        borderRadius: getResponsiveValue(28, 30, 32),
+        borderRadius: getResponsiveValue(35, 30, 32),
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'relative',
     },
     badge: {
         position: 'absolute',
-        top: -4,
-        right: -4,
+        top: -6,
+        right: -6,
         backgroundColor: '#F59E0B',
-        minWidth: getResponsiveValue(20, 22, 24),
-        height: getResponsiveValue(20, 22, 24),
-        borderRadius: getResponsiveValue(10, 11, 12),
+        minWidth: getResponsiveValue(24, 24, 26),
+        height: getResponsiveValue(24, 24, 26),
+        borderRadius: getResponsiveValue(12, 12, 13),
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 4,
-        borderWidth: 2,
+        paddingHorizontal: 6,
+        borderWidth: 3,
         borderColor: '#fff',
-        zIndex: 100,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     badgeText: {
         color: '#fff',
-        fontSize: getResponsiveValue(10, 11, 12),
+        fontSize: getResponsiveValue(11, 11, 12),
         fontWeight: '800',
         letterSpacing: -0.3,
     },
@@ -152,9 +161,9 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        borderRadius: getResponsiveValue(28, 30, 32),
+        borderRadius: getResponsiveValue(35, 30, 32),
         borderWidth: 2,
         borderColor: '#EF4444',
-        opacity: 0.3,
+        opacity: 0.2,
     },
 });

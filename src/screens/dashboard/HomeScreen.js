@@ -131,7 +131,7 @@ const RewardCardSkeleton = () => (
 export default function HomeScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
   const { rewards, refreshPoints } = useContext(PointsDetailContext);
-  // const [rewards, setRewards] = useState(null);
+  const [rewardsInfo, setRewardsInfo] = useState([]);
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,34 +186,34 @@ export default function HomeScreen({ navigation }) {
     extrapolate: "clamp"
   });
 
-  // const fetchRewards = async () => {
-  //   try {
-  //     await fetch(`${BASE_URL}customer/user-total-points`, {
-  //       method: "GET",
-  //       headers: {
-  //         Accept: "application/json",
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${userInfo.token}`,
-  //       },
-  //     }).then(processResponse).then((res) => {
-  //       const { statusCode, data } = res;
-  //       // console.log("user details: ", data);
-  //       // console.log(userInfo);
-  //       // setRewards(data);
-  //     }).catch(error => {
-  //       console.error(error);
-  //     });
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
+  const fetchRewards = async () => {
+    try {
+      await fetch(`${BASE_URL}customer/get-rewards`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }).then(processResponse).then((res) => {
+        const { statusCode, data } = res;
+        console.log("user details: ", data.result);
+        // console.log(userInfo);
+        setRewardsInfo(data.result);
+      }).catch(error => {
+        console.error(error);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const loadAllData = async () => {
     setIsLoading(true);
     try {
       // Wait for all API calls to complete
       await Promise.all([
-        // fetchRewards(),
+        fetchRewards(),
         refreshPoints?.()
         // Add other API calls here if needed
         // fetchOtherData(),
@@ -250,9 +250,21 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const getRewardStyle = (type) => {
+    const styles = {
+      'CASH': { color: '#FF6B6B', icon: 'cash-outline' },
+      'DISCOUNT': { color: '#4ECDC4', icon: 'pricetag-outline' },
+      'SERVICE': { color: '#FFD93D', icon: 'construct-outline' },
+      'VOUCHER': { color: '#95E1D3', icon: 'ticket-outline' },
+      'DEFAULT': { color: '#A8A8A8', icon: 'gift-outline' }
+    };
+    return styles[type] || styles['DEFAULT'];
+  };
+
+
   useEffect(() => {
     loadAllData();
-    console.log(userDetails);
+    // console.log(userDetails);
   }, []);
 
   return (
@@ -447,99 +459,142 @@ export default function HomeScreen({ navigation }) {
                 </ImageBackground>
               </Animated.View>
 
-              {/* Quick Stats Section */}
-              <View style={custom_styles.statsContainer}>
-                <View style={custom_styles.statCard}>
-                  <View style={[custom_styles.statIcon, { backgroundColor: '#FFE5E5' }]}>
-                    <Ionicons name="gift-outline" size={24} color="#FF6B6B" />
-                  </View>
-                  <Text style={custom_styles.statValue}>12</Text>
-                  <Text style={custom_styles.statLabel}>Rewards</Text>
-                </View>
-
-                <View style={custom_styles.statCard}>
-                  <View style={[custom_styles.statIcon, { backgroundColor: '#E5F5FF' }]}>
-                    <Ionicons name="location-outline" size={24} color="#4ECDC4" />
-                  </View>
-                  <Text style={custom_styles.statValue}>8</Text>
-                  <Text style={custom_styles.statLabel}>Stations</Text>
-                </View>
-
-                <View style={custom_styles.statCard}>
-                  <View style={[custom_styles.statIcon, { backgroundColor: '#FFF5E5' }]}>
-                    <Ionicons name="time-outline" size={24} color="#FFD93D" />
-                  </View>
-                  <Text style={custom_styles.statValue}>24</Text>
-                  <Text style={custom_styles.statLabel}>Activities</Text>
-                </View>
-              </View>
-
-              {/* Rewards Section with Enhanced Header */}
-              <View style={custom_styles.sectionContainer}>
-                <View style={custom_styles.sectionHeader}>
-                  <View>
-                    <Text style={custom_styles.sectionTitle}>REWARDS</Text>
-                    <Text style={custom_styles.sectionSubtitle}>
-                      Exclusive offers for you ✨
+                <View style={custom_styles.statsContainer}>
+                  <View style={custom_styles.statCard}>
+                    <View style={[custom_styles.statIcon, { backgroundColor: '#FFE5E5' }]}>
+                      <Ionicons name="gift-outline" size={24} color="#FF6B6B" />
+                    </View>
+                    <Text style={custom_styles.statValue}>
+                      {rewardsInfo.length}
                     </Text>
+                    <Text style={custom_styles.statLabel}>Rewards</Text>
                   </View>
-                  <TouchableOpacity
-                    style={custom_styles.viewAllButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={custom_styles.viewAllText}>View All</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#E0B820" />
-                  </TouchableOpacity>
+
+                  <View style={custom_styles.statCard}>
+                    <View style={[custom_styles.statIcon, { backgroundColor: '#E5F5FF' }]}>
+                      <Ionicons name="location-outline" size={24} color="#4ECDC4" />
+                    </View>
+                    <Text style={custom_styles.statValue}>8</Text>
+                    <Text style={custom_styles.statLabel}>Stations</Text>
+                  </View>
+
+                  <View style={custom_styles.statCard}>
+                    <View style={[custom_styles.statIcon, { backgroundColor: '#FFF5E5' }]}>
+                      <Ionicons name="time-outline" size={24} color="#FFD93D" />
+                    </View>
+                    <Text style={custom_styles.statValue}>24</Text>
+                    <Text style={custom_styles.statLabel}>Activities</Text>
+                  </View>
                 </View>
 
-                <FlatList
-                  style={custom_styles.rewardsList}
-                  data={DATA}
-                  renderItem={({ item, index }) => (
+                <View style={custom_styles.sectionContainer}>
+                  <View style={custom_styles.sectionHeader}>
+                    <View>
+                      <Text style={custom_styles.sectionTitle}>REWARDS</Text>
+                      <Text style={custom_styles.sectionSubtitle}>
+                        Exclusive offers for you ✨
+                      </Text>
+                    </View>
                     <TouchableOpacity
-                      style={[
-                        custom_styles.rewardCard,
-                        { marginLeft: index === 0 ? 20 : 0 }
-                      ]}
-                      onPress={() => {
-                        navigation.navigate("RewardDetails", { item: item });
-                      }}
-                      activeOpacity={0.9}
+                      style={custom_styles.viewAllButton}
+                      activeOpacity={0.7}
+                      onPress={() => navigation.navigate("RewardsScreen")} // Add navigation if you have a rewards screen
                     >
-                      <View style={custom_styles.rewardImageContainer}>
-                        <Image
-                          source={item.image}
-                          style={custom_styles.rewardImage}
-                        />
-                        <LinearGradient
-                          colors={['transparent', 'rgba(0,0,0,0.7)']}
-                          style={custom_styles.imageGradient}
-                        />
-                        <View style={[custom_styles.categoryBadge, { backgroundColor: item.color }]}>
-                          <Ionicons name="star" size={12} color="#FFF" />
-                        </View>
-                      </View>
-                      <View style={custom_styles.rewardContent}>
-                        <Text style={custom_styles.rewardTitle} numberOfLines={1}>
-                          {item.title}
-                        </Text>
-                        <Text style={custom_styles.rewardDescription} numberOfLines={2}>
-                          {item.description}
-                        </Text>
-                        <View style={custom_styles.rewardFooter}>
-                          <Text style={custom_styles.learnMore}>Learn More</Text>
-                          <Ionicons name="arrow-forward" size={16} color="#E0B820" />
-                        </View>
-                      </View>
+                      <Text style={custom_styles.viewAllText}>View All</Text>
+                      <Ionicons name="chevron-forward" size={18} color="#E0B820" />
                     </TouchableOpacity>
+                  </View>
+
+                  {rewardsInfo.length > 0 ? (
+                    <FlatList
+                      style={custom_styles.rewardsList}
+                      data={rewardsInfo}
+                      renderItem={({ item, index }) => {
+                        const rewardStyle = getRewardStyle(item.type);
+                        return (
+                          <TouchableOpacity
+                            style={[
+                              custom_styles.rewardCard,
+                              { marginLeft: index === 0 ? 20 : 0 }
+                            ]}
+                            onPress={() => {
+                              navigation.navigate("RewardDetails", {
+                                item: {
+                                  id: item.data.id.toString(),
+                                  title: item.data.name,
+                                  description: item.data.description,
+                                  type: item.type,
+                                  points: item.data.points,
+                                  reward_type: item.data.reward_type_name,
+                                  is_active: item.data.is_active
+                                }
+                              });
+                            }}
+                            activeOpacity={0.9}
+                            disabled={item.data.is_active === 0}
+                          >
+                            <View style={custom_styles.rewardImageContainer}>
+                              <Image
+                                source={require("../../../assets/motorista.png")}
+                                style={custom_styles.rewardImage}
+                              />
+                              <LinearGradient
+                                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                                style={custom_styles.imageGradient}
+                              />
+                              <View style={[custom_styles.categoryBadge, { backgroundColor: rewardStyle.color }]}>
+                                <Ionicons name={rewardStyle.icon} size={12} color="#FFF" />
+                              </View>
+                              {item.data.is_active === 0 && (
+                                <View style={custom_styles.inactiveBadge}>
+                                  <Text style={custom_styles.inactiveText}>Inactive</Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={custom_styles.rewardContent}>
+                              <Text style={custom_styles.rewardTitle} numberOfLines={1}>
+                                {item.data.name}
+                              </Text>
+                              <Text style={custom_styles.rewardDescription} numberOfLines={2}>
+                                {item.data.description}
+                              </Text>
+                              <View style={custom_styles.rewardFooter}>
+                                <View style={custom_styles.pointsBadge}>
+                                  <Ionicons name="star" size={12} color="#E0B820" />
+                                  <Text style={custom_styles.pointsText}>
+                                    {item.data.points} pts
+                                  </Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                  <Text style={custom_styles.learnMore}>Learn More</Text>
+                                  <Ionicons name="arrow-forward" size={16} color="#E0B820" />
+                                </View>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      }}
+                      keyExtractor={(item) => item.data.id.toString()}
+                      horizontal
+                      ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingRight: 20 }}
+                      ListEmptyComponent={() => (
+                        <View style={custom_styles.emptyRewards}>
+                          <Ionicons name="gift-outline" size={48} color="#CCC" />
+                          <Text style={custom_styles.emptyText}>No rewards available</Text>
+                          <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
+                        </View>
+                      )}
+                    />
+                  ) : (
+                    <View style={custom_styles.emptyRewards}>
+                      <Ionicons name="gift-outline" size={48} color="#CCC" />
+                      <Text style={custom_styles.emptyText}>No rewards available</Text>
+                      <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
+                    </View>
                   )}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 20 }}
-                />
-              </View>
+                </View>
 
               {/* Promotional Banner */}
               <View style={custom_styles.promoBanner}>
@@ -577,6 +632,56 @@ const custom_styles = StyleSheet.create({
     height: 150,
     width: "100%",
     position: "relative"
+  },
+  pointsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF5E5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12
+  },
+  pointsText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#E0B820',
+    marginLeft: 4
+  },
+  inactiveBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12
+  },
+  inactiveText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600'
+  },
+  emptyRewards: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 40,
+    marginLeft: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    width: width - 40
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 12,
+    marginBottom: 4
+  },
+  emptySubtext: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center'
   },
   logo: {
     position: "absolute",

@@ -113,12 +113,13 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
 
     // Replace the handleAddToCart function with this:
     const handleAddToCart = async () => {
+
         // Check if station is selected
         if (!selectedStation) {
+            handleCloseProduct();
             onShowStationModal(product);
             return;
         }
-
         try {
             const inventoryCheck = await fetch(
                 `${BASE_URL}customer/check-inventory?inventory_id=${product.id}&station_id=${selectedStation.id}`,
@@ -230,6 +231,7 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
             animationType="slide"
             transparent={true}
             onRequestClose={handleCloseProduct}
+            presentationStyle="overFullScreen"
         >
             <View style={styles.modalOverlay}>
                 <TouchableOpacity

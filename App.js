@@ -126,9 +126,10 @@ export default function App() {
   //   };
 
   //   requestTracking();
-  // }, []);
+  // }, []);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
   // Conditional rendering
+  
   let ScreenToRender = <Navigation />;
 
   if (!isConnected) {
