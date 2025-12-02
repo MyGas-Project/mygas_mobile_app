@@ -259,7 +259,7 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                         {/* Product Image */}
                         <View style={styles.imageSection}>
                             <Image
-                                source={product.image ? { uri: product.image } : require('../../../../assets/my.png')}
+                                source={product.image ? { uri: product.image } : require('../../../../assets/mygas.jpg')}
                                 style={styles.productImage}
                             />
 

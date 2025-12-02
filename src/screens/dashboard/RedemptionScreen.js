@@ -109,7 +109,7 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
     >
       <View style={styles.imageContainer}>
         <Image
-          source={product.image ? { uri: product.image } : require("../../../assets/my.png")}
+          source={product.image ? { uri: product.image } : require("../../../assets/mygas.jpg")}
           style={styles.productImage}
         />
 

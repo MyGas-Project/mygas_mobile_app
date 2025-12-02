@@ -54,7 +54,7 @@ export default function ActivityScreen({ navigation }) {
                 }
             }).then(processResponse).then((res) => {
                 const { statusCode, data } = res;
-                console.log(data.result);
+                // console.log(data.result);
                 if (statusCode === 200) {
                     const grouped = groupByDate(data.result);
                     setGroupedTransactions(grouped);

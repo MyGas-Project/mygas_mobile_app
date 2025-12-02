@@ -465,7 +465,7 @@ export default function HomeScreen({ navigation }) {
                       <Ionicons name="gift-outline" size={24} color="#FF6B6B" />
                     </View>
                     <Text style={custom_styles.statValue}>
-                      {rewardsInfo.length}
+                      {rewardsInfo?.length ? rewardsInfo.length : "0"}
                     </Text>
                     <Text style={custom_styles.statLabel}>Rewards</Text>
                   </View>
@@ -498,14 +498,16 @@ export default function HomeScreen({ navigation }) {
                     <TouchableOpacity
                       style={custom_styles.viewAllButton}
                       activeOpacity={0.7}
-                      onPress={() => navigation.navigate("RewardsScreen")} // Add navigation if you have a rewards screen
+                      onPress={() => {
+                        
+                      }} // Add navigation if you have a rewards screen
                     >
                       <Text style={custom_styles.viewAllText}>View All</Text>
                       <Ionicons name="chevron-forward" size={18} color="#E0B820" />
                     </TouchableOpacity>
                   </View>
 
-                  {rewardsInfo.length > 0 ? (
+                  {rewardsInfo?.length > 0 ? (
                     <FlatList
                       style={custom_styles.rewardsList}
                       data={rewardsInfo}
@@ -597,7 +599,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
 
               {/* Promotional Banner */}
-              <View style={custom_styles.promoBanner}>
+              {/* <View style={custom_styles.promoBanner}>
                 <LinearGradient
                   colors={['#FFD93D', '#E0B820']}
                   start={{ x: 0, y: 0 }}
@@ -617,7 +619,7 @@ export default function HomeScreen({ navigation }) {
                     <Ionicons name="chevron-forward" size={24} color="#FFF" />
                   </View>
                 </LinearGradient>
-              </View>
+              </View> */}
             </>
           )}
         </Animated.ScrollView>
