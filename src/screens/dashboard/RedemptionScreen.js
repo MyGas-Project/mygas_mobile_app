@@ -392,7 +392,7 @@ export default function RedemptionScreen({ navigation }) {
       if (statusCode === 200) {
         Alert.alert(
           'Notice',
-          'Are you sure you want to change station? all carts that have been saved will be cleared out',
+          'Are you sure you want to change station? All carts that have been saved will be cleared out',
           [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -506,7 +506,7 @@ export default function RedemptionScreen({ navigation }) {
       if (statusCode === 200 || statusCode === 201) {
         Alert.alert(
           'Notice',
-          'Are you sure you want to change station? all carts that have been saved will be cleared out',
+          'Are you sure you want to change station? All carts that have been saved will be cleared out',
           [
             { text: 'Cancel', style: 'cancel' },
             {

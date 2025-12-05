@@ -356,7 +356,7 @@ export default function HomeScreen({ navigation }) {
                       <SkeletonBox width={200} height={22} style={{ marginBottom: 4 }} />
                     ) : (
                       <Text style={custom_styles.nameText}>
-                        {userDetails?.first_name}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name}
+                        {userDetails?.last_name}, {userDetails?.first_name} {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""}
                       </Text>
                     )}
                     <Text style={custom_styles.subtitleText}>
@@ -384,70 +384,70 @@ export default function HomeScreen({ navigation }) {
                     { transform: [{ scale: cardScale }], backgroundColor: 'transparent' }
                   ]}
                 >
-                    <ImageBackground
-                      source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.png") : require("../../../assets/regular_card.png")}
-                      resizeMode="contain"
-                      style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
-                    >
-                      {/* Floating Particles Effect Overlay */}
-                      <View style={custom_styles.cardOverlay}>
-                        <View style={custom_styles.floatingDot1} />
-                        <View style={custom_styles.floatingDot2} />
-                      </View>
+                  <ImageBackground
+                    source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.png") : require("../../../assets/regular_card.png")}
+                    resizeMode="contain"
+                    style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
+                  >
+                    {/* Floating Particles Effect Overlay */}
+                    <View style={custom_styles.cardOverlay}>
+                      <View style={custom_styles.floatingDot1} />
+                      <View style={custom_styles.floatingDot2} />
+                    </View>
 
-                      <View style={custom_styles.cardContent}>
-                        <View style={custom_styles.pointsSection}>
-                          <View style={custom_styles.pointsDisplay}>
-                            {rewards?.points !== undefined && rewards?.points !== null ? (
-                              <>
-                                <Text style={custom_styles.pointsNumber}>
-                                  {rewards.points}
-                                </Text>
-                                <View style={custom_styles.ptsLabel}>
-                                  <Text style={custom_styles.ptsText}>PTS</Text>
-                                </View>
-                              </>
-                            ) : (
-                              <>
-                                <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
-                                <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
-                              </>
-                            )}
-                          </View>
-
-                          <View style={custom_styles.cardDetails}>
-                            <View style={custom_styles.detailRow}>
-                              <Ionicons name="calendar-outline" size={12} color="#666" />
-                              {userDetails?.created_at ? (
-                                <Text style={custom_styles.detailText}>
-                                  {new Date(userDetails.created_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </Text>
-                              ) : (
-                                <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
-                              )}
-                            </View>
-                            <View style={custom_styles.detailRow}>
-                              <Ionicons name="trophy-outline" size={12} color="#666" />
-                              {userDetails?.points !== undefined && userDetails?.points !== null ? (
-                                <Text style={custom_styles.detailText}>
-                                  Earned: {userDetails.points} pts
-                                </Text>
-                              ) : (
-                                <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
-                              )}
-                            </View>
-                          </View>
+                    <View style={custom_styles.cardContent}>
+                      <View style={custom_styles.pointsSection}>
+                        <View style={custom_styles.pointsDisplay}>
+                          {rewards?.points !== undefined && rewards?.points !== null ? (
+                            <>
+                              <Text style={custom_styles.pointsNumber}>
+                                {rewards.points}
+                              </Text>
+                              <View style={custom_styles.ptsLabel}>
+                                <Text style={custom_styles.ptsText}>PTS</Text>
+                              </View>
+                            </>
+                          ) : (
+                            <>
+                              <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
+                              <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
+                            </>
+                          )}
                         </View>
 
-                        {userDetails?.bar_code ? (
-                          <Text style={custom_styles.cardNumber}>
-                            •••• •••• ••• {userDetails.bar_code.slice(-3)}
-                          </Text>
-                        ) : (
-                          <SkeletonBox width={180} height={14} />
-                        )}
+                        <View style={custom_styles.cardDetails}>
+                          <View style={custom_styles.detailRow}>
+                            <Ionicons name="calendar-outline" size={12} color="#666" />
+                            {userDetails?.created_at ? (
+                              <Text style={custom_styles.detailText}>
+                                {new Date(userDetails.created_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </Text>
+                            ) : (
+                              <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                            )}
+                          </View>
+                          <View style={custom_styles.detailRow}>
+                            <Ionicons name="trophy-outline" size={12} color="#666" />
+                            {userDetails?.points !== undefined && userDetails?.points !== null ? (
+                              <Text style={custom_styles.detailText}>
+                                Earned: {userDetails.points} pts
+                              </Text>
+                            ) : (
+                              <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                            )}
+                          </View>
+                        </View>
                       </View>
-                    </ImageBackground>
+
+                      {userDetails?.bar_code ? (
+                        <Text style={custom_styles.cardNumber}>
+                          •••• •••• ••• {userDetails.bar_code.slice(-3)}
+                        </Text>
+                      ) : (
+                        <SkeletonBox width={180} height={14} />
+                      )}
+                    </View>
+                  </ImageBackground>
                 </Animated.View>
 
                 <View style={custom_styles.statsContainer}>
@@ -465,7 +465,7 @@ export default function HomeScreen({ navigation }) {
                     <View style={[custom_styles.statIcon, { backgroundColor: '#E5F5FF' }]}>
                       <Ionicons name="location-outline" size={24} color="#4ECDC4" />
                     </View>
-                      <Text style={custom_styles.statValue}>{stationCount ?? "0"}</Text>
+                    <Text style={custom_styles.statValue}>{stationCount ?? "0"}</Text>
                     <Text style={custom_styles.statLabel}>Stations</Text>
                   </View>
 
