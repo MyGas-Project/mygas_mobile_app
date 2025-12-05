@@ -22,6 +22,9 @@ import { subscribeToChannel, unsubscribeChannel, Websockets } from "../../lib/We
 import { Pusher } from "@pusher/pusher-websocket-react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { PointsDetailContext } from "../../context/PointsDetails";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import FlashUserDetails from "./components/FlashUserDetails";
+import GetStationsLists from "../../service/Stations";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
@@ -135,41 +138,19 @@ export default function HomeScreen({ navigation }) {
   const { styles } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showFlashDetails, setShowFlashDetails] = useState(false);
+  const [stationCount, setStationCount] = useState(0);
 
-  const DATA = [
-    {
-      id: "1",
-      title: "Oil Change",
-      description:
-        "High-quality oil change services with top-brand oils to ensure the best performance of your engine.",
-      image: require("../../../assets/motorista.png"),
-      color: "#FF6B6B"
-    },
-    {
-      id: "2",
-      title: "Tire Replacement",
-      description:
-        "Variety of tire brands and types, ensuring safety and comfort on the road.",
-      image: require("../../../assets/motorista.png"),
-      color: "#4ECDC4"
-    },
-    {
-      id: "3",
-      title: "Brake Service",
-      description:
-        "Professional brake inspection and replacement for your safety.",
-      image: require("../../../assets/motorista.png"),
-      color: "#FFD93D"
-    },
-    {
-      id: "4",
-      title: "Battery Replacement",
-      description:
-        "High-performance, long-lasting batteries to keep your vehicle running smoothly.",
-      image: require("../../../assets/motorista.png"),
-      color: "#95E1D3"
-    }
-  ];
+  useEffect(() => {
+    const loadCardLogin = async () => {
+      const value = await AsyncStorage.getItem("card_login");
+      if (value === "true" || value === "1") {
+        setShowFlashDetails(true);
+      }
+    };
+
+    loadCardLogin();
+  }, []);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -188,6 +169,8 @@ export default function HomeScreen({ navigation }) {
 
   const fetchRewards = async () => {
     try {
+      const rez = await GetStationsLists(userInfo.token, "");
+      setStationCount(rez.data.length);
       await fetch(`${BASE_URL}customer/get-rewards`, {
         method: "GET",
         headers: {
@@ -197,7 +180,7 @@ export default function HomeScreen({ navigation }) {
         },
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
-        console.log("user details: ", data.result);
+        // console.log("user details: ", data.result);
         // console.log(userInfo);
         setRewardsInfo(data.result);
       }).catch(error => {
@@ -268,196 +251,204 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
-      <Animated.View style={{ opacity: headerOpacity }}>
-        <ImageBackground
-          resizeMode="stretch"
-          source={require("../../../assets/mygas-header.jpeg")}
-          style={custom_styles.top_bar}
-        >
-          <LinearGradient
-            colors={["rgba(249, 250, 141, 0.9)", "transparent"]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1.4 }}
-            style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-          />
-          <Image
-            source={require("../../../assets/mygas_logo.png")}
-            style={custom_styles.logo}
-          />
-          <View style={{ position: "absolute", right: 0, top: 0 }}>
-            <Navbar hideBack />
-          </View>
-        </ImageBackground>
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          custom_styles.cardContainer,
-          { transform: [{ translateY: cardContainerTranslateY }] }
-        ]}
-      >
-        <Animated.ScrollView
-          style={{ flex: 1, width: "100%" }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#E0B820"
-              colors={["#E0B820"]}
-              progressViewOffset={60}
+    <>
+      <FlashUserDetails
+        visible={showFlashDetails}
+        onClose={() => {
+          setShowFlashDetails(false);
+          AsyncStorage.removeItem("card_login");
+        }}
+      />
+      <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+        <Animated.View style={{ opacity: headerOpacity }}>
+          <ImageBackground
+            resizeMode="stretch"
+            source={require("../../../assets/mygas-header.jpeg")}
+            style={custom_styles.top_bar}
+          >
+            <LinearGradient
+              colors={["rgba(249, 250, 141, 0.9)", "transparent"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1.4 }}
+              style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
             />
-          }
+            <Image
+              source={require("../../../assets/mygas_logo.png")}
+              style={custom_styles.logo}
+            />
+            <View style={{ position: "absolute", right: 0, top: 0 }}>
+              <Navbar hideBack />
+            </View>
+          </ImageBackground>
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            custom_styles.cardContainer,
+            { transform: [{ translateY: cardContainerTranslateY }] }
+          ]}
         >
-          {isLoading ? (
-            <>
-              {/* Skeleton Loaders */}
-              <GreetingCardSkeleton />
-              <PointsCardSkeleton />
-              <StatsCardSkeleton />
+          <Animated.ScrollView
+            style={{ flex: 1, width: "100%" }}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )}
+            scrollEventThrottle={16}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#E0B820"
+                colors={["#E0B820"]}
+                progressViewOffset={60}
+              />
+            }
+          >
+            {isLoading ? (
+              <>
+                {/* Skeleton Loaders */}
+                <GreetingCardSkeleton />
+                <PointsCardSkeleton />
+                <StatsCardSkeleton />
 
-              {/* Rewards Section Skeleton */}
-              <View style={custom_styles.sectionContainer}>
-                <View style={custom_styles.sectionHeader}>
-                  <View>
-                    <SkeletonBox width={120} height={20} style={{ marginBottom: 4 }} />
-                    <SkeletonBox width={160} height={13} />
+                {/* Rewards Section Skeleton */}
+                <View style={custom_styles.sectionContainer}>
+                  <View style={custom_styles.sectionHeader}>
+                    <View>
+                      <SkeletonBox width={120} height={20} style={{ marginBottom: 4 }} />
+                      <SkeletonBox width={160} height={13} />
+                    </View>
+                    <SkeletonBox width={80} height={36} style={{ borderRadius: 20 }} />
                   </View>
-                  <SkeletonBox width={80} height={36} style={{ borderRadius: 20 }} />
-                </View>
 
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 20 }}
-                >
-                  <RewardCardSkeleton />
-                  <View style={{ width: 16 }} />
-                  <RewardCardSkeleton />
-                </ScrollView>
-              </View>
-
-              {/* Promo Banner Skeleton */}
-              <View style={[custom_styles.promoBanner, { backgroundColor: "#E1E9EE" }]}>
-                <View style={{ padding: 20, flexDirection: "row", alignItems: "center" }}>
-                  <SkeletonBox width={40} height={40} style={{ borderRadius: 20 }} />
-                  <View style={{ flex: 1, marginLeft: 16 }}>
-                    <SkeletonBox width={140} height={18} style={{ marginBottom: 6 }} />
-                    <SkeletonBox width={200} height={13} />
-                  </View>
-                </View>
-              </View>
-            </>
-          ) : (
-            <>
-              {/* Greeting Section with Enhanced Design */}
-              <View style={custom_styles.greetingCard}>
-                <View style={{ flex: 1 }}>
-                  <Text style={custom_styles.greetingText}>Good Day,</Text>
-                  {!userDetails?.first_name ? (
-                    <SkeletonBox width={200} height={22} style={{ marginBottom: 4 }} />
-                  ) : (
-                    <Text style={custom_styles.nameText}>
-                      {userDetails?.first_name}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name}
-                    </Text>
-                  )}
-                  <Text style={custom_styles.subtitleText}>
-                    Welcome back! 🎉
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("ScanScreen")}
-                  style={custom_styles.qrButton}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={["#FFD93D", "#E0B820"]}
-                    style={custom_styles.qrGradient}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 20 }}
                   >
-                    <Ionicons name="qr-code-outline" size={28} color="#000" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
+                    <RewardCardSkeleton />
+                    <View style={{ width: 16 }} />
+                    <RewardCardSkeleton />
+                  </ScrollView>
+                </View>
 
-              {/* Enhanced Points Card */}
-              <Animated.View
-                style={[
-                  custom_styles.pointsCardWrapper,
-                  { transform: [{ scale: cardScale }] }
-                ]}
-              >
-                <ImageBackground
-                  source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.jpeg") : require("../../../assets/regular_card.jpeg")}
-                  resizeMode="contain"
-                  style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
-                >
-                  {/* Floating Particles Effect Overlay */}
-                  <View style={custom_styles.cardOverlay}>
-                    <View style={custom_styles.floatingDot1} />
-                    <View style={custom_styles.floatingDot2} />
+                {/* Promo Banner Skeleton */}
+                <View style={[custom_styles.promoBanner, { backgroundColor: "#E1E9EE" }]}>
+                  <View style={{ padding: 20, flexDirection: "row", alignItems: "center" }}>
+                    <SkeletonBox width={40} height={40} style={{ borderRadius: 20 }} />
+                    <View style={{ flex: 1, marginLeft: 16 }}>
+                      <SkeletonBox width={140} height={18} style={{ marginBottom: 6 }} />
+                      <SkeletonBox width={200} height={13} />
+                    </View>
                   </View>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Greeting Section with Enhanced Design */}
+                <View style={custom_styles.greetingCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={custom_styles.greetingText}>Good Day,</Text>
+                    {!userDetails?.first_name ? (
+                      <SkeletonBox width={200} height={22} style={{ marginBottom: 4 }} />
+                    ) : (
+                      <Text style={custom_styles.nameText}>
+                        {userDetails?.first_name}, {userDetails?.middle_name ? userDetails.middle_name.charAt(0) + '.' : ""} {userDetails?.last_name}
+                      </Text>
+                    )}
+                    <Text style={custom_styles.subtitleText}>
+                      Welcome back! 🎉
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("ScanScreen")}
+                    style={custom_styles.qrButton}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={["#FFD93D", "#E0B820"]}
+                      style={custom_styles.qrGradient}
+                    >
+                      <Ionicons name="qr-code-outline" size={28} color="#000" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
 
-                  <View style={custom_styles.cardContent}>
-                    <View style={custom_styles.pointsSection}>
-                      <View style={custom_styles.pointsDisplay}>
-                        {rewards?.points !== undefined && rewards?.points !== null ? (
-                          <>
-                            <Text style={custom_styles.pointsNumber}>
-                              {rewards.points}
-                            </Text>
-                            <View style={custom_styles.ptsLabel}>
-                              <Text style={custom_styles.ptsText}>PTS</Text>
+                {/* Enhanced Points Card */}
+                <Animated.View
+                  style={[
+                    custom_styles.pointsCardWrapper,
+                    { transform: [{ scale: cardScale }], backgroundColor: 'transparent' }
+                  ]}
+                >
+                    <ImageBackground
+                      source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.png") : require("../../../assets/regular_card.png")}
+                      resizeMode="contain"
+                      style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
+                    >
+                      {/* Floating Particles Effect Overlay */}
+                      <View style={custom_styles.cardOverlay}>
+                        <View style={custom_styles.floatingDot1} />
+                        <View style={custom_styles.floatingDot2} />
+                      </View>
+
+                      <View style={custom_styles.cardContent}>
+                        <View style={custom_styles.pointsSection}>
+                          <View style={custom_styles.pointsDisplay}>
+                            {rewards?.points !== undefined && rewards?.points !== null ? (
+                              <>
+                                <Text style={custom_styles.pointsNumber}>
+                                  {rewards.points}
+                                </Text>
+                                <View style={custom_styles.ptsLabel}>
+                                  <Text style={custom_styles.ptsText}>PTS</Text>
+                                </View>
+                              </>
+                            ) : (
+                              <>
+                                <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
+                                <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
+                              </>
+                            )}
+                          </View>
+
+                          <View style={custom_styles.cardDetails}>
+                            <View style={custom_styles.detailRow}>
+                              <Ionicons name="calendar-outline" size={12} color="#666" />
+                              {userDetails?.created_at ? (
+                                <Text style={custom_styles.detailText}>
+                                  {new Date(userDetails.created_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </Text>
+                              ) : (
+                                <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                              )}
                             </View>
-                          </>
+                            <View style={custom_styles.detailRow}>
+                              <Ionicons name="trophy-outline" size={12} color="#666" />
+                              {userDetails?.points !== undefined && userDetails?.points !== null ? (
+                                <Text style={custom_styles.detailText}>
+                                  Earned: {userDetails.points} pts
+                                </Text>
+                              ) : (
+                                <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
+                              )}
+                            </View>
+                          </View>
+                        </View>
+
+                        {userDetails?.bar_code ? (
+                          <Text style={custom_styles.cardNumber}>
+                            •••• •••• ••• {userDetails.bar_code.slice(-3)}
+                          </Text>
                         ) : (
-                          <>
-                            <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
-                            <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
-                          </>
+                          <SkeletonBox width={180} height={14} />
                         )}
                       </View>
-
-                      <View style={custom_styles.cardDetails}>
-                        <View style={custom_styles.detailRow}>
-                          <Ionicons name="calendar-outline" size={12} color="#666" />
-                          {userDetails?.created_at ? (
-                            <Text style={custom_styles.detailText}>
-                              {new Date(userDetails.created_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </Text>
-                          ) : (
-                            <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
-                          )}
-                        </View>
-                        <View style={custom_styles.detailRow}>
-                          <Ionicons name="trophy-outline" size={12} color="#666" />
-                          {userDetails?.points !== undefined && userDetails?.points !== null ? (
-                            <Text style={custom_styles.detailText}>
-                              Earned: {userDetails.points} pts
-                            </Text>
-                          ) : (
-                            <SkeletonBox width={100} height={11} style={{ marginLeft: 6 }} />
-                          )}
-                        </View>
-                      </View>
-                    </View>
-
-                    {userDetails?.bar_code ? (
-                      <Text style={custom_styles.cardNumber}>
-                        •••• •••• ••• {userDetails.bar_code.slice(-3)}
-                      </Text>
-                    ) : (
-                      <SkeletonBox width={180} height={14} />
-                    )}
-                  </View>
-                </ImageBackground>
-              </Animated.View>
+                    </ImageBackground>
+                </Animated.View>
 
                 <View style={custom_styles.statsContainer}>
                   <View style={custom_styles.statCard}>
@@ -474,7 +465,7 @@ export default function HomeScreen({ navigation }) {
                     <View style={[custom_styles.statIcon, { backgroundColor: '#E5F5FF' }]}>
                       <Ionicons name="location-outline" size={24} color="#4ECDC4" />
                     </View>
-                    <Text style={custom_styles.statValue}>8</Text>
+                      <Text style={custom_styles.statValue}>{stationCount ?? "0"}</Text>
                     <Text style={custom_styles.statLabel}>Stations</Text>
                   </View>
 
@@ -499,7 +490,7 @@ export default function HomeScreen({ navigation }) {
                       style={custom_styles.viewAllButton}
                       activeOpacity={0.7}
                       onPress={() => {
-                        
+
                       }} // Add navigation if you have a rewards screen
                     >
                       <Text style={custom_styles.viewAllText}>View All</Text>
@@ -598,8 +589,8 @@ export default function HomeScreen({ navigation }) {
                   )}
                 </View>
 
-              {/* Promotional Banner */}
-              {/* <View style={custom_styles.promoBanner}>
+                {/* Promotional Banner */}
+                {/* <View style={custom_styles.promoBanner}>
                 <LinearGradient
                   colors={['#FFD93D', '#E0B820']}
                   start={{ x: 0, y: 0 }}
@@ -620,12 +611,13 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </LinearGradient>
               </View> */}
-            </>
-          )}
-        </Animated.ScrollView>
-      </Animated.View>
-      <View style={{ height: 70 }}></View>
-    </View>
+              </>
+            )}
+          </Animated.ScrollView>
+        </Animated.View>
+        <View style={{ height: 10 }}></View>
+      </View>
+    </>
   );
 }
 

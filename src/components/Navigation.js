@@ -23,6 +23,8 @@ import RedemptionTransactionScreens from "../screens/dashboard/RedemptionTransac
 import TransactionDetailsPopup from "../screens/dashboard/components/TransactionDetailsPopup";
 import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import CardLogin from "../screens/auth/CardLogin";
+import OTPverification from "../screens/auth/OTPverification";
 
 const Stack = createNativeStackNavigator();
 
@@ -110,6 +112,16 @@ export default function Navigation() {
             <Stack.Screen
               name="Login"
               component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="CardLogin"
+              component={CardLogin}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="OTPverification"
+              component={OTPverification}
               options={{ headerShown: false }}
             />
             <Stack.Screen

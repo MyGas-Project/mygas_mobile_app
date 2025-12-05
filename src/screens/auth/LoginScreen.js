@@ -19,6 +19,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthContext } from "../../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -88,6 +89,10 @@ export default function LoginScreen({ navigation }) {
       setIsLoading(false);
       setPassword("");
     }
+  };
+
+  const handleCardLogin = () => {
+    navigation.navigate('CardLogin');
   };
 
   return (
@@ -198,9 +203,9 @@ export default function LoginScreen({ navigation }) {
 
               <TouchableOpacity
                 style={professionalStyles.forgotPassword}
-                onPress={() => {/* Add forgot password logic */
+                onPress={() => {
                   navigation.navigate('ForgotPassword')
-                 }}
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={professionalStyles.forgotPasswordText}>
@@ -221,6 +226,27 @@ export default function LoginScreen({ navigation }) {
               <Text style={professionalStyles.loginButtonText}>
                 {isLoading ? "Signing In..." : "Sign In"}
               </Text>
+            </TouchableOpacity>
+
+            {/* Divider with OR */}
+            <View style={professionalStyles.dividerContainer}>
+              <View style={professionalStyles.dividerLine} />
+              <Text style={professionalStyles.dividerText}>OR</Text>
+              <View style={professionalStyles.dividerLine} />
+            </View>
+
+            {/* Card Login Button */}
+            <TouchableOpacity
+              style={professionalStyles.cardLoginButton}
+              onPress={handleCardLogin}
+              activeOpacity={0.8}
+            >
+              <View style={professionalStyles.cardLoginContent}>
+                <Text style={professionalStyles.cardLoginIcon}>💳</Text>
+                <Text style={professionalStyles.cardLoginText}>
+                  Login Using Card
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <View style={professionalStyles.signupContainer}>
@@ -299,17 +325,10 @@ const professionalStyles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: 'transparent',
-    // borderTopLeftRadius: 30,
-    // borderTopRightRadius: 30,
     marginTop: -30,
     paddingHorizontal: 24,
     paddingTop: 36,
     paddingBottom: 24,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: -3 },
-    // shadowOpacity: 0.08,
-    // shadowRadius: 12,
-    // elevation: 8,
   },
   inputGroup: {
     marginBottom: 24,
@@ -384,6 +403,47 @@ const professionalStyles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E8E8E8',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 13,
+    color: '#999999',
+    fontWeight: '600',
+  },
+  cardLoginButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fe0002',
+    marginBottom: 8,
+  },
+  cardLoginContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardLoginIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  cardLoginText: {
+    color: '#fe0002',
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.5,

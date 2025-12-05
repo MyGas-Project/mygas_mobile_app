@@ -110,7 +110,7 @@ export default function App() {
   useEffect(() => {
     const checkMaintenance = async () => {
       const result = await CheckServerMaintenance();
-      console.log("maintenance check:", result);
+      // console.log("maintenance check:", result);
       setMaintenance(result);
     };
 

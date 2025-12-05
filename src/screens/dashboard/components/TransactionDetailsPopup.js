@@ -10,6 +10,7 @@ import {
     Platform,
     SafeAreaView,
     Alert,
+    StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,7 +38,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
     const [showQR, setShowQR] = useState(false);
     const downloadViewShotRef = useRef();
     const transaction = route?.params?.transaction;
-    console.log(transaction);
+
     if (!transaction) {
         return (
             <SafeAreaView style={styles.container}>
@@ -106,9 +107,11 @@ export default function TransactionDetailsPopup({ navigation, route }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Hidden ViewShot for Download */}
-            <View style={styles.hiddenDownloadContainer}>
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" />
+
+            {/* Hidden ViewShot for Download - FIXED POSITION */}
+            <View style={styles.hiddenDownloadContainer} pointerEvents="none">
                 <ViewShot
                     ref={downloadViewShotRef}
                     options={{
@@ -129,19 +132,23 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                 colors={['#FF0000', '#CC0000']}
                 style={styles.header}
             >
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons
-                        name="arrow-back"
-                        size={28}
-                        color="#fff"
-                    />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Transaction Details</Text>
-                <View style={styles.headerSpacer} />
+                <SafeAreaView edges={['top']}>
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons
+                                name="arrow-back"
+                                size={28}
+                                color="#fff"
+                            />
+                        </TouchableOpacity>
+                        <Text style={styles.headerTitle}>Transaction Details</Text>
+                        <View style={styles.headerSpacer} />
+                    </View>
+                </SafeAreaView>
             </LinearGradient>
 
             <ScrollView
@@ -359,7 +366,7 @@ export default function TransactionDetailsPopup({ navigation, route }) {
                 qrCode={transaction.qr_code}
                 transactionId={transaction.id}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -370,21 +377,25 @@ const styles = StyleSheet.create({
     },
     hiddenDownloadContainer: {
         position: 'absolute',
-        left: -9999,
-        top: -9999,
+        left: -99999,
+        top: -99999,
+        opacity: 0,
+        zIndex: -1,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-        paddingTop: 25,
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: Platform.OS === 'ios' ? 0 : 30,
+        paddingBottom: 15,
+        paddingHorizontal: Platform.OS === 'ios' ? 20 : 20,
     },
     backButton: {
         padding: 8,

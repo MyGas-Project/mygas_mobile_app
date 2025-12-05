@@ -13,6 +13,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,7 +27,7 @@ import SpecificProduct from "./redemption/SpecificProduct";
 import CartComponent from "../../components/CartComponent";
 import { useFocusEffect } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
-import { getUniqueCartCount } from "../../lib/CartCountHelper";
+import { clearAllCartItems, getUniqueCartCount } from "../../lib/CartCountHelper";
 
 const { width, height } = Dimensions.get("window");
 
@@ -273,7 +274,7 @@ export default function RedemptionScreen({ navigation }) {
 
       const res = await processResponse(response);
       const { statusCode, data } = res;
-      console.log("getAllProducts: ", statusCode);
+      // console.log("getAllProducts: ", statusCode);
       if (statusCode === 200) {
         // Transform API data to match the expected format
         const transformedProducts = data.data.inventories.map((item) => ({
@@ -372,16 +373,109 @@ export default function RedemptionScreen({ navigation }) {
 
   const handleClearStation = useCallback(async () => {
     try {
-      // Clear the cached station from AsyncStorage
-      await AsyncStorage.removeItem("stationSelected");
+      const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        body: JSON.stringify({
+          bar_code: userDetails.bar_code,
+        })
+      });
 
-      // Clear the local state
-      setSelectedStation(null);
-      // setProducts([]);
-      setLoading(false);
-      getAllProducts();
+      const res = await processResponse(response);
+      const { statusCode } = res;
+      // console.log(res);
 
-      console.log("Station cleared successfully");
+      if (statusCode === 200) {
+        Alert.alert(
+          'Notice',
+          'Are you sure you want to change station? all carts that have been saved will be cleared out',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Proceed',
+              style: 'destructive',
+              onPress: async () => {
+                await AsyncStorage.removeItem('carts');
+                await clearAllCartItems();
+                setCartCount(0);
+                await AsyncStorage.removeItem("stationSelected");
+                // Clear the local state
+                setSelectedStation(null);
+                // setProducts([]);
+                setLoading(false);
+                getAllProducts();
+              }
+            }
+          ]
+        );
+      } else {
+        await AsyncStorage.removeItem("stationSelected");
+        // Clear the local state
+        setSelectedStation(null);
+        // setProducts([]);
+        setLoading(false);
+        getAllProducts();
+      }
+      // if (selectedStation !== null) {
+      //   Alert.alert(
+      //     'Notice',
+      //     'Are you sure you want to change station? all carts that have been saved will be cleared out',
+      //     [
+      //       { text: 'Cancel', style: 'cancel' },
+      //       {
+      //         text: 'Proceed',
+      //         style: 'destructive',
+      //         onPress: async () => {
+      //           try {
+      //             const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
+      //               method: "DELETE",
+      //               headers: {
+      //                 "Content-Type": "application/json",
+      //                 Accept: "application/json",
+      //                 Authorization: `Bearer ${userInfo.token}`,
+      //               },
+      //               body: JSON.stringify({
+      //                 bar_code: userDetails.bar_code,
+      //               })
+      //             });
+
+      //             const res = await processResponse(response);
+      //             const { statusCode } = res;
+      //             // console.log(res);
+
+      //             if (statusCode === 200) {
+      //               // Clear localStorage
+      //               await AsyncStorage.removeItem('carts');
+      //               await clearAllCartItems();
+      //               setCartCount(0);
+      //             }
+      //             await AsyncStorage.removeItem("stationSelected");
+      //             // Clear the local state
+      //             setSelectedStation(null);
+      //             // setProducts([]);
+      //             setLoading(false);
+      //             getAllProducts();
+      //           } catch (error) {
+      //             setLoading(false);
+      //             console.error(error);
+      //           }
+      //         }
+      //       }
+      //     ]
+      //   );
+      // } else {
+      //   await AsyncStorage.removeItem("stationSelected");
+      //   // Clear the local state
+      //   setSelectedStation(null);
+      //   // setProducts([]);
+      //   setLoading(false);
+      //   getAllProducts();
+      // }
+      // console.log("Station cleared successfully");
     } catch (error) {
       console.error("Error clearing station:", error);
     }
@@ -394,9 +488,54 @@ export default function RedemptionScreen({ navigation }) {
   }, [filters]);
 
   const handleStationConfirm = useCallback(async (data) => {
-    await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
-    setSelectedStation(data.station);
-    getAllProducts(data.station);
+    try {
+      const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        body: JSON.stringify({
+          bar_code: userDetails.bar_code,
+        })
+      });
+
+      const res = await processResponse(response);
+      const { statusCode } = res;
+      if (statusCode === 200 || statusCode === 201) {
+        Alert.alert(
+          'Notice',
+          'Are you sure you want to change station? all carts that have been saved will be cleared out',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Proceed',
+              style: 'destructive',
+              onPress: async () => {
+                // Clear the cached station from AsyncStorage
+                await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
+                setSelectedStation(data.station);
+                getAllProducts(data.station);
+
+                // Clear localStorage
+                await AsyncStorage.removeItem('carts');
+                await clearAllCartItems();
+                setCartCount(0);
+              }
+            }
+          ]
+        );
+      } else {
+        // Clear the cached station from AsyncStorage
+        await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
+        setSelectedStation(data.station);
+        getAllProducts(data.station);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
   }, []);
 
   const renderProductItem = useCallback(({ item }) => (

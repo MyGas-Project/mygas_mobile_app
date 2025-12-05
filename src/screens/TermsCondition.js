@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, SafeAreaView, Dimensions } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native'
 import React from 'react'
 import Navbar from '../components/Navbar';
 
@@ -6,7 +6,7 @@ const { width } = Dimensions.get('window')
 
 export default function TermsCondition({ navigation }) {
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <Navbar />
             <ScrollView
                 style={styles.scrollView}
@@ -143,7 +143,7 @@ export default function TermsCondition({ navigation }) {
                     </Text>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     )
 }
 

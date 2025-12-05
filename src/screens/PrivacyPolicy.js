@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, SafeAreaView, Dimensions, Platform } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, Dimensions, Platform } from 'react-native'
 import React from 'react'
 import Navbar from '../components/Navbar';
 
@@ -10,7 +10,7 @@ const isLargeScreen = width >= 1024
 
 export default function PrivacyPolicy({ navigation }) {
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <Navbar />
             <ScrollView
                 style={styles.scrollView}
@@ -240,7 +240,7 @@ export default function PrivacyPolicy({ navigation }) {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     )
 }
 
@@ -262,6 +262,7 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+        paddingTop: 10
     },
     contentContainer: {
         paddingBottom: 60,

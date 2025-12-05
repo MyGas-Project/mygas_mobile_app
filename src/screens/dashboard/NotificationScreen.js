@@ -251,7 +251,7 @@ const NotificationScreen = ({ nav }) => {
                 </Text>
               </View>
               <Text style={custom_styles.timeText}>
-                {formatTime(item.created_at)}
+                {formatTime(item.date)}
               </Text>
             </View>
           </View>
@@ -449,7 +449,7 @@ const NotificationScreen = ({ nav }) => {
       </Animated.View>
     </View>
   );
-};
+}; 
 
 const custom_styles = StyleSheet.create({
   container: {
@@ -488,7 +488,7 @@ const custom_styles = StyleSheet.create({
     zIndex: 1,
   },
   headerContainer: {
-    paddingHorizontal: scale(20),
+    paddingHorizontal: scale(5),
     paddingTop: scale(24),
     paddingBottom: scale(16),
   },
@@ -512,7 +512,7 @@ const custom_styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#FFF",
     borderRadius: scale(16),
-    padding: scale(6),
+    padding: scale(8),
     gap: scale(8),
     ...Platform.select({
       ios: {
@@ -540,7 +540,7 @@ const custom_styles = StyleSheet.create({
     backgroundColor: "#E0B820",
   },
   filterText: {
-    fontSize: scale(13),
+    fontSize: scale(12),
     fontWeight: "600",
     color: "#64748B",
   },

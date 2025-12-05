@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, card_login = false) => {
     try {
       fetch(`${AUTH_URL}login-customer`, {
         method: "POST",
@@ -133,6 +133,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           cred: email,
           password: password,
+          card_login: card_login
         }),
       })
         .then(processResponse)
@@ -152,6 +153,9 @@ export const AuthProvider = ({ children }) => {
             password: password
           }));
           AsyncStorage.setItem("newUser", "true");
+          if(card_login == true){
+            AsyncStorage.setItem("card_login", "true");
+          }
         })
         .catch((error) => {
           console.error(error);
@@ -183,6 +187,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const cardLoginVerification = (data) => {
+    return fetch(`${AUTH_URL}login-using-barcode`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ bar_code: data }),
+    })
+      .then(processResponse)
+      .then((res) => {
+        // console.log("cardLoginVerification response:", res);
+        return res;
+      })
+      .catch((error) => {
+        console.error("cardLoginVerification error:", error);
+        throw error;
+      });
+  };
+
   const logout = async (navigation) => {
     let res;
     if (!navigation) {
@@ -194,7 +218,7 @@ export const AuthProvider = ({ children }) => {
     setUserInfo(null);
     setUserDetails(null);
     const allKeys = await AsyncStorage.getAllKeys();
-    const keysToRemove = allKeys.filter(key => !['newUser'].includes(key));
+    const keysToRemove = allKeys.filter(key => !['newUser', 'card_login'].includes(key));
     await AsyncStorage.multiRemove(keysToRemove);
 
     try {
@@ -308,7 +332,7 @@ export const AuthProvider = ({ children }) => {
         const userData = await AsyncStorage.getItem("userInfo");
         if (userData) {
           const parsedData = JSON.parse(userData);
-          console.log("Loaded user from storage:", parsedData);
+          // console.log("Loaded user from storage:", parsedData);
           setUserInfo(parsedData);
           getUserDetails(parsedData);
         }
@@ -331,13 +355,15 @@ export const AuthProvider = ({ children }) => {
         userInfo,
         userDetails,
         locationEnabled,
+        cardLoginVerification,
         checkLocationPermission,
         userLocation,
         registerStep1,
         verifyCode,
         registerStep2,
         registerStep3,
-        isLoading
+        isLoading,
+        getUserDetails
       }}
     >
       {children}

@@ -23,7 +23,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { AuthContext } from "../../context/AuthContext";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from "react-native-dropdown-picker";
-import { BASE_URL, PATH_URL } from "../../config";
+import { BASE_URL, PATH_URL, processResponse } from "../../config";
+import Constants from "expo-constants";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -43,7 +44,7 @@ const isSmallScreen = screenWidth < 375;
 let globalShowDetails = false;
 
 const ProfileScreen = () => {
-  const { userInfo, userDetails } = useContext(AuthContext);
+  const { userInfo, userDetails, getUserDetails } = useContext(AuthContext);
   const [showDetails, setShowDetails] = useState(globalShowDetails);
   const [editMode, setEditMode] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -136,13 +137,34 @@ const ProfileScreen = () => {
       return;
     }
 
-    // Here you would call your password update API
-    // updatePassword(passwordData);
-
-    Alert.alert("Success", "Your password has been updated", [
-      {
-        text: "OK",
-        onPress: () => {
+    fetch(`${BASE_URL}customer/update-password`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+      body: JSON.stringify({
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+        confirm_password: passwordData.confirmPassword,
+        user_id: userInfo.user_id
+      }),
+    })
+      .then(processResponse)
+      .then((res) => {
+        const { statusCode, data } = res;
+        console.log(res);
+        if (statusCode !== 200 && statusCode !== 201) {
+          Alert.alert("Error", data.message);
+          setPasswordData({
+            // currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+          return;
+        } else {
+          Alert.alert("Success", "Your password has been updated");
           setIsChangingPassword(false);
           setPasswordData({
             currentPassword: '',
@@ -150,9 +172,29 @@ const ProfileScreen = () => {
             confirmPassword: ''
           });
           setShowDetails(false);
+          getUserDetails(userInfo);
         }
-      }
-    ]);
+      })
+      .catch((error) => {
+        console.error("handleSavePassword error:", error);
+        Alert.alert("Error", "An error occurred while updating your password");
+        return;
+      });
+
+    // Alert.alert("Success", "Your password has been updated", [
+    //   {
+    //     text: "OK",
+    //     onPress: () => {
+    //       setIsChangingPassword(false);
+    //       setPasswordData({
+    //         currentPassword: '',
+    //         newPassword: '',
+    //         confirmPassword: ''
+    //       });
+    //       setShowDetails(false);
+    //     }
+    //   }
+    // ]);
   };
 
   const handleCancelEdit = () => {
@@ -263,7 +305,7 @@ const ProfileScreen = () => {
           <Text style={profile_styles.myAccountTitle}>My Account</Text>
 
           {/* Password Change Alert */}
-          {!editMode && userDetails?.is_pass_change === 0 ? (
+          {!editMode && editedDetails?.is_pass_change === 0 ? (
             <TouchableOpacity
               style={profile_styles.alertCard}
               onPress={handleChangePassword}
@@ -455,7 +497,7 @@ const ProfileScreen = () => {
 
                 <TouchableOpacity
                   style={profile_styles.settingsOption}
-                  onPress={() => Alert.alert("About MyGas", "Version 1.0.0")}
+                  onPress={() => Alert.alert("About MyGas", `Version ${Constants.expoConfig.version}`)}
                   activeOpacity={0.7}
                 >
                   <View style={profile_styles.settingsOptionLeft}>
