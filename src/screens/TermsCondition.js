@@ -1,13 +1,17 @@
 import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native'
-import React from 'react'
+import React, { useContext } from 'react'
 import Navbar from '../components/Navbar';
+import { AuthContext } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window')
 
 export default function TermsCondition({ navigation }) {
+    const { userInfo } = useContext(AuthContext);
+
     return (
         <View style={styles.container}>
-            <Navbar />
+            {/* <Navbar /> */}
+            {userInfo && <Navbar />}
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.contentContainer}

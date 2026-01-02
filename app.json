@@ -3,7 +3,7 @@
     "name": "mygas",
     "slug": "mygas",
     "scheme": "mygas",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/logo.jpg",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "buildNumber": "2",
+      "buildNumber": "3",
       "supportsTablet": false,
       "bundleIdentifier": "com.mediaone.mygas",
       "infoPlist": {
@@ -28,7 +28,7 @@
       }
     },
     "android": {
-      "versionCode": 2,
+      "versionCode": 3,
       "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/mygas_adaptive_icon.png",

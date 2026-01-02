@@ -75,6 +75,22 @@ export default function ScanScreen() {
               </Text>
             </View>
 
+            {userInfo?.is_guest == 1 ? (
+              <>
+                <View style={custom_styles.alertBox}>
+                  <View style={custom_styles.alertIconContainer}>
+                    <Text style={custom_styles.alertIcon}>⚠️</Text>
+                  </View>
+                  <View style={custom_styles.alertContent}>
+                    <Text style={custom_styles.alertTitle}>Temporary Barcode</Text>
+                    <Text style={custom_styles.alertMessage}>
+                      This barcode is temporary. Please activate your card to get a permanent barcode and unlock all features.
+                    </Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
+
             {/* Barcode Section */}
             <View style={custom_styles.codeCard}>
               <View style={custom_styles.codeWrapper}>
@@ -132,7 +148,7 @@ const custom_styles = StyleSheet.create({
   },
   cardContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     alignItems: "center",
     marginTop: -20,
     backgroundColor: "#F5F5F5",
@@ -165,6 +181,46 @@ const custom_styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
     paddingHorizontal: 10,
+  },
+  alertBox: {
+    width: "100%",
+    backgroundColor: "#FFF4E5",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF9800",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  alertIconContainer: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  alertIcon: {
+    fontSize: 24,
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitle: {
+    fontSize: Math.min(width * 0.04, 16),
+    fontWeight: "700",
+    color: "#E65100",
+    marginBottom: 4,
+  },
+  alertMessage: {
+    fontSize: Math.min(width * 0.035, 14),
+    color: "#666",
+    lineHeight: 20,
   },
   codeCard: {
     width: "100%",

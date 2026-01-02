@@ -95,6 +95,16 @@ export default function LoginScreen({ navigation }) {
     navigation.navigate('CardLogin');
   };
 
+  const handleTermsPress = () => {
+    // Navigate to Terms and Conditions screen
+    navigation.navigate('TermsCondition');
+  };
+
+  const handlePrivacyPress = () => {
+    // Navigate to Privacy Policy screen
+    navigation.navigate('PrivacyPolicy');
+  };
+
   return (
     <View style={professionalStyles.container}>
       <StatusBar barStyle="light-content" />
@@ -259,6 +269,28 @@ export default function LoginScreen({ navigation }) {
               >
                 <Text style={professionalStyles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
+            </View>
+
+            {/* Terms and Privacy Policy */}
+            <View style={professionalStyles.termsContainer}>
+              <Text style={professionalStyles.termsText}>
+                By continuing, you agree to our{" "}
+              </Text>
+              <View style={professionalStyles.termsLinksRow}>
+                <TouchableOpacity
+                  onPress={handleTermsPress}
+                  activeOpacity={0.7}
+                >
+                  <Text style={professionalStyles.termsLink}>Terms & Conditions</Text>
+                </TouchableOpacity>
+                <Text style={professionalStyles.termsText}> and </Text>
+                <TouchableOpacity
+                  onPress={handlePrivacyPress}
+                  activeOpacity={0.7}
+                >
+                  <Text style={professionalStyles.termsLink}>Privacy Policy</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -463,5 +495,30 @@ const professionalStyles = StyleSheet.create({
     fontSize: 15,
     color: '#fe0002',
     fontWeight: '700',
+  },
+  termsContainer: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+    alignItems: 'center',
+  },
+  termsText: {
+    fontSize: 13,
+    color: '#999999',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  termsLinksRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  termsLink: {
+    fontSize: 13,
+    color: '#fe0002',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

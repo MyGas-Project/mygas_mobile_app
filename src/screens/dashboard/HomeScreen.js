@@ -25,6 +25,8 @@ import { PointsDetailContext } from "../../context/PointsDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FlashUserDetails from "./components/FlashUserDetails";
 import GetStationsLists from "../../service/Stations";
+import GuestRewardsComponent from "../../components/guest/GuestRewardsComponent";
+import GuestBanner from "../../components/guest/GuestBanner";
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
@@ -244,7 +246,6 @@ export default function HomeScreen({ navigation }) {
     return styles[type] || styles['DEFAULT'];
   };
 
-
   useEffect(() => {
     loadAllData();
     // console.log(userDetails);
@@ -377,6 +378,10 @@ export default function HomeScreen({ navigation }) {
                   </TouchableOpacity>
                 </View>
 
+                {userInfo?.is_guest == 1 ? (
+                  <GuestBanner />
+                ) : null}
+
                 {/* Enhanced Points Card */}
                 <Animated.View
                   style={[
@@ -473,10 +478,11 @@ export default function HomeScreen({ navigation }) {
                     <View style={[custom_styles.statIcon, { backgroundColor: '#FFF5E5' }]}>
                       <Ionicons name="time-outline" size={24} color="#FFD93D" />
                     </View>
-                    <Text style={custom_styles.statValue}>24</Text>
+                    <Text style={custom_styles.statValue}>0</Text>
                     <Text style={custom_styles.statLabel}>Activities</Text>
                   </View>
                 </View>
+
 
                 <View style={custom_styles.sectionContainer}>
                   <View style={custom_styles.sectionHeader}>
@@ -498,95 +504,102 @@ export default function HomeScreen({ navigation }) {
                     </TouchableOpacity>
                   </View>
 
-                  {rewardsInfo?.length > 0 ? (
-                    <FlatList
-                      style={custom_styles.rewardsList}
-                      data={rewardsInfo}
-                      renderItem={({ item, index }) => {
-                        const rewardStyle = getRewardStyle(item.type);
-                        return (
-                          <TouchableOpacity
-                            style={[
-                              custom_styles.rewardCard,
-                              { marginLeft: index === 0 ? 20 : 0 }
-                            ]}
-                            onPress={() => {
-                              navigation.navigate("RewardDetails", {
-                                item: {
-                                  id: item.data.id.toString(),
-                                  title: item.data.name,
-                                  description: item.data.description,
-                                  type: item.type,
-                                  points: item.data.points,
-                                  reward_type: item.data.reward_type_name,
-                                  is_active: item.data.is_active
-                                }
-                              });
-                            }}
-                            activeOpacity={0.9}
-                            disabled={item.data.is_active === 0}
-                          >
-                            <View style={custom_styles.rewardImageContainer}>
-                              <Image
-                                source={require("../../../assets/motorista.png")}
-                                style={custom_styles.rewardImage}
-                              />
-                              <LinearGradient
-                                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                                style={custom_styles.imageGradient}
-                              />
-                              <View style={[custom_styles.categoryBadge, { backgroundColor: rewardStyle.color }]}>
-                                <Ionicons name={rewardStyle.icon} size={12} color="#FFF" />
-                              </View>
-                              {item.data.is_active === 0 && (
-                                <View style={custom_styles.inactiveBadge}>
-                                  <Text style={custom_styles.inactiveText}>Inactive</Text>
+                  {userInfo?.is_guest == 1 ? (
+                    <GuestRewardsComponent />
+                  ) : (
+                    <>
+                      {rewardsInfo?.length > 0 ? (
+                        <FlatList
+                          style={custom_styles.rewardsList}
+                          data={rewardsInfo}
+                          renderItem={({ item, index }) => {
+                            const rewardStyle = getRewardStyle(item.type);
+                            return (
+                              <TouchableOpacity
+                                style={[
+                                  custom_styles.rewardCard,
+                                  { marginLeft: index === 0 ? 20 : 0 }
+                                ]}
+                                onPress={() => {
+                                  navigation.navigate("RewardDetails", {
+                                    item: {
+                                      id: item.data.id.toString(),
+                                      title: item.data.name,
+                                      description: item.data.description,
+                                      type: item.type,
+                                      points: item.data.points,
+                                      reward_type: item.data.reward_type_name,
+                                      is_active: item.data.is_active
+                                    }
+                                  });
+                                }}
+                                activeOpacity={0.9}
+                                disabled={item.data.is_active === 0}
+                              >
+                                <View style={custom_styles.rewardImageContainer}>
+                                  <Image
+                                    source={require("../../../assets/motorista.png")}
+                                    style={custom_styles.rewardImage}
+                                  />
+                                  <LinearGradient
+                                    colors={['transparent', 'rgba(0,0,0,0.7)']}
+                                    style={custom_styles.imageGradient}
+                                  />
+                                  <View style={[custom_styles.categoryBadge, { backgroundColor: rewardStyle.color }]}>
+                                    <Ionicons name={rewardStyle.icon} size={12} color="#FFF" />
+                                  </View>
+                                  {item.data.is_active === 0 && (
+                                    <View style={custom_styles.inactiveBadge}>
+                                      <Text style={custom_styles.inactiveText}>Inactive</Text>
+                                    </View>
+                                  )}
                                 </View>
-                              )}
-                            </View>
-                            <View style={custom_styles.rewardContent}>
-                              <Text style={custom_styles.rewardTitle} numberOfLines={1}>
-                                {item.data.name}
-                              </Text>
-                              <Text style={custom_styles.rewardDescription} numberOfLines={2}>
-                                {item.data.description}
-                              </Text>
-                              <View style={custom_styles.rewardFooter}>
-                                <View style={custom_styles.pointsBadge}>
-                                  <Ionicons name="star" size={12} color="#E0B820" />
-                                  <Text style={custom_styles.pointsText}>
-                                    {item.data.points} pts
+                                <View style={custom_styles.rewardContent}>
+                                  <Text style={custom_styles.rewardTitle} numberOfLines={1}>
+                                    {item.data.name}
                                   </Text>
+                                  <Text style={custom_styles.rewardDescription} numberOfLines={2}>
+                                    {item.data.description}
+                                  </Text>
+                                  <View style={custom_styles.rewardFooter}>
+                                    <View style={custom_styles.pointsBadge}>
+                                      <Ionicons name="star" size={12} color="#E0B820" />
+                                      <Text style={custom_styles.pointsText}>
+                                        {item.data.points} pts
+                                      </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                      <Text style={custom_styles.learnMore}>Learn More</Text>
+                                      <Ionicons name="arrow-forward" size={16} color="#E0B820" />
+                                    </View>
+                                  </View>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                  <Text style={custom_styles.learnMore}>Learn More</Text>
-                                  <Ionicons name="arrow-forward" size={16} color="#E0B820" />
-                                </View>
-                              </View>
+                              </TouchableOpacity>
+                            );
+                          }}
+                          keyExtractor={(item) => item.data.id.toString()}
+                          horizontal
+                          ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{ paddingRight: 20 }}
+                          ListEmptyComponent={() => (
+                            <View style={custom_styles.emptyRewards}>
+                              <Ionicons name="gift-outline" size={48} color="#CCC" />
+                              <Text style={custom_styles.emptyText}>No rewards available</Text>
+                              <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
                             </View>
-                          </TouchableOpacity>
-                        );
-                      }}
-                      keyExtractor={(item) => item.data.id.toString()}
-                      horizontal
-                      ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingRight: 20 }}
-                      ListEmptyComponent={() => (
+                          )}
+                        />
+                      ) : (
                         <View style={custom_styles.emptyRewards}>
                           <Ionicons name="gift-outline" size={48} color="#CCC" />
                           <Text style={custom_styles.emptyText}>No rewards available</Text>
                           <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
                         </View>
                       )}
-                    />
-                  ) : (
-                    <View style={custom_styles.emptyRewards}>
-                      <Ionicons name="gift-outline" size={48} color="#CCC" />
-                      <Text style={custom_styles.emptyText}>No rewards available</Text>
-                      <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
-                    </View>
+                    </>
                   )}
+
                 </View>
 
                 {/* Promotional Banner */}
@@ -616,7 +629,7 @@ export default function HomeScreen({ navigation }) {
           </Animated.ScrollView>
         </Animated.View>
         <View style={{ height: 10 }}></View>
-      </View>
+      </View >
     </>
   );
 }

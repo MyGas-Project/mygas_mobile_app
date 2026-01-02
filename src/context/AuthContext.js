@@ -3,6 +3,7 @@ import { AUTH_URL, BASE_URL, processResponse } from "../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 import * as Location from "expo-location";
+import * as Device from 'expo-device';
 
 export const AuthContext = createContext();
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [userDetails, setUserDetails] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   const registerStep1 = (data) => {
     try {
@@ -98,6 +99,17 @@ export const AuthProvider = ({ children }) => {
 
   const registerStep3 = (data) => {
     try {
+      const deviceInfo = {
+        brand: Device.brand,
+        manufacturer: Device.manufacturer,
+        modelName: Device.modelName,
+        modelId: Device.modelId,
+        osName: Device.osName,
+        osVersion: Device.osVersion,
+        deviceYearClass: Device.deviceYearClass,
+        isDevice: Device.isDevice,
+      };
+
       return fetch(`${AUTH_URL}register/step-3`, {
         method: "POST",
         headers: {
@@ -106,7 +118,9 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({
           user_id: data.user_id,
-          wheel_type_id: data.wheel_type_id
+          wheel_type_id: data.wheel_type_id,
+          phone_body: JSON.stringify(deviceInfo),
+          is_phone: true,
         }),
       })
         .then(processResponse)

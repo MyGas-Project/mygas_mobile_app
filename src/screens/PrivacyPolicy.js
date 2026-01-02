@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, Dimensions, Platform } from 'react-native'
-import React from 'react'
+import React, { useContext } from 'react'
 import Navbar from '../components/Navbar';
+import { AuthContext } from '../context/AuthContext';
 
 const { width, height } = Dimensions.get('window')
 
@@ -9,9 +10,12 @@ const isTablet = width >= 768
 const isLargeScreen = width >= 1024
 
 export default function PrivacyPolicy({ navigation }) {
+    const { userInfo } = useContext(AuthContext);
+
     return (
         <View style={styles.container}>
-            <Navbar />
+            {/* <Navbar /> */}
+            {userInfo && <Navbar />}
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.contentContainer}

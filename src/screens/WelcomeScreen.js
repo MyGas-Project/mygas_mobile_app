@@ -186,11 +186,40 @@ export default function WelcomeScreen({ navigation }) {
                             </Text>
                         </TouchableOpacity>
 
-                        <Text style={[responsiveStyles.footerNote, {
-                            fontSize: getResponsiveFontSize(12)
-                        }]}>
-                            By continuing, you agree to our Terms & Privacy Policy
-                        </Text>
+                        <View style={responsiveStyles.linksContainer}>
+                            <Text style={[responsiveStyles.footerNote, {
+                                fontSize: getResponsiveFontSize(12)
+                            }]}>
+                                By continuing, you agree to our{' '}
+                            </Text>
+                            <View style={responsiveStyles.linksRow}>
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('TermsCondition')}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[responsiveStyles.linkText, {
+                                        fontSize: getResponsiveFontSize(12)
+                                    }]}>
+                                        Terms & Conditions
+                                    </Text>
+                                </TouchableOpacity>
+                                <Text style={[responsiveStyles.footerNote, {
+                                    fontSize: getResponsiveFontSize(12)
+                                }]}>
+                                    {' '}and{' '}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('PrivacyPolicy')}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[responsiveStyles.linkText, {
+                                        fontSize: getResponsiveFontSize(12)
+                                    }]}>
+                                        Privacy Policy
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 </View>
             </ImageBackground>
@@ -366,11 +395,26 @@ const responsiveStyles = {
         fontWeight: '700',
         letterSpacing: 0.8,
     },
+    linksContainer: {
+        alignItems: 'center',
+        marginTop: 8,
+        paddingHorizontal: 24,
+    },
+    linksRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+    },
     footerNote: {
         color: '#999',
         textAlign: 'center',
-        marginTop: 8,
-        paddingHorizontal: 24,
+        lineHeight: 18,
+    },
+    linkText: {
+        color: '#FE0002',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
         lineHeight: 18,
     },
 };

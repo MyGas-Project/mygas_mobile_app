@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import RewardDetails from "../screens/dashboard/RewardDetails";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AuthContext } from "../context/AuthContext";
+import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -127,6 +129,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 };
 
 const BottomTabNavigator = () => {
+  const { userInfo } = useContext(AuthContext);
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -145,7 +148,7 @@ const BottomTabNavigator = () => {
       />
       <Tab.Screen
         name="Redemption"
-        component={RedemptionScreen}
+        component={userInfo?.is_guest == 1 ? GuestRedemptionScreen : RedemptionScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen

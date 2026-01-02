@@ -21,7 +21,7 @@ export default function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [serverUp, setServerUp] = useState(true);
   const [appState, setAppState] = useState(AppState.currentState);
-  const [maintenance, setMaintenance] = useState(null);
+  const [maintenance, setMaintenance] = useState(false);
 
   // useNotifications();
 
@@ -110,26 +110,18 @@ export default function App() {
   useEffect(() => {
     const checkMaintenance = async () => {
       const result = await CheckServerMaintenance();
-      // console.log("maintenance check:", result);
-      setMaintenance(result);
+      // console.log("maintenance check:", result.result[0].value);
+      if(result.result[0].value === "true"){
+        setMaintenance(true);
+      }else{
+        setMaintenance(false);
+      }
     };
 
     checkMaintenance();
-  }, []);
-
-  // useEffect(() => {
-  //   const requestTracking = async () => {
-  //     const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
-  //     if (status === 'undetermined') {
-  //       await TrackingTransparency.requestTrackingPermissionsAsync();
-  //     }
-  //   };
-
-  //   requestTracking();
-  // }, []);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  }, []);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
   // Conditional rendering
-  
   let ScreenToRender = <Navigation />;
 
   if (!isConnected) {
@@ -144,9 +136,15 @@ export default function App() {
         }}
       />
     );
-  } else if (!serverUp) {
+  } 
+
+  if (!serverUp) {
     ScreenToRender = <ServerMaintenance />;
   }
+
+  // if (!maintenance) {
+  //   ScreenToRender = <ServerMaintenance />;
+  // }
 
   return (
     <SafeAreaProvider>

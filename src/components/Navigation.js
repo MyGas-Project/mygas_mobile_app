@@ -25,6 +25,7 @@ import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import CardLogin from "../screens/auth/CardLogin";
 import OTPverification from "../screens/auth/OTPverification";
+import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -79,16 +80,26 @@ export default function Navigation() {
               component={ScanScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen
-              name="CartScreens"
-              component={CartScreens}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="RedemptionScreen"
-              component={RedemptionScreen}
-              options={{ headerShown: false }}
-            />
+            {userInfo?.is_guest == 1 ? (
+              <Stack.Screen
+                name="GuestRedemptionScreen"
+                component={GuestRedemptionScreen}
+                options={{ headerShown: false }}
+              />
+            ) : (
+              <>
+                <Stack.Screen
+                  name="CartScreens"
+                  component={CartScreens}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="RedemptionScreen"
+                  component={RedemptionScreen}
+                  options={{ headerShown: false }}
+                />
+              </>
+            )}
             <Stack.Screen
               name="RedemptionTransactionScreens"
               component={RedemptionTransactionScreens}
@@ -99,6 +110,7 @@ export default function Navigation() {
               component={TransactionDetailsPopup}
               options={{ headerShown: false }}
             />
+
           </>
         ) : (
           <>
@@ -114,12 +126,12 @@ export default function Navigation() {
               component={LoginScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen 
+            <Stack.Screen
               name="CardLogin"
               component={CardLogin}
               options={{ headerShown: false }}
             />
-            <Stack.Screen 
+            <Stack.Screen
               name="OTPverification"
               component={OTPverification}
               options={{ headerShown: false }}
