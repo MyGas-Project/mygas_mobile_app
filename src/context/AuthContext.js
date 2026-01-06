@@ -252,7 +252,7 @@ export const AuthProvider = ({ children }) => {
     setUserInfo(null);
     setUserDetails(null);
     const allKeys = await AsyncStorage.getAllKeys();
-    const keysToRemove = allKeys.filter(key => !['newUser', 'card_login'].includes(key));
+    const keysToRemove = allKeys.filter(key => !['newUser', 'card_login', 'agreementAccepted'].includes(key));
     await AsyncStorage.multiRemove(keysToRemove);
 
     try {
