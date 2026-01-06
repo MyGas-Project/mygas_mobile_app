@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   TouchableOpacity,
   Image,
@@ -14,8 +13,9 @@ import {
   ImageBackground,
   Alert,
   Modal,
+  StatusBar,
 } from "react-native";
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,8 +28,9 @@ const Stack = createNativeStackNavigator();
 const { width, height } = Dimensions.get("window");
 
 // Responsive sizing helper
-const scale = (size) => (width / 375) * size;
-const verticalScale = (size) => (height / 812) * size;
+const isSmallDevice = width < 375;
+const isMediumDevice = width >= 375 && width < 414;
+const isLargeDevice = width >= 414;
 
 const Step1 = ({ navigation }) => {
   const { styles, currentTheme, mainTheme } = useTheme();
@@ -61,189 +62,198 @@ const Step1 = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={responsiveStyles.header}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={responsiveStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-        <ScrollView
-          style={responsiveStyles.scrollView}
-          contentContainerStyle={responsiveStyles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
         >
-          <ProgressIndicator step={1} />
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={1} />
 
-          <View style={responsiveStyles.contentContainer}>
-            <View style={responsiveStyles.headerSection}>
-              <Text style={[styles.text, responsiveStyles.subtitle]}>
-                Create Your Account
-              </Text>
-              <Text style={[styles.text, responsiveStyles.title]}>
-                Complete Your Profile Details
-              </Text>
-            </View>
-
-            <View style={responsiveStyles.formWrapper}>
-              <View style={responsiveStyles.inputGroup}>
-                <Text style={[styles.text, responsiveStyles.label]}>First Name</Text>
-                <TextInput
-                  style={[
-                    styles.form_input,
-                    responsiveStyles.input,
-                    errors.firstName && responsiveStyles.inputError
-                  ]}
-                  value={Batch1Form?.firstName || ""}
-                  onChangeText={(firstName) => {
-                    setBatch1Form({ ...Batch1Form, firstName });
-                    if (errors.firstName) {
-                      setErrors({ ...errors, firstName: null });
-                    }
-                  }}
-                  placeholder="First Name"
-                  placeholderTextColor={currentTheme.infoColor}
-                />
-                {errors.firstName && (
-                  <Text style={responsiveStyles.errorText}>
-                    {errors.firstName}
-                  </Text>
-                )}
-              </View>
-
-              <View style={responsiveStyles.inputGroup}>
-                <Text style={[styles.text, responsiveStyles.label]}>Last Name</Text>
-                <TextInput
-                  style={[
-                    styles.form_input,
-                    responsiveStyles.input,
-                    errors.lastName && responsiveStyles.inputError
-                  ]}
-                  value={Batch1Form?.lastName || ""}
-                  onChangeText={(lastName) => {
-                    setBatch1Form({ ...Batch1Form, lastName });
-                    if (errors.lastName) {
-                      setErrors({ ...errors, lastName: null });
-                    }
-                  }}
-                  placeholder="Last Name"
-                  placeholderTextColor={currentTheme.infoColor}
-                />
-                {errors.lastName && (
-                  <Text style={responsiveStyles.errorText}>
-                    {errors.lastName}
-                  </Text>
-                )}
-              </View>
-
-              <View style={responsiveStyles.inputGroup}>
-                <View style={responsiveStyles.labelRow}>
-                  <Text style={[styles.text, responsiveStyles.label]}>
-                    Birth Date <Text style={responsiveStyles.optionalText}>(Optional)</Text>
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowTooltip(!showTooltip)}
-                    style={responsiveStyles.infoButton}
-                  >
-                    <View style={responsiveStyles.infoIcon}>
-                      <Text style={responsiveStyles.infoIconText}>i</Text>
-                    </View>
-                  </TouchableOpacity>
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>CREATE YOUR</Text>
+                  <Text style={responsiveStyles.motoristaText}>ACCOUNT</Text>
+                  <View style={responsiveStyles.underline} />
+                  <Text style={responsiveStyles.subtitleText}>Complete Your Profile Details</Text>
                 </View>
 
-                {showTooltip && (
-                  <View style={responsiveStyles.tooltip}>
-                    <Text style={[styles.text, responsiveStyles.tooltipText]}>
-                      Get ready for exclusive promos in your birth month! By adding your
-                      birthdate, you'll unlock special offers and rewards to make
-                      your celebration even sweeter.
-                    </Text>
-                  </View>
-                )}
-
-                {showDatePicker && (
-                  Platform.OS === "ios" ? (
-                    <Modal transparent={true} animationType="slide">
-                      <View style={responsiveStyles.modalOverlay}>
-                        <View style={responsiveStyles.modalContent}>
-                          <DateTimePicker
-                            value={new Date(Batch1Form?.birthDate || Date.now())}
-                            mode="date"
-                            display="spinner"
-                            onChange={(event, selectedDate) => {
-                              if (event.type === "set") {
-                                setBatch1Form({
-                                  ...Batch1Form,
-                                  birthDate: selectedDate.toISOString().split("T")[0],
-                                });
-                              }
-                            }}
-                          />
-                          <TouchableOpacity
-                            style={[styles.primaryButton, { marginTop: 16 }]}
-                            onPress={() => setShowDatePicker(false)}
-                          >
-                            <Text style={styles.primaryButtonText}>Done</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </Modal>
-                  ) : (
-                    <DateTimePicker
-                      value={new Date(Batch1Form?.birthDate || Date.now())}
-                      mode="date"
-                      display="default"
-                      onChange={(event, selectedDate) => {
-                        setShowDatePicker(false);
-                        if (selectedDate) {
-                          setBatch1Form({
-                            ...Batch1Form,
-                            birthDate: selectedDate.toISOString().split("T")[0],
-                          });
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>First Name</Text>
+                    <TextInput
+                      style={[
+                        responsiveStyles.input,
+                        errors.firstName && responsiveStyles.inputError
+                      ]}
+                      value={Batch1Form?.firstName || ""}
+                      onChangeText={(firstName) => {
+                        setBatch1Form({ ...Batch1Form, firstName });
+                        if (errors.firstName) {
+                          setErrors({ ...errors, firstName: null });
                         }
                       }}
+                      placeholder="First Name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     />
-                  )
-                )}
-                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                  <View style={[styles.form_input, responsiveStyles.input, responsiveStyles.dateInput]}>
-                    <Text style={[styles.text, !Batch1Form?.birthDate && { color: currentTheme.infoColor }]}>
-                      {Batch1Form?.birthDate || "Select Birth Date"}
-                    </Text>
+                    {errors.firstName && (
+                      <Text style={responsiveStyles.errorText}>
+                        {errors.firstName}
+                      </Text>
+                    )}
                   </View>
-                </TouchableOpacity>
-              </View>
 
-              <View style={responsiveStyles.buttonGroup}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, responsiveStyles.button]}
-                  onPress={handleNext}
-                >
-                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>Next</Text>
-                </TouchableOpacity>
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>Last Name</Text>
+                    <TextInput
+                      style={[
+                        responsiveStyles.input,
+                        errors.lastName && responsiveStyles.inputError
+                      ]}
+                      value={Batch1Form?.lastName || ""}
+                      onChangeText={(lastName) => {
+                        setBatch1Form({ ...Batch1Form, lastName });
+                        if (errors.lastName) {
+                          setErrors({ ...errors, lastName: null });
+                        }
+                      }}
+                      placeholder="Last Name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    />
+                    {errors.lastName && (
+                      <Text style={responsiveStyles.errorText}>
+                        {errors.lastName}
+                      </Text>
+                    )}
+                  </View>
 
-                <TouchableOpacity
-                  style={[styles.secondaryButton, responsiveStyles.button]}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Cancel</Text>
-                </TouchableOpacity>
+                  <View style={responsiveStyles.inputGroup}>
+                    <View style={responsiveStyles.labelRow}>
+                      <Text style={responsiveStyles.label}>
+                        Birth Date <Text style={responsiveStyles.optionalText}>(Optional)</Text>
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowTooltip(!showTooltip)}
+                        style={responsiveStyles.infoButton}
+                      >
+                        <View style={responsiveStyles.infoIcon}>
+                          <Text style={responsiveStyles.infoIconText}>i</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+
+                    {showTooltip && (
+                      <View style={responsiveStyles.tooltip}>
+                        <Text style={responsiveStyles.tooltipText}>
+                          Get ready for exclusive promos in your birth month! By adding your
+                          birthdate, you'll unlock special offers and rewards to make
+                          your celebration even sweeter.
+                        </Text>
+                      </View>
+                    )}
+
+                    {showDatePicker && (
+                      Platform.OS === "ios" ? (
+                        <Modal transparent={true} animationType="slide">
+                          <View style={responsiveStyles.modalOverlay}>
+                            <View style={responsiveStyles.modalContent}>
+                              <DateTimePicker
+                                value={new Date(Batch1Form?.birthDate || Date.now())}
+                                mode="date"
+                                display="spinner"
+                                onChange={(event, selectedDate) => {
+                                  if (event.type === "set") {
+                                    setBatch1Form({
+                                      ...Batch1Form,
+                                      birthDate: selectedDate.toISOString().split("T")[0],
+                                    });
+                                  }
+                                }}
+                              />
+                              <TouchableOpacity
+                                style={responsiveStyles.modalButton}
+                                onPress={() => setShowDatePicker(false)}
+                              >
+                                <Text style={responsiveStyles.modalButtonText}>Done</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </Modal>
+                      ) : (
+                        <DateTimePicker
+                          value={new Date(Batch1Form?.birthDate || Date.now())}
+                          mode="date"
+                          display="default"
+                          onChange={(event, selectedDate) => {
+                            setShowDatePicker(false);
+                            if (selectedDate) {
+                              setBatch1Form({
+                                ...Batch1Form,
+                                birthDate: selectedDate.toISOString().split("T")[0],
+                              });
+                            }
+                          }}
+                        />
+                      )
+                    )}
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                      <View style={[responsiveStyles.input, responsiveStyles.dateInput]}>
+                        <Text style={[responsiveStyles.dateText, !Batch1Form?.birthDate && responsiveStyles.placeholderText]}>
+                          {Batch1Form?.birthDate || "Select Birth Date"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      onPress={handleNext}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>NEXT</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>CANCEL</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
@@ -288,100 +298,110 @@ const Step2 = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={responsiveStyles.header}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={responsiveStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={responsiveStyles.scrollView}
-          contentContainerStyle={responsiveStyles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
         >
-          <ProgressIndicator step={2} />
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={2} />
 
-          <View style={responsiveStyles.contentContainer}>
-            <View style={responsiveStyles.headerSection}>
-              <Text style={[styles.text, responsiveStyles.subtitle]}>
-                Create Your Account
-              </Text>
-              <Text style={[styles.text, responsiveStyles.title]}>
-                Enter Your Mobile Number
-              </Text>
-            </View>
-
-            <View style={responsiveStyles.formWrapper}>
-              <View style={responsiveStyles.inputGroup}>
-                <Text style={[styles.text, responsiveStyles.label]}>Mobile Number</Text>
-                <View style={responsiveStyles.phoneInputContainer}>
-                  <Text style={responsiveStyles.countryCode}>+63</Text>
-                  <TextInput
-                    style={[
-                      styles.form_input,
-                      responsiveStyles.input,
-                      responsiveStyles.phoneInput,
-                      errors.mobileNumber && responsiveStyles.inputError
-                    ]}
-                    value={batch1Final?.mobileNumber || ""}
-                    onChangeText={(mobileNumber) => {
-                      const cleanedNumber = mobileNumber.replace(/^0+/, "");
-                      setBatch1Final({ ...batch1Final, mobileNumber: cleanedNumber });
-                      if (errors.mobileNumber) {
-                        setErrors({ ...errors, mobileNumber: null });
-                      }
-                    }}
-                    placeholder="9XX XXX XXXX"
-                    placeholderTextColor={currentTheme.infoColor}
-                    keyboardType="numeric"
-                    maxLength={10}
-                  />
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>ENTER YOUR</Text>
+                  <Text style={responsiveStyles.motoristaText}>MOBILE NUMBER</Text>
+                  <View style={responsiveStyles.underline} />
                 </View>
-                {!errors.mobileNumber && (
-                  <Text style={responsiveStyles.helperText}>
-                    Please enter 10-digit number, excluding 0 at the beginning.
-                  </Text>
-                )}
-                {errors.mobileNumber && (
-                  <Text style={responsiveStyles.errorText}>
-                    {errors.mobileNumber}
-                  </Text>
-                )}
-              </View>
 
-              <View style={responsiveStyles.buttonGroup}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, responsiveStyles.button]}
-                  disabled={loadingState}
-                  onPress={handleNext}
-                >
-                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
-                    {loadingState ? "Loading..." : "Next"}
-                  </Text>
-                </TouchableOpacity>
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>Mobile Number</Text>
+                    <View style={responsiveStyles.phoneInputContainer}>
+                      <Text style={responsiveStyles.countryCode}>+63</Text>
+                      <TextInput
+                        style={[
+                          responsiveStyles.input,
+                          responsiveStyles.phoneInput,
+                          errors.mobileNumber && responsiveStyles.inputError
+                        ]}
+                        value={batch1Final?.mobileNumber || ""}
+                        onChangeText={(mobileNumber) => {
+                          const cleanedNumber = mobileNumber.replace(/^0+/, "");
+                          setBatch1Final({ ...batch1Final, mobileNumber: cleanedNumber });
+                          if (errors.mobileNumber) {
+                            setErrors({ ...errors, mobileNumber: null });
+                          }
+                        }}
+                        placeholder="9XX XXX XXXX"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        keyboardType="numeric"
+                        maxLength={10}
+                      />
+                    </View>
+                    {!errors.mobileNumber && (
+                      <Text style={responsiveStyles.helperText}>
+                        Please enter 10-digit number, excluding 0 at the beginning.
+                      </Text>
+                    )}
+                    {errors.mobileNumber && (
+                      <Text style={responsiveStyles.errorText}>
+                        {errors.mobileNumber}
+                      </Text>
+                    )}
+                  </View>
 
-                <TouchableOpacity
-                  style={[styles.secondaryButton, responsiveStyles.button]}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
-                </TouchableOpacity>
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      disabled={loadingState}
+                      onPress={handleNext}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>
+                          {loadingState ? "LOADING..." : "NEXT"}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>BACK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
@@ -394,7 +414,6 @@ const Step3 = ({ navigation, route }) => {
   const [loadingState, setLoadingState] = useState(false);
 
   const handleChange = (text, index) => {
-    // console.log(data);
     if (text.length > 1) text = text.charAt(0);
     const newCode = [...code];
     newCode[index] = text;
@@ -415,7 +434,6 @@ const Step3 = ({ navigation, route }) => {
   const handleVerify = async () => {
     setLoadingState(true);
     const res = await verifyCode(data.data, code.join(""));
-    // console.log(res);
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       navigation.navigate("Step4", { res: res, data: data.data });
@@ -426,86 +444,96 @@ const Step3 = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar hidden={true} />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={responsiveStyles.header}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={responsiveStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={responsiveStyles.scrollView}
-          contentContainerStyle={responsiveStyles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
         >
-          <ProgressIndicator step={3} />
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={3} />
 
-          <View style={responsiveStyles.contentContainer}>
-            <View style={responsiveStyles.headerSection}>
-              <Text style={[styles.text, responsiveStyles.subtitle]}>
-                Create Your Account
-              </Text>
-              <Text style={[styles.text, responsiveStyles.title]}>
-                Enter Verification Code
-              </Text>
-              <Text style={[styles.text, responsiveStyles.description]}>
-                A one-time passcode has been sent to (+63) {batch1form?.mobileNumber || 0}. Please
-                enter the passcode to verify your phone number. 
-                {/* (code: {data.data.code}) */}
-              </Text>
-            </View>
-
-            <View style={responsiveStyles.formWrapper}>
-              <View style={responsiveStyles.codeContainer}>
-                {code.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => (inputs.current[index] = ref)}
-                    style={[
-                      responsiveStyles.codeInput,
-                      code[index] !== "" && { borderColor: mainTheme.accent, borderWidth: 2 }
-                    ]}
-                    keyboardType="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChangeText={(text) => handleChange(text, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                  />
-                ))}
-              </View>
-
-              <View style={responsiveStyles.buttonGroup}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, responsiveStyles.button]}
-                  disabled={loadingState}
-                  onPress={handleVerify}
-                >
-                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
-                    {loadingState ? "Verifying..." : "Verify"}
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>ENTER</Text>
+                  <Text style={responsiveStyles.motoristaText}>VERIFICATION CODE</Text>
+                  <View style={responsiveStyles.underline} />
+                  <Text style={responsiveStyles.descriptionText}>
+                    A one-time passcode has been sent to (+63) {batch1form?.mobileNumber || 0}. Please
+                    enter the passcode to verify your phone number.
                   </Text>
-                </TouchableOpacity>
+                </View>
 
-                <TouchableOpacity
-                  style={[styles.secondaryButton, responsiveStyles.button]}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
-                </TouchableOpacity>
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.codeContainer}>
+                    {code.map((digit, index) => (
+                      <TextInput
+                        key={index}
+                        ref={(ref) => (inputs.current[index] = ref)}
+                        style={[
+                          responsiveStyles.codeInput,
+                          code[index] !== "" && responsiveStyles.codeInputFilled
+                        ]}
+                        keyboardType="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChangeText={(text) => handleChange(text, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                      />
+                    ))}
+                  </View>
+
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      disabled={loadingState}
+                      onPress={handleVerify}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>
+                          {loadingState ? "VERIFYING..." : "VERIFY"}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>BACK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
@@ -530,97 +558,106 @@ const Step4 = ({ navigation, route }) => {
   };
 
   const handleNext = () => {
-    // console.log(res, data);
     if (validateEmail()) {
       navigation.navigate("Step5", { Batch2Form });
     }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={responsiveStyles.header}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={responsiveStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={responsiveStyles.scrollView}
-          contentContainerStyle={responsiveStyles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
         >
-          <ProgressIndicator step={4} />
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={4} />
 
-          <View style={responsiveStyles.contentContainer}>
-            <View style={responsiveStyles.headerSection}>
-              <Text style={[styles.text, responsiveStyles.subtitle]}>
-                Create Your Account
-              </Text>
-              <Text style={[styles.text, responsiveStyles.title]}>
-                Enter Your Email Address
-              </Text>
-              <Text style={[styles.text, responsiveStyles.description]}>
-                Updates will be sent to your email address.
-              </Text>
-            </View>
-
-            <View style={responsiveStyles.formWrapper}>
-              <View style={responsiveStyles.inputGroup}>
-                <Text style={[styles.text, responsiveStyles.label]}>Email Address</Text>
-                <TextInput
-                  style={[
-                    styles.form_input,
-                    responsiveStyles.input,
-                    errors.email && responsiveStyles.inputError
-                  ]}
-                  onChangeText={(e) => {
-                    setBatch2Form({ ...Batch2Form, email: e });
-                    if (errors.email) {
-                      setErrors({ ...errors, email: null });
-                    }
-                  }}
-                  value={Batch2Form.email}
-                  placeholder="your.email@example.com"
-                  placeholderTextColor={currentTheme.infoColor}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-                {errors.email && (
-                  <Text style={responsiveStyles.errorText}>
-                    {errors.email}
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>ENTER YOUR</Text>
+                  <Text style={responsiveStyles.motoristaText}>EMAIL ADDRESS</Text>
+                  <View style={responsiveStyles.underline} />
+                  <Text style={responsiveStyles.descriptionText}>
+                    Updates will be sent to your email address.
                   </Text>
-                )}
-              </View>
+                </View>
 
-              <View style={responsiveStyles.buttonGroup}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, responsiveStyles.button]}
-                  onPress={handleNext}
-                >
-                  <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>Next</Text>
-                </TouchableOpacity>
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>Email Address</Text>
+                    <TextInput
+                      style={[
+                        responsiveStyles.input,
+                        errors.email && responsiveStyles.inputError
+                      ]}
+                      onChangeText={(e) => {
+                        setBatch2Form({ ...Batch2Form, email: e });
+                        if (errors.email) {
+                          setErrors({ ...errors, email: null });
+                        }
+                      }}
+                      value={Batch2Form.email}
+                      placeholder="your.email@example.com"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                    {errors.email && (
+                      <Text style={responsiveStyles.errorText}>
+                        {errors.email}
+                      </Text>
+                    )}
+                  </View>
 
-                <TouchableOpacity
-                  style={[styles.secondaryButton, responsiveStyles.button]}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Text style={[styles.secondaryButtonText, responsiveStyles.buttonText]}>Back</Text>
-                </TouchableOpacity>
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      onPress={handleNext}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>NEXT</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>BACK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
@@ -632,96 +669,126 @@ const Step5 = ({ navigation, route }) => {
   const { registerStep2 } = useContext(AuthContext);
   const [loadingState, setLoadingState] = useState(false);
 
+  const handleConfirm = async () => {
+    setLoadingState(true);
+
+    if (reconfirmPassword !== finalForm.password) {
+      Alert.alert("Password Mismatch", "Passwords do not match");
+      setLoadingState(false);
+      return;
+    }
+
+    const res = await registerStep2(finalForm);
+
+    if (res.statusCode == 201) {
+      navigation.navigate("Step6", { user_id: res.data.user_id });
+    } else {
+      setLoadingState(false);
+      Alert.alert("Error", res.data.message);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
+        >
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={5} />
+
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>CREATE YOUR</Text>
+                  <Text style={responsiveStyles.motoristaText}>PASSWORD</Text>
+                  <View style={responsiveStyles.underline} />
+                  <Text style={responsiveStyles.descriptionText}>
+                    Your password protects your account and keeps your information safe.
+                  </Text>
+                </View>
+
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>Enter your password</Text>
+                    <TextInput
+                      style={responsiveStyles.input}
+                      onChangeText={(password) => {
+                        setFinalForm({
+                          ...finalForm,
+                          password: password,
+                        })
+                      }}
+                      secureTextEntry={true}
+                      placeholder="Password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    />
+                  </View>
+
+                  <View style={responsiveStyles.inputGroup}>
+                    <Text style={responsiveStyles.label}>Re-enter your password</Text>
+                    <TextInput
+                      style={responsiveStyles.input}
+                      secureTextEntry={true}
+                      onChangeText={(e) => {
+                        setReconfirmPassword(e);
+                      }}
+                      placeholder="Confirm Password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    />
+                  </View>
+
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      disabled={loadingState}
+                      onPress={handleConfirm}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>
+                          {loadingState ? "LOADING..." : "CONFIRM PASSWORD"}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>BACK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
       </ImageBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ProgressIndicator step={5} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              Create Your Account Password
-            </Text>
-            <Text style={styles.text}>
-              Your password protects your account and keeps your information
-              safe.
-            </Text>
-          </View>
-          <View style={styles.form_container}>
-            <View style={styles.form_section}>
-              <Text style={styles.form_label}>Enter your password</Text>
-              <TextInput style={styles.form_input}
-                onChangeText={(password) => {
-                  setFinalForm({
-                    ...finalForm,
-                    password: password,
-                  })
-                }} secureTextEntry={true} />
-            </View>
-            <View style={styles.form_section}>
-              <Text style={styles.form_label}>Re-enter your password</Text>
-              <TextInput style={styles.form_input} secureTextEntry={true}
-                onChangeText={(e) => {
-                  setReconfirmPassword(e);
-                }} />
-            </View>
-            <View style={[styles.form_section, { flexDirection: "column-reverse", gap: 15 }]}>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                disabled={loadingState}
-                onPress={async () => {
-                  console.log(finalForm);
-                  setLoadingState(true);
-
-                  // if (reconfirmPassword !== finalForm.password) {
-                  //   Alert.alert("Password Mismatch", "Passwords do not match");
-                  //   setLoadingState(false);
-                  //   return;
-                  // }
-
-                  const res = await registerStep2(finalForm);
-                  console.info(res);
-
-                  if (res.statusCode == 201) {
-                    navigation.navigate("Step6", { user_id: res.data.user_id });
-                  } else {
-                    setLoadingState(false);
-                    Alert.alert("Error", res.data.message);
-                  }
-                  // navigation.navigate("Step7");
-                }}
-              >
-                <Text style={styles.primaryButtonText}>Confirm Password</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -761,79 +828,106 @@ const Step6 = ({ navigation, route }) => {
     getWheelTypes();
   }, [])
 
+  const handleConfirm = async () => {
+    setLoadingState(true);
+    const data = {
+      user_id: user_id,
+      wheel_type_id: selectedWheelType.id
+    }
+    const res = await registerStep3(data);
+    if (res.statusCode == 201) {
+      navigation.navigate("Step7", { user_id: user_id });
+    } else {
+      setLoadingState(false);
+      Alert.alert("Error", res.data.message);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft: 25}}>
-                    <Image source={require('../../../assets/arrow-circle-left.png')} style={styles.top_bar_button}/>
-                </TouchableOpacity> */}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
+        >
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={responsiveStyles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={6} />
+
+              <View style={responsiveStyles.contentContainer}>
+                <View style={responsiveStyles.headerSection}>
+                  <Text style={responsiveStyles.welcomeText}>SELECT YOUR</Text>
+                  <Text style={responsiveStyles.motoristaText}>VEHICLE TYPE</Text>
+                  <View style={responsiveStyles.underline} />
+                </View>
+
+                <View style={responsiveStyles.formWrapper}>
+                  <View style={responsiveStyles.inputGroup}>
+                    <SelectList
+                      data={wheelTypes}
+                      setSelected={(val) => {
+                        setSelectedWheelType(
+                          wheelTypes.find((item) => item.value === val)
+                        );
+                      }}
+                      save="value"
+                      boxStyles={responsiveStyles.selectBox}
+                      dropdownStyles={responsiveStyles.selectDropdown}
+                      inputStyles={responsiveStyles.selectInput}
+                      dropdownTextStyles={responsiveStyles.selectText}
+                    />
+                  </View>
+
+                  <View style={responsiveStyles.buttonGroup}>
+                    <TouchableOpacity
+                      style={responsiveStyles.signInButton}
+                      disabled={loadingState}
+                      onPress={handleConfirm}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#FFFFFF', '#F8F8F8']}
+                        style={responsiveStyles.buttonGradient}
+                      >
+                        <Text style={responsiveStyles.signInText}>
+                          {loadingState ? "LOADING..." : "CONFIRM VEHICLE"}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={responsiveStyles.registerButton}
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={responsiveStyles.registerText}>BACK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
       </ImageBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ProgressIndicator step={6} />
-        <ScrollView style={styles.auth_content}>
-          <View style={{ padding: 20 }}>
-            <Text style={[styles.text, styles.text_md]}>
-              Create Your Account
-            </Text>
-            <Text style={[styles.text, styles.text_lg]}>
-              What vehicle type do you have?
-            </Text>
-          </View>
-          <View style={styles.form_container}>
-            <SelectList
-              data={wheelTypes}
-              setSelected={(val) => {
-                setSelectedWheelType(
-                  wheelTypes.find((item) => item.value === val)
-                );
-              }}
-              save="value"
-            />
-          </View>
-          <View style={[styles.form_container, { flexDirection: "column-reverse", gap: 15, marginTop: 15 }]}>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              disabled={loadingState}
-              onPress={async () => {
-                setLoadingState(true);
-                const data = {
-                  user_id: user_id,
-                  wheel_type_id: selectedWheelType.id
-                }
-                // console.info(data);
-                const res = await registerStep3(data);
-                // console.log(res);
-                if (res.statusCode == 201) {
-                  navigation.navigate("Step7", { user_id: user_id });
-                } else {
-                  setLoadingState(false);
-                  Alert.alert("Error", res.data.message);
-                }
-              }}
-            >
-              <Text style={styles.primaryButtonText}>Confirm Vehicle</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -841,79 +935,86 @@ const Step7 = ({ navigation, route }) => {
   const { styles, mainTheme, currentTheme } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={responsiveStyles.container} edges={[]}>
+      <StatusBar barStyle="light-content" />
       <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={responsiveStyles.header}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={responsiveStyles.backgroundImage}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.5)"]}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={responsiveStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={responsiveStyles.scrollView}
-          contentContainerStyle={[responsiveStyles.scrollContent, { justifyContent: 'center' }]}
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={responsiveStyles.gradient}
         >
-          <ProgressIndicator step={7} />
+          <KeyboardAvoidingView
+            style={responsiveStyles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              style={responsiveStyles.scrollView}
+              contentContainerStyle={[responsiveStyles.scrollContent, { justifyContent: 'center' }]}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProgressIndicator step={7} />
 
-          <View style={responsiveStyles.successContainer}>
-            <View style={responsiveStyles.successIconContainer}>
-              <Text style={responsiveStyles.successIcon}>✓</Text>
-            </View>
+              <View style={responsiveStyles.successContainer}>
+                <View style={responsiveStyles.successIconContainer}>
+                  <Text style={responsiveStyles.successIcon}>✓</Text>
+                </View>
 
-            <Text style={[styles.text, responsiveStyles.successTitle]}>
-              Thank You for Registering!
-            </Text>
-
-            <Text style={[styles.text, responsiveStyles.successDescription]}>
-              You can now proceed to the nearest station for your barcode number and verification processing.
-            </Text>
-
-            <View style={responsiveStyles.successButtonContainer}>
-              <TouchableOpacity
-                style={[styles.primaryButton, responsiveStyles.button]}
-                onPress={() => navigation.navigate("Login")}
-              >
-                <Text style={[styles.primaryButtonText, responsiveStyles.buttonText]}>
-                  Complete Registration
+                <Text style={responsiveStyles.successTitle}>
+                  THANK YOU FOR REGISTERING!
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+
+                <Text style={responsiveStyles.successDescription}>
+                  You can now proceed to the nearest station for your barcode number and verification processing.
+                </Text>
+
+                <View style={responsiveStyles.successButtonContainer}>
+                  <TouchableOpacity
+                    style={responsiveStyles.signInButton}
+                    onPress={() => navigation.navigate("Login")}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={['#FFFFFF', '#F8F8F8']}
+                      style={responsiveStyles.buttonGradient}
+                    >
+                      <Text style={responsiveStyles.signInText}>COMPLETE REGISTRATION</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </LinearGradient>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
 const ProgressIndicator = ({ step }) => {
-  const { mainTheme, currentTheme } = useTheme();
   const totalSteps = 7;
   const progress = (step / totalSteps) * 100;
 
   return (
     <View style={responsiveStyles.progressContainer}>
       <View style={responsiveStyles.progressBarContainer}>
-        <View style={[responsiveStyles.progressBar, { backgroundColor: currentTheme.borderColor }]}>
+        <View style={responsiveStyles.progressBar}>
           <View
             style={[
               responsiveStyles.progressFill,
-              {
-                width: `${progress}%`,
-                backgroundColor: mainTheme.accent
-              }
+              { width: `${progress}%` }
             ]}
           />
         </View>
-        <Text style={[responsiveStyles.progressText, { color: currentTheme.foregroundColor }]}>
+        <Text style={responsiveStyles.progressText}>
           Step {step} of {totalSteps}
         </Text>
       </View>
@@ -936,52 +1037,94 @@ export default function RegisterScreen() {
 }
 
 const responsiveStyles = StyleSheet.create({
-  // Layout containers
-  keyboardView: {
+  // Base containers
+  container: {
+    flex: 1,
+    backgroundColor: '#8B2C2E',
+  },
+  backgroundImage: {
     flex: 1,
     width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
-    width: '100%',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: scale(30),
+    paddingBottom: isSmallDevice ? 20 : 30,
   },
   contentContainer: {
     flex: 1,
-    width: '100%',
-    paddingHorizontal: scale(20),
+    paddingHorizontal: isSmallDevice ? 20 : 28,
+    paddingTop: Platform.OS === 'android' ? 20 : 10,
   },
 
-  // Header
-  header: {
-    height: verticalScale(120),
-    width: '100%',
-    position: 'relative',
-  },
-
-  // Section headers
+  // Header section
   headerSection: {
-    marginTop: verticalScale(20),
-    marginBottom: verticalScale(30),
+    marginTop: isSmallDevice ? 20 : 30,
+    marginBottom: isSmallDevice ? 24 : 36,
   },
-  subtitle: {
-    fontSize: scale(16),
-    marginBottom: verticalScale(8),
-    opacity: 0.7,
+  welcomeText: {
+    fontSize: isSmallDevice ? 28 : isLargeDevice ? 38 : 34,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    lineHeight: isSmallDevice ? 34 : isLargeDevice ? 44 : 40,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  title: {
-    fontSize: scale(28),
-    fontWeight: 'bold',
-    marginBottom: verticalScale(12),
-    lineHeight: scale(34),
+  motoristaText: {
+    fontSize: isSmallDevice ? 28 : isLargeDevice ? 38 : 34,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    lineHeight: isSmallDevice ? 34 : isLargeDevice ? 44 : 40,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  description: {
-    fontSize: scale(14),
-    lineHeight: scale(20),
-    opacity: 0.8,
+  underline: {
+    width: 80,
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+    marginBottom: 12,
+    borderRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  subtitleText: {
+    fontSize: isSmallDevice ? 14 : 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: isSmallDevice ? 20 : 24,
+    letterSpacing: 0.3,
+    opacity: 0.95,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  descriptionText: {
+    fontSize: isSmallDevice ? 13 : 14,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    lineHeight: isSmallDevice ? 18 : 20,
+    letterSpacing: 0.2,
+    opacity: 0.9,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 
   // Form wrapper
@@ -991,26 +1134,43 @@ const responsiveStyles = StyleSheet.create({
 
   // Input groups
   inputGroup: {
-    marginBottom: verticalScale(24),
+    marginBottom: isSmallDevice ? 18 : 24,
   },
   label: {
-    fontSize: scale(14),
-    fontWeight: '600',
-    marginBottom: verticalScale(8),
+    fontSize: isSmallDevice ? 13 : 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   input: {
-    fontSize: scale(16),
-    paddingVertical: verticalScale(16),
-    paddingHorizontal: scale(16),
-    borderRadius: 8,
-    minHeight: verticalScale(56),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingVertical: isSmallDevice ? 14 : 16,
+    paddingHorizontal: 16,
+    fontSize: isSmallDevice ? 15 : 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   inputError: {
-    borderColor: '#fe0002',
+    borderColor: '#FFD700',
     borderWidth: 2,
   },
   dateInput: {
     justifyContent: 'center',
+  },
+  dateText: {
+    color: '#FFFFFF',
+    fontSize: isSmallDevice ? 15 : 16,
+    fontWeight: '500',
+  },
+  placeholderText: {
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 
   // Phone input
@@ -1018,70 +1178,74 @@ const responsiveStyles = StyleSheet.create({
     position: 'relative',
   },
   phoneInput: {
-    paddingLeft: scale(60),
+    paddingLeft: 60,
   },
   countryCode: {
     position: 'absolute',
-    top: verticalScale(18),
-    left: scale(16),
-    fontSize: scale(16),
-    color: '#666',
+    top: isSmallDevice ? 14 : 16,
+    left: 16,
+    fontSize: isSmallDevice ? 15 : 16,
+    color: '#FFFFFF',
     fontWeight: '600',
     zIndex: 1,
   },
 
   // Helper and error text
   helperText: {
-    fontSize: scale(12),
-    marginTop: verticalScale(6),
-    color: '#666',
-    lineHeight: scale(16),
+    fontSize: isSmallDevice ? 11 : 12,
+    marginTop: 6,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    lineHeight: isSmallDevice ? 15 : 16,
   },
   errorText: {
-    fontSize: scale(12),
-    marginTop: verticalScale(6),
-    color: '#fe0002',
-    lineHeight: scale(16),
+    fontSize: isSmallDevice ? 11 : 12,
+    marginTop: 6,
+    color: '#FFD700',
+    lineHeight: isSmallDevice ? 15 : 16,
+    fontWeight: '600',
   },
 
   // Tooltip
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: verticalScale(8),
+    marginBottom: 8,
   },
   optionalText: {
-    color: '#999',
-    fontSize: scale(13),
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: isSmallDevice ? 12 : 13,
   },
   infoButton: {
-    marginLeft: scale(8),
+    marginLeft: 8,
   },
   infoIcon: {
-    width: scale(20),
-    height: scale(20),
-    borderRadius: scale(10),
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#666',
+    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   infoIconText: {
-    fontSize: scale(13),
-    color: '#666',
+    fontSize: 13,
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   tooltip: {
-    backgroundColor: '#f5f5f5',
-    padding: scale(14),
-    borderRadius: 8,
-    marginBottom: verticalScale(16),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16,
     borderLeftWidth: 3,
-    borderLeftColor: '#fe0002',
+    borderLeftColor: '#FFFFFF',
   },
   tooltipText: {
-    fontSize: scale(13),
-    lineHeight: scale(18),
+    fontSize: isSmallDevice ? 12 : 13,
+    lineHeight: isSmallDevice ? 17 : 18,
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
 
   // Modal
@@ -1092,67 +1256,145 @@ const responsiveStyles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    padding: scale(20),
+    padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  modalButton: {
+    backgroundColor: '#8B2C2E',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 
   // Code input
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: verticalScale(30),
-    paddingHorizontal: scale(10),
+    marginBottom: isSmallDevice ? 24 : 30,
+    paddingHorizontal: 10,
   },
   codeInput: {
-    width: scale(48),
-    height: verticalScale(60),
+    width: isSmallDevice ? 45 : 50,
+    height: isSmallDevice ? 55 : 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     textAlign: 'center',
-    fontSize: scale(24),
+    fontSize: isSmallDevice ? 22 : 24,
     fontWeight: '600',
     borderRadius: 12,
+    color: '#FFFFFF',
+  },
+  codeInputFilled: {
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+
+  // SelectList styling
+  selectBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: isSmallDevice ? 14 : 16,
+  },
+  selectDropdown: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  selectInput: {
+    color: '#FFFFFF',
+    fontSize: isSmallDevice ? 15 : 16,
+    fontWeight: '500',
+  },
+  selectText: {
+    color: '#8B2C2E',
+    fontSize: isSmallDevice ? 14 : 15,
   },
 
   // Buttons
   buttonGroup: {
-    marginTop: verticalScale(20),
-    gap: verticalScale(12),
+    marginTop: isSmallDevice ? 20 : 30,
+    gap: isSmallDevice ? 12 : 14,
   },
-  button: {
-    paddingVertical: verticalScale(16),
-    borderRadius: 8,
-    minHeight: verticalScale(56),
+  signInButton: {
+    borderRadius: 16,
+    shadowColor: '#8B2C2E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+    overflow: 'hidden',
   },
-  buttonText: {
-    fontSize: scale(16),
-    fontWeight: '600',
+  buttonGradient: {
+    paddingVertical: isSmallDevice ? 17 : 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+  },
+  signInText: {
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '900',
+    color: '#8B2C2E',
+    letterSpacing: 2.5,
+  },
+  registerButton: {
+    backgroundColor: '#8B2C2E',
+    borderRadius: 16,
+    paddingVertical: isSmallDevice ? 17 : 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  registerText: {
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 2.5,
   },
 
   // Progress indicator
   progressContainer: {
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(20),
+    paddingHorizontal: isSmallDevice ? 20 : 28,
+    paddingTop: isSmallDevice ? 30 : 55,
+    paddingBottom: isSmallDevice ? 10 : 15,
   },
   progressBarContainer: {
     width: '100%',
   },
   progressBar: {
     width: '100%',
-    height: verticalScale(8),
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
+    backgroundColor: '#FFFFFF',
     borderRadius: 4,
   },
   progressText: {
-    fontSize: scale(13),
-    marginTop: verticalScale(8),
+    fontSize: isSmallDevice ? 12 : 13,
+    marginTop: 8,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    opacity: 0.9,
   },
 
   // Success screen
@@ -1160,44 +1402,49 @@ const responsiveStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: scale(30),
-    paddingVertical: verticalScale(40),
+    paddingHorizontal: 30,
+    paddingVertical: 40,
   },
   successIconContainer: {
-    width: scale(100),
-    height: scale(100),
-    borderRadius: scale(50),
-    backgroundColor: '#4CAF50',
+    width: isSmallDevice ? 90 : 100,
+    height: isSmallDevice ? 90 : 100,
+    borderRadius: isSmallDevice ? 45 : 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: verticalScale(30),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    marginBottom: 30,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
   },
   successIcon: {
-    fontSize: scale(60),
-    color: '#fff',
+    fontSize: isSmallDevice ? 55 : 60,
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   successTitle: {
-    fontSize: scale(26),
-    fontWeight: 'bold',
+    fontSize: isSmallDevice ? 24 : 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: verticalScale(16),
-    lineHeight: scale(32),
+    marginBottom: 16,
+    lineHeight: isSmallDevice ? 30 : 34,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   successDescription: {
-    fontSize: scale(15),
+    fontSize: isSmallDevice ? 14 : 15,
     textAlign: 'center',
-    lineHeight: scale(22),
-    opacity: 0.8,
-    marginBottom: verticalScale(40),
+    lineHeight: isSmallDevice ? 20 : 22,
+    color: '#FFFFFF',
+    opacity: 0.95,
+    marginBottom: 40,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   successButtonContainer: {
     width: '100%',
-    maxWidth: scale(400),
   },
 });

@@ -26,6 +26,8 @@ import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import CardLogin from "../screens/auth/CardLogin";
 import OTPverification from "../screens/auth/OTPverification";
 import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
+import AgreementScreen from "../screens/AgreementScreen";
+import PhoneLogin from "../screens/auth/PhoneLogin";
 
 const Stack = createNativeStackNavigator();
 
@@ -33,11 +35,15 @@ export default function Navigation() {
   const { userInfo, userDetails, isLoading } = useContext(AuthContext);
   const [initialRoute, setInitialRoute] = useState(null);
   const [checkingStorage, setCheckingStorage] = useState(true);
+  const [checkAgreement, setCheckAgreement] = useState(null);
 
   useEffect(() => {
     const checkIfNewUser = async () => {
       try {
         const isNewUser = await AsyncStorage.getItem("newUser");
+        const agreementAccepted = await AsyncStorage.getItem('agreementAccepted');
+
+        setCheckAgreement(agreementAccepted);
         setInitialRoute(isNewUser);
       } catch (e) {
         await AsyncStorage.removeItem("newUser");
@@ -114,13 +120,20 @@ export default function Navigation() {
           </>
         ) : (
           <>
-            {!initialRoute && (
-              <Stack.Screen
-                name="Welcome"
-                component={WelcomeScreen}
-                options={{ headerShown: false }}
-              />
-            )}
+              {!initialRoute && checkAgreement !== 'true' && (
+                <>
+                  <Stack.Screen
+                    name="Welcome"
+                    component={WelcomeScreen}
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="AgreementScreen"
+                    component={AgreementScreen}
+                    options={{ headerShown: false }}
+                  />
+                </>
+              )}
             <Stack.Screen
               name="Login"
               component={LoginScreen}
@@ -131,6 +144,11 @@ export default function Navigation() {
               component={CardLogin}
               options={{ headerShown: false }}
             />
+              <Stack.Screen
+                name="PhoneLogin"
+                component={PhoneLogin}
+                options={{ headerShown: false }}
+              />
             <Stack.Screen
               name="OTPverification"
               component={OTPverification}
@@ -151,6 +169,7 @@ export default function Navigation() {
               component={Step1}
               options={{ headerShown: false }}
             />
+
           </>
         )}
         <Stack.Screen

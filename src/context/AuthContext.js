@@ -221,6 +221,26 @@ export const AuthProvider = ({ children }) => {
       });
   };
 
+  const phoneLoginVerification = (data) => {
+    return fetch(`${AUTH_URL}login-using-barcode`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ phone_number: data }),
+    })
+      .then(processResponse)
+      .then((res) => {
+        // console.log("cardLoginVerification response:", res);
+        return res;
+      })
+      .catch((error) => {
+        console.error("cardLoginVerification error:", error);
+        throw error;
+      });
+  };
+
   const logout = async (navigation) => {
     let res;
     if (!navigation) {
@@ -370,6 +390,7 @@ export const AuthProvider = ({ children }) => {
         userDetails,
         locationEnabled,
         cardLoginVerification,
+        phoneLoginVerification,
         checkLocationPermission,
         userLocation,
         registerStep1,

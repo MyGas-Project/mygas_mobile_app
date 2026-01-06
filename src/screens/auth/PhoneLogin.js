@@ -27,38 +27,47 @@ const { width, height } = Dimensions.get('window');
 const isSmallDevice = width < 375;
 const isLargeDevice = width >= 414;
 
-export default function CardLogin({ navigation }) {
-    const { cardLoginVerification } = useContext(AuthContext);
-    const [cardNumber, setCardNumber] = useState("");
+export default function PhoneLogin({ navigation }) {
+    const { phoneLoginVerification } = useContext(AuthContext);
+    const [phoneNumber, setPhoneNumber] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [cardFocused, setCardFocused] = useState(false);
+    const [phoneFocused, setPhoneFocused] = useState(false);
     const [error, setError] = useState("");
 
-    const cardInputRef = useRef(null);
+    const phoneInputRef = useRef(null);
 
-    const formatCardNumber = (text) => {
+    const formatPhoneNumber = (text) => {
         // Remove all non-digits
-        const cleaned = text.replace(/\D/g, "");
+        let cleaned = text.replace(/\D/g, "");
 
-        // Limit to 10 digits
-        const limited = cleaned.slice(0, 10);
+        // Handle +63 country code - convert to 0
+        if (cleaned.startsWith("63") && cleaned.length >= 2) {
+            cleaned = "0" + cleaned.slice(2);
+        }
 
-        // Add spaces every 4 digits (for better readability)
-        const formatted = limited.match(/.{1,4}/g)?.join(" ") || limited;
+        // Limit to 11 digits
+        const limited = cleaned.slice(0, 11);
 
-        return formatted;
+        // Format as (XXXX) XXX-XXXX
+        if (limited.length <= 4) {
+            return limited;
+        } else if (limited.length <= 7) {
+            return `(${limited.slice(0, 4)}) ${limited.slice(4)}`;
+        } else {
+            return `(${limited.slice(0, 4)}) ${limited.slice(4, 7)}-${limited.slice(7)}`;
+        }
     };
 
-    const validateCardNumber = () => {
-        const cleaned = cardNumber.replace(/\s/g, "");
+    const validatePhoneNumber = () => {
+        const cleaned = phoneNumber.replace(/\D/g, "");
 
         if (!cleaned) {
-            setError("Card number is required");
+            setError("Phone number is required");
             return false;
         }
 
-        if (cleaned.length < 10) {
-            setError("Please enter a valid 10-digit card number");
+        if (cleaned.length < 11) {
+            setError("Please enter a valid 11-digit phone number");
             return false;
         }
 
@@ -66,8 +75,8 @@ export default function CardLogin({ navigation }) {
         return true;
     };
 
-    const handleCardLogin = async () => {
-        if (!validateCardNumber()) {
+    const handlePhoneLogin = async () => {
+        if (!validatePhoneNumber()) {
             return;
         }
 
@@ -75,9 +84,10 @@ export default function CardLogin({ navigation }) {
 
         try {
             setIsLoading(true);
-
-            const cleanedCard = cardNumber.replace(/\s/g, "");
-            const { statusCode, data } = await cardLoginVerification(cleanedCard);
+            
+            const cleanedPhone = phoneNumber.replace(/\D/g, "");
+            console.log(cleanedPhone);
+            const { statusCode, data } = await phoneLoginVerification(cleanedPhone);
             console.log(data);
 
             if (statusCode !== 201 && statusCode !== 200) {
@@ -93,7 +103,7 @@ export default function CardLogin({ navigation }) {
         } catch (error) {
             Alert.alert(
                 "Login Failed",
-                error.message || "Invalid card number. Please try again.",
+                error.message || "Invalid phone number. Please try again.",
                 [{ text: "OK", style: "default" }]
             );
         } finally {
@@ -150,47 +160,46 @@ export default function CardLogin({ navigation }) {
                                             </View>
 
                                             <View style={styles.titleContainer}>
-                                                <Text style={styles.welcomeText}>CARD LOGIN</Text>
+                                                <Text style={styles.welcomeText}>PHONE LOGIN</Text>
                                                 <View style={styles.underline} />
                                             </View>
 
                                             <Text style={styles.subtitleText}>
-                                                Enter your Motorista card number to continue
+                                                Enter your phone number to continue
                                             </Text>
                                         </View>
 
-                                        {/* Card Visual Section */}
-                                        <View style={styles.cardSection}>
-                                            <View style={styles.cardVisual}>
+                                        {/* Phone Visual Section */}
+                                        <View style={styles.phoneSection}>
+                                            <View style={styles.phoneVisual}>
                                                 <LinearGradient
                                                     colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
                                                     start={{ x: 0, y: 0 }}
                                                     end={{ x: 1, y: 1 }}
-                                                    style={styles.cardGradient}
+                                                    style={styles.phoneGradient}
                                                 >
-                                                    <View style={styles.cardContent}>
-                                                        <View style={styles.cardTopRow}>
-                                                            <View style={styles.cardChipContainer}>
-                                                                <View style={styles.cardChip} />
+                                                    <View style={styles.phoneContent}>
+                                                        <View style={styles.phoneIconContainer}>
+                                                            <View style={styles.phoneIconCircle}>
+                                                                <Icon name="call" size={36} color="#8B2C2E" />
                                                             </View>
-                                                            <Icon name="card" size={32} color="#8B2C2E" />
                                                         </View>
 
-                                                        <View style={styles.cardMiddle}>
-                                                            <Text style={styles.cardNumberDisplay}>
-                                                                {cardNumber || "•••• •••• ••"}
+                                                        <View style={styles.phoneMiddle}>
+                                                            <Text style={styles.phoneNumberDisplay}>
+                                                                {phoneNumber || "(••••) •••-••••"}
                                                             </Text>
                                                         </View>
 
-                                                        <View style={styles.cardBottom}>
+                                                        <View style={styles.phoneBottom}>
                                                             <View>
-                                                                <Text style={styles.cardLabel}>CARD HOLDER</Text>
-                                                                <Text style={styles.cardValue}>MOTORISTA</Text>
+                                                                <Text style={styles.phoneLabel}>REGISTERED TO</Text>
+                                                                <Text style={styles.phoneValue}>MOTORISTA</Text>
                                                             </View>
-                                                            <View style={styles.cardLogoSmall}>
+                                                            <View style={styles.phoneLogoSmall}>
                                                                 <Image
                                                                     source={require('../../../assets/heart_logo.png')}
-                                                                    style={styles.cardLogoImage}
+                                                                    style={styles.phoneLogoImage}
                                                                     resizeMode='contain'
                                                                 />
                                                             </View>
@@ -203,39 +212,39 @@ export default function CardLogin({ navigation }) {
                                         {/* Form Section */}
                                         <View style={styles.formSection}>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Card Number</Text>
-                                                <TouchableWithoutFeedback onPress={() => cardInputRef.current?.focus()}>
+                                                <Text style={styles.inputLabel}>Phone Number</Text>
+                                                <TouchableWithoutFeedback onPress={() => phoneInputRef.current?.focus()}>
                                                     <View style={[
                                                         styles.inputWrapper,
-                                                        cardFocused && styles.inputWrapperFocused,
+                                                        phoneFocused && styles.inputWrapperFocused,
                                                         error && styles.inputWrapperError
                                                     ]}>
                                                         <Icon
-                                                            name="card-outline"
+                                                            name="call-outline"
                                                             size={20}
-                                                            color={cardFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)"}
+                                                            color={phoneFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)"}
                                                             style={styles.inputIcon}
                                                         />
                                                         <TextInput
-                                                            ref={cardInputRef}
+                                                            ref={phoneInputRef}
                                                             style={styles.input}
-                                                            value={cardNumber}
-                                                            placeholder="0000 0000 00"
+                                                            value={phoneNumber}
+                                                            placeholder="(0000) 000-0000"
                                                             placeholderTextColor="rgba(255,255,255,0.5)"
                                                             onChangeText={(text) => {
-                                                                const formatted = formatCardNumber(text);
-                                                                setCardNumber(formatted);
+                                                                const formatted = formatPhoneNumber(text);
+                                                                setPhoneNumber(formatted);
                                                                 if (error) {
                                                                     setError("");
                                                                 }
                                                             }}
-                                                            keyboardType="number-pad"
+                                                            keyboardType="phone-pad"
                                                             editable={!isLoading}
                                                             returnKeyType="done"
-                                                            onSubmitEditing={handleCardLogin}
-                                                            onFocus={() => setCardFocused(true)}
-                                                            onBlur={() => setCardFocused(false)}
-                                                            maxLength={12} // 10 digits + 2 spaces
+                                                            onSubmitEditing={handlePhoneLogin}
+                                                            onFocus={() => setPhoneFocused(true)}
+                                                            onBlur={() => setPhoneFocused(false)}
+                                                            maxLength={16} // (XXXX) XXX-XXXX format
                                                         />
                                                     </View>
                                                 </TouchableWithoutFeedback>
@@ -243,7 +252,7 @@ export default function CardLogin({ navigation }) {
                                                     <Text style={styles.errorText}>{error}</Text>
                                                 )}
                                                 <Text style={styles.helperText}>
-                                                    Enter your 10-digit card number
+                                                    Enter your 11-digit phone number
                                                 </Text>
                                             </View>
 
@@ -253,7 +262,7 @@ export default function CardLogin({ navigation }) {
                                                     styles.loginButton,
                                                     isLoading && styles.loginButtonDisabled
                                                 ]}
-                                                onPress={handleCardLogin}
+                                                onPress={handlePhoneLogin}
                                                 disabled={isLoading}
                                                 activeOpacity={0.8}
                                             >
@@ -262,7 +271,7 @@ export default function CardLogin({ navigation }) {
                                                     style={styles.buttonGradient}
                                                 >
                                                     <Text style={styles.loginText}>
-                                                        {isLoading ? "VERIFYING..." : "LOGIN WITH CARD"}
+                                                        {isLoading ? "VERIFYING..." : "LOGIN WITH PHONE"}
                                                     </Text>
                                                 </LinearGradient>
                                             </TouchableOpacity>
@@ -274,7 +283,7 @@ export default function CardLogin({ navigation }) {
                                                     <Text style={styles.infoTitle}>Secure Login</Text>
                                                 </View>
                                                 <Text style={styles.infoText}>
-                                                    Your card information is encrypted and securely processed. We never store your complete card details.
+                                                    Your phone number is encrypted and securely processed. We'll send you a verification code to confirm your identity.
                                                 </Text>
                                             </View>
                                         </View>
@@ -319,15 +328,6 @@ const styles = StyleSheet.create({
     },
     headerSection: {
         marginBottom: isSmallDevice ? 20 : 28,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
     },
     logoRow: {
         flexDirection: 'row',
@@ -407,10 +407,10 @@ const styles = StyleSheet.create({
         textShadowRadius: 2,
         marginTop: 8,
     },
-    cardSection: {
-        marginVertical: isSmallDevice ? 20 : 28,
+    phoneSection: {
+        marginVertical: isSmallDevice ? 12 : 16, // Reduced from 20 : 28
     },
-    cardVisual: {
+    phoneVisual: {
         borderRadius: 20,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -419,47 +419,43 @@ const styles = StyleSheet.create({
         shadowRadius: 15,
         elevation: 10,
     },
-    cardGradient: {
-        padding: 24,
-        minHeight: isSmallDevice ? 180 : 200,
+    phoneGradient: {
+        padding: isSmallDevice ? 16 : 18, // Reduced from 24
+        minHeight: isSmallDevice ? 140 : 160, // Reduced from 180 : 200
     },
-    cardContent: {
+    phoneContent: {
         flex: 1,
         justifyContent: 'space-between',
     },
-    cardTopRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    phoneIconContainer: {
         alignItems: 'center',
+        marginBottom: 8, // Reduced from 12
     },
-    cardChipContainer: {
-        width: 50,
-        height: 40,
+    phoneIconCircle: {
+        width: 60, // Reduced from 80
+        height: 60, // Reduced from 80
         backgroundColor: 'rgba(139, 44, 46, 0.1)',
-        borderRadius: 8,
-        padding: 8,
+        borderRadius: 30, // Reduced from 40
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    cardChip: {
-        flex: 1,
-        backgroundColor: '#D4AF37',
-        borderRadius: 4,
+    phoneMiddle: {
+        alignItems: 'center',
+        marginVertical: 10, // Reduced from 16
     },
-    cardMiddle: {
-        marginVertical: 16,
-    },
-    cardNumberDisplay: {
-        fontSize: isSmallDevice ? 20 : 24,
+    phoneNumberDisplay: {
+        fontSize: isSmallDevice ? 20 : 24, // Reduced from 22 : 26
         fontWeight: '700',
         color: '#8B2C2E',
-        letterSpacing: 3,
+        letterSpacing: 1.5,
         fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     },
-    cardBottom: {
+    phoneBottom: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
     },
-    cardLabel: {
+    phoneLabel: {
         fontSize: 9,
         fontWeight: '600',
         color: '#8B2C2E',
@@ -467,20 +463,20 @@ const styles = StyleSheet.create({
         opacity: 0.7,
         marginBottom: 2,
     },
-    cardValue: {
+    phoneValue: {
         fontSize: 13,
         fontWeight: '700',
         color: '#8B2C2E',
         letterSpacing: 0.5,
     },
-    cardLogoSmall: {
-        width: 36,
-        height: 36,
+    phoneLogoSmall: {
+        width: 32, // Reduced from 36
+        height: 32, // Reduced from 36
         backgroundColor: '#8B2C2E',
-        borderRadius: 18,
+        borderRadius: 16, // Reduced from 18
         padding: 6,
     },
-    cardLogoImage: {
+    phoneLogoImage: {
         width: '100%',
         height: '100%',
     },
@@ -533,7 +529,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#FFFFFF',
         fontWeight: '600',
-        letterSpacing: 2,
+        letterSpacing: 1,
         fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     },
     errorText: {
@@ -577,23 +573,6 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#8B2C2E',
         letterSpacing: 2.5,
-    },
-    dividerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: isSmallDevice ? 20 : 24,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    dividerText: {
-        marginHorizontal: 16,
-        fontSize: 13,
-        color: '#FFFFFF',
-        fontWeight: '600',
-        opacity: 0.8,
     },
     infoSection: {
         marginTop: 24,

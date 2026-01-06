@@ -13,25 +13,32 @@ import {
   Dimensions,
   StyleSheet,
   StatusBar,
+  TouchableWithoutFeedback,
 } from "react-native";
-import React, { useContext, useEffect, useState } from "react";
-import { useTheme } from "../../context/ThemeContext";
+import React, { useContext, useState, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthContext } from "../../context/AuthContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Icon from 'react-native-vector-icons/Ionicons';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
+
+// Responsive sizing helper
+const isSmallDevice = width < 375;
+const isLargeDevice = width >= 414;
 
 export default function LoginScreen({ navigation }) {
-  const { styles } = useTheme();
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   const validateForm = () => {
     const newErrors = {};
@@ -39,18 +46,15 @@ export default function LoginScreen({ navigation }) {
     if (!email.trim()) {
       newErrors.email = "Email or Mobile Number is required";
     } else {
-      // Basic email or mobile validation
       const isEmail = email.includes('@');
       const isMobile = /^\d+$/.test(email.trim());
 
       if (isEmail) {
-        // Basic email format check
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
           newErrors.email = "Please enter a valid email address";
         }
       } else if (isMobile) {
-        // Mobile number validation
         if (email.trim().length < 10) {
           newErrors.email = "Please enter a valid mobile number";
         }
@@ -92,393 +96,510 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleCardLogin = () => {
-    navigation.navigate('CardLogin');
+    navigation.navigate('PhoneLogin');
   };
 
   const handleTermsPress = () => {
-    // Navigate to Terms and Conditions screen
     navigation.navigate('TermsCondition');
   };
 
   const handlePrivacyPress = () => {
-    // Navigate to Privacy Policy screen
     navigation.navigate('PrivacyPolicy');
   };
 
   return (
-    <View style={professionalStyles.container}>
-      <StatusBar barStyle="light-content" />
-
+    <View style={styles.container}>
+      <StatusBar hidden={true} />
       <ImageBackground
-        resizeMode="cover"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={professionalStyles.headerBackground}
+        source={require('../../../assets/office.jpg')}
+        resizeMode='cover'
+        style={styles.backgroundImage}
       >
         <LinearGradient
-          colors={["rgba(0,0,0,0.3)", "rgba(255,255,255,0.95)"]}
-          locations={[0, 0.85]}
-          style={professionalStyles.headerGradient}
-        />
-
-        <View style={professionalStyles.headerContent}>
-          <Image
-            source={require("../../../assets/mygas.jpg")}
-            style={professionalStyles.logo}
-            resizeMode="contain"
-          />
-          <Text style={professionalStyles.welcomeText}>Welcome Back</Text>
-          <Text style={professionalStyles.subtitleText}>Sign in to continue</Text>
-        </View>
-      </ImageBackground>
-
-      <KeyboardAvoidingView
-        style={professionalStyles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          style={professionalStyles.scrollView}
-          contentContainerStyle={professionalStyles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          colors={[
+            'rgba(139, 44, 46, 0.92)',
+            'rgba(200, 75, 58, 0.85)',
+            'rgba(232, 137, 94, 0.75)',
+            'rgba(244, 181, 124, 0.65)'
+          ]}
+          locations={[0, 0.35, 0.65, 1]}
+          style={styles.gradient}
         >
-          <View style={professionalStyles.formCard}>
-            <View style={professionalStyles.inputGroup}>
-              <Text style={professionalStyles.inputLabel}>
-                Email or Mobile Number
-              </Text>
-              <View style={[
-                professionalStyles.inputWrapper,
-                emailFocused && professionalStyles.inputWrapperFocused,
-                errors.email && professionalStyles.inputWrapperError
-              ]}>
-                <TextInput
-                  style={professionalStyles.input}
-                  value={email}
-                  placeholder="Enter your email or mobile number"
-                  placeholderTextColor="#A0A0A0"
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    // Clear error when user starts typing
-                    if (errors.email) {
-                      setErrors({ ...errors, email: null });
-                    }
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!isLoading}
-                  returnKeyType="next"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                />
-              </View>
-              {errors.email && (
-                <Text style={professionalStyles.errorText}>
-                  {errors.email}
-                </Text>
-              )}
-            </View>
-
-            <View style={professionalStyles.inputGroup}>
-              <Text style={professionalStyles.inputLabel}>Password</Text>
-              <View style={[
-                professionalStyles.inputWrapper,
-                passwordFocused && professionalStyles.inputWrapperFocused,
-                errors.password && professionalStyles.inputWrapperError
-              ]}>
-                <TextInput
-                  style={professionalStyles.input}
-                  value={password}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#A0A0A0"
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    // Clear error when user starts typing
-                    if (errors.password) {
-                      setErrors({ ...errors, password: null });
-                    }
-                  }}
-                  secureTextEntry
-                  editable={!isLoading}
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-              </View>
-              {errors.password && (
-                <Text style={professionalStyles.errorText}>
-                  {errors.password}
-                </Text>
-              )}
-
-              <TouchableOpacity
-                style={professionalStyles.forgotPassword}
-                onPress={() => {
-                  navigation.navigate('ForgotPassword')
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={professionalStyles.forgotPasswordText}>
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                professionalStyles.loginButton,
-                isLoading && professionalStyles.loginButtonDisabled
-              ]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
+          <SafeAreaView style={styles.safeArea} edges={[]}>
+            <KeyboardAvoidingView
+              style={styles.keyboardView}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={0}
             >
-              <Text style={professionalStyles.loginButtonText}>
-                {isLoading ? "Signing In..." : "Sign In"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Divider with OR */}
-            <View style={professionalStyles.dividerContainer}>
-              <View style={professionalStyles.dividerLine} />
-              <Text style={professionalStyles.dividerText}>OR</Text>
-              <View style={professionalStyles.dividerLine} />
-            </View>
-
-            {/* Card Login Button */}
-            <TouchableOpacity
-              style={professionalStyles.cardLoginButton}
-              onPress={handleCardLogin}
-              activeOpacity={0.8}
-            >
-              <View style={professionalStyles.cardLoginContent}>
-                <Text style={professionalStyles.cardLoginIcon}>💳</Text>
-                <Text style={professionalStyles.cardLoginText}>
-                  Login Using Card
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={professionalStyles.signupContainer}>
-              <Text style={professionalStyles.signupText}>
-                Don't have an account?{" "}
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('Register')}
-                activeOpacity={0.7}
-              >
-                <Text style={professionalStyles.signupLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Terms and Privacy Policy */}
-            <View style={professionalStyles.termsContainer}>
-              <Text style={professionalStyles.termsText}>
-                By continuing, you agree to our{" "}
-              </Text>
-              <View style={professionalStyles.termsLinksRow}>
-                <TouchableOpacity
-                  onPress={handleTermsPress}
-                  activeOpacity={0.7}
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView
+                  contentContainerStyle={styles.scrollContent}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  bounces={false}
                 >
-                  <Text style={professionalStyles.termsLink}>Terms & Conditions</Text>
-                </TouchableOpacity>
-                <Text style={professionalStyles.termsText}> and </Text>
-                <TouchableOpacity
-                  onPress={handlePrivacyPress}
-                  activeOpacity={0.7}
-                >
-                  <Text style={professionalStyles.termsLink}>Privacy Policy</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                  <View style={styles.content}>
+                    {/* Header Section */}
+                    <View style={styles.headerSection}>
+                      <View style={styles.logoRow}>
+                        <View style={styles.logoWrapper}>
+                          <Image
+                            source={require('../../../assets/heart_logo.png')}
+                            style={styles.logo}
+                            resizeMode='contain'
+                          />
+                        </View>
+                        <View style={styles.logoTextContainer}>
+                          <Text style={styles.logoMainText}>MY GAS</Text>
+                          <Text style={styles.logoSubText}>MOTORISTA APP</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.titleContainer}>
+                        <Text style={styles.welcomeText}>SIGN IN</Text>
+                        <View style={styles.underline} />
+                      </View>
+
+                      <Text style={styles.subtitleText}>
+                        Welcome back! Please enter your details.
+                      </Text>
+                    </View>
+
+                    {/* Form Section */}
+                    <View style={styles.formSection}>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Email or Mobile Number</Text>
+                        <TouchableWithoutFeedback onPress={() => emailInputRef.current?.focus()}>
+                          <View style={[
+                            styles.inputWrapper,
+                            emailFocused && styles.inputWrapperFocused,
+                            errors.email && styles.inputWrapperError
+                          ]}>
+                            <Icon name="mail-outline" size={20} color={emailFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)"} style={styles.inputIcon} />
+                            <TextInput
+                              ref={emailInputRef}
+                              style={styles.input}
+                              value={email}
+                              placeholder="Enter your email or mobile number"
+                              placeholderTextColor="rgba(255,255,255,0.5)"
+                              onChangeText={(text) => {
+                                setEmail(text);
+                                if (errors.email) {
+                                  setErrors({ ...errors, email: null });
+                                }
+                              }}
+                              keyboardType="email-address"
+                              autoCapitalize="none"
+                              editable={!isLoading}
+                              returnKeyType="next"
+                              onFocus={() => setEmailFocused(true)}
+                              onBlur={() => setEmailFocused(false)}
+                              onSubmitEditing={() => passwordInputRef.current?.focus()}
+                              blurOnSubmit={false}
+                            />
+                          </View>
+                        </TouchableWithoutFeedback>
+                        {errors.email && (
+                          <Text style={styles.errorText}>{errors.email}</Text>
+                        )}
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Password</Text>
+                        <TouchableWithoutFeedback onPress={() => passwordInputRef.current?.focus()}>
+                          <View style={[
+                            styles.inputWrapper,
+                            passwordFocused && styles.inputWrapperFocused,
+                            errors.password && styles.inputWrapperError
+                          ]}>
+                            <Icon name="lock-closed-outline" size={20} color={passwordFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)"} style={styles.inputIcon} />
+                            <TextInput
+                              ref={passwordInputRef}
+                              style={[styles.input, styles.passwordInput]}
+                              value={password}
+                              placeholder="Enter your password"
+                              placeholderTextColor="rgba(255,255,255,0.5)"
+                              onChangeText={(text) => {
+                                setPassword(text);
+                                if (errors.password) {
+                                  setErrors({ ...errors, password: null });
+                                }
+                              }}
+                              secureTextEntry={!showPassword}
+                              editable={!isLoading}
+                              returnKeyType="done"
+                              onSubmitEditing={handleLogin}
+                              onFocus={() => setPasswordFocused(true)}
+                              onBlur={() => setPasswordFocused(false)}
+                            />
+                            <TouchableOpacity
+                              onPress={() => setShowPassword(!showPassword)}
+                              style={styles.eyeIcon}
+                              activeOpacity={0.7}
+                            >
+                              <Icon
+                                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                size={20}
+                                color="rgba(255,255,255,0.6)"
+                              />
+                            </TouchableOpacity>
+                          </View>
+                        </TouchableWithoutFeedback>
+                        {errors.password && (
+                          <Text style={styles.errorText}>{errors.password}</Text>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.forgotPassword}
+                        onPress={() => navigation.navigate('ForgotPassword')}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.forgotPasswordText}>
+                          Forgot Password?
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Sign In Button */}
+                      <TouchableOpacity
+                        style={[
+                          styles.signInButton,
+                          isLoading && styles.signInButtonDisabled
+                        ]}
+                        onPress={handleLogin}
+                        disabled={isLoading}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={['#FFFFFF', '#F8F8F8']}
+                          style={styles.buttonGradient}
+                        >
+                          <Text style={styles.signInText}>
+                            {isLoading ? "SIGNING IN..." : "SIGN IN"}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+
+                      {/* Divider */}
+                      <View style={styles.dividerContainer}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>OR</Text>
+                        <View style={styles.dividerLine} />
+                      </View>
+
+                      {/* Card Login Button */}
+                      <TouchableOpacity
+                        style={styles.cardLoginButton}
+                        onPress={handleCardLogin}
+                        activeOpacity={0.8}
+                      >
+                        <Icon name="card-outline" size={20} color="#FFFFFF" style={styles.cardIcon} />
+                        <Text style={styles.cardLoginText}>
+                          LOGIN USING PHONE
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Sign Up Link */}
+                      <View style={styles.signupContainer}>
+                        <Text style={styles.signupText}>Don't have an account? </Text>
+                        <TouchableOpacity
+                          onPress={() => navigation.navigate('Register')}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.signupLink}>Sign Up</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Terms and Privacy */}
+                      <View style={styles.termsContainer}>
+                        <Text style={styles.termsText}>
+                          By continuing, you agree to our{" "}
+                        </Text>
+                        <View style={styles.termsLinksRow}>
+                          <TouchableOpacity onPress={handleTermsPress} activeOpacity={0.7}>
+                            <Text style={styles.termsLink}>Terms & Conditions</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.termsText}> and </Text>
+                          <TouchableOpacity onPress={handlePrivacyPress} activeOpacity={0.7}>
+                            <Text style={styles.termsLink}>Privacy Policy</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </ScrollView>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </LinearGradient>
+      </ImageBackground>
     </View>
   );
 }
 
-const professionalStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#8B2C2E',
   },
-  headerBackground: {
-    height: SCREEN_HEIGHT * 0.38,
-    width: '100%',
-  },
-  headerGradient: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  headerContent: {
+  backgroundImage: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 20,
+    width: '100%',
+    height: '100%',
   },
-  logo: {
-    width: SCREEN_WIDTH * 0.28,
-    height: SCREEN_WIDTH * 0.28,
-    marginBottom: 16,
-    borderRadius: SCREEN_WIDTH * 0.14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+  gradient: {
+    flex: 1,
   },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 6,
-    letterSpacing: 0.3,
-  },
-  subtitleText: {
-    fontSize: 15,
-    color: '#666666',
-    fontWeight: '400',
+  safeArea: {
+    flex: 1,
   },
   keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 20,
   },
-  formCard: {
-    backgroundColor: 'transparent',
-    marginTop: -30,
-    paddingHorizontal: 24,
-    paddingTop: 36,
-    paddingBottom: 24,
+  content: {
+    flex: 1,
+    paddingHorizontal: isSmallDevice ? 20 : 28,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
-  inputGroup: {
-    marginBottom: 24,
+  headerSection: {
+    marginBottom: isSmallDevice ? 24 : 32,
   },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 10,
-    letterSpacing: 0.2,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  inputWrapper: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    overflow: 'hidden',
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: isSmallDevice ? 20 : 28,
   },
-  inputWrapperFocused: {
-    borderColor: '#007AFF',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#007AFF',
+  logoWrapper: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: 8,
+    marginRight: 14,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
+  },
+  logo: {
+    width: isSmallDevice ? 42 : 48,
+    height: isSmallDevice ? 42 : 48,
+  },
+  logoTextContainer: {
+    justifyContent: 'center',
+  },
+  logoMainText: {
+    fontSize: isSmallDevice ? 22 : 26,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    lineHeight: isSmallDevice ? 26 : 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  logoSubText: {
+    fontSize: isSmallDevice ? 9 : 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 2,
+    lineHeight: isSmallDevice ? 12 : 14,
+    opacity: 0.95,
+  },
+  titleContainer: {
+    marginBottom: 8,
+  },
+  welcomeText: {
+    fontSize: isSmallDevice ? 32 : isLargeDevice ? 42 : 38,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    lineHeight: isSmallDevice ? 38 : isLargeDevice ? 48 : 44,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  underline: {
+    width: 80,
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+    borderRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 2,
   },
+  subtitleText: {
+    fontSize: isSmallDevice ? 14 : 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: isSmallDevice ? 20 : 24,
+    letterSpacing: 0.3,
+    opacity: 0.95,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    marginTop: 8,
+  },
+  formSection: {
+    flex: 1,
+  },
+  inputGroup: {
+    marginBottom: isSmallDevice ? 18 : 20,
+  },
+  inputLabel: {
+    fontSize: isSmallDevice ? 13 : 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 14,
+    minHeight: 56,
+  },
+  inputWrapperFocused: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   inputWrapperError: {
-    borderColor: '#fe0002',
+    borderColor: '#FFE5E5',
     borderWidth: 2,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: 'rgba(255, 229, 229, 0.1)',
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    flex: 1,
+    paddingVertical: isSmallDevice ? 14 : 16,
     fontSize: 16,
-    color: '#1A1A1A',
+    color: '#FFFFFF',
     fontWeight: '400',
   },
+  passwordInput: {
+    paddingRight: 40,
+  },
+  eyeIcon: {
+    padding: 8,
+    position: 'absolute',
+    right: 8,
+  },
   errorText: {
-    color: '#fe0002',
-    fontSize: 12,
+    color: '#FAB12F',
+    fontSize: 18,
     marginTop: 6,
     marginLeft: 4,
     fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginTop: 10,
+    marginTop: 4,
+    marginBottom: 8,
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: '#fe0002',
+    color: '#FFFFFF',
     fontWeight: '600',
+    textDecorationLine: 'underline',
+    opacity: 0.9,
   },
-  loginButton: {
-    backgroundColor: '#fe0002',
-    borderRadius: 12,
-    paddingVertical: 16,
+  signInButton: {
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  signInButtonDisabled: {
+    opacity: 0.6,
+  },
+  buttonGradient: {
+    paddingVertical: isSmallDevice ? 17 : 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 16,
   },
-  loginButtonDisabled: {
-    backgroundColor: '#B0B0B0',
-    shadowOpacity: 0.1,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  signInText: {
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '900',
+    color: '#8B2C2E',
+    letterSpacing: 2.5,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: isSmallDevice ? 20 : 24,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E8E8E8',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   dividerText: {
     marginHorizontal: 16,
     fontSize: 13,
-    color: '#999999',
+    color: '#FFFFFF',
     fontWeight: '600',
+    opacity: 0.8,
   },
   cardLoginButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fe0002',
-    marginBottom: 8,
-  },
-  cardLoginContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#8B2C2E',
+    borderRadius: 16,
+    paddingVertical: isSmallDevice ? 17 : 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  cardLoginIcon: {
-    fontSize: 20,
+  cardIcon: {
     marginRight: 10,
   },
   cardLoginText: {
-    color: '#fe0002',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: isSmallDevice ? 16 : 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 2.5,
   },
   signupContainer: {
     flexDirection: 'row',
@@ -488,37 +609,43 @@ const professionalStyles = StyleSheet.create({
   },
   signupText: {
     fontSize: 15,
-    color: '#666666',
+    color: '#FFFFFF',
     fontWeight: '400',
+    opacity: 0.9,
   },
   signupLink: {
     fontSize: 15,
-    color: '#fe0002',
+    color: '#FFFFFF',
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   termsContainer: {
-    marginTop: 24,
+    marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
+    marginBottom: 20,
   },
   termsText: {
-    fontSize: 13,
-    color: '#999999',
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.8,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   termsLinksRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 4,
   },
   termsLink: {
-    fontSize: 13,
-    color: '#fe0002',
+    fontSize: 12,
+    color: '#FFFFFF',
     fontWeight: '600',
     textDecorationLine: 'underline',
+    opacity: 0.9,
   },
 });

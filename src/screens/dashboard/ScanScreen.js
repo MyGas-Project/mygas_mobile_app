@@ -92,7 +92,7 @@ export default function ScanScreen() {
             ) : null}
 
             {/* Barcode Section */}
-            <View style={custom_styles.codeCard}>
+            {/* <View style={custom_styles.codeCard}>
               <View style={custom_styles.codeWrapper}>
                 <Barcode
                   value={userDetails?.bar_code || "000000000000"}
@@ -106,14 +106,14 @@ export default function ScanScreen() {
               <Text style={custom_styles.barcodeText}>
                 {userDetails?.bar_code ? `**** **** ***${userDetails.bar_code.slice(-3)}` : "**** **** ***"}
               </Text>
-            </View>
+            </View> */}
 
             {/* Divider */}
-            <View style={custom_styles.divider}>
+            {/* <View style={custom_styles.divider}>
               <View style={custom_styles.dividerLine} />
               <Text style={custom_styles.dividerText}>OR</Text>
               <View style={custom_styles.dividerLine} />
-            </View>
+            </View> */}
 
             {/* QR Code Section */}
             <View style={custom_styles.codeCard}>

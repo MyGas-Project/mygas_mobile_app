@@ -16,6 +16,7 @@ import { PATH_URL } from "./src/config";
 import { CheckServerMaintenance } from "./src/lib/CheckServerMaintenance";
 // import * as TrackingTransparency from 'expo-tracking-transparency';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
@@ -119,6 +120,8 @@ export default function App() {
     };
 
     checkMaintenance();
+
+    // AsyncStorage.clear();
   }, []);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
   // Conditional rendering
