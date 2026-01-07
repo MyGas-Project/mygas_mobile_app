@@ -167,7 +167,7 @@ export const AuthProvider = ({ children }) => {
             password: password
           }));
           AsyncStorage.setItem("newUser", "true");
-          if(card_login == true){
+          if (card_login == true) {
             AsyncStorage.setItem("card_login", "true");
           }
         })
@@ -277,6 +277,8 @@ export const AuthProvider = ({ children }) => {
   const pushCodeNotifcation = async (id) => {
     try {
       const token = await AsyncStorage.getItem("expoPushToken");
+      console.log(token);
+      
       fetch(`${AUTH_URL}save-token`, {
         method: "POST",
         headers: {

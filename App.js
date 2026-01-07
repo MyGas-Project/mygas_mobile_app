@@ -24,7 +24,7 @@ export default function App() {
   const [appState, setAppState] = useState(AppState.currentState);
   const [maintenance, setMaintenance] = useState(false);
 
-  // useNotifications();
+  useNotifications();
 
   useEffect(() => {
     let intervalId = null;

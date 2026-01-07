@@ -12,6 +12,7 @@ Notifications.setNotificationHandler({
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
     }),
 });
 
@@ -25,14 +26,13 @@ export default function useNotifications() {
             try {
                 const netInfo = await NetInfo.fetch();
                 if (!netInfo.isConnected && !netInfo.isInternetReachable) {
-                    // Alert.alert("No Internet", "Please connect to the internet to enable push notifications.");
                     return;
                 }
 
                 const token = await registerForPushNotificationsAsync();
                 if (token) {
                     setExpoPushToken(token);
-                    // console.log("Expo Push Token:", token);
+                    console.log("✅ Expo Push Token:", token);
                     try {
                         await AsyncStorage.setItem("expoPushToken", JSON.stringify(token));
                     } catch (storageError) {
@@ -41,29 +41,35 @@ export default function useNotifications() {
                 }
             } catch (err) {
                 console.error("Error initializing notifications:", err);
-                // Alert.alert("Notification Error", "Something went wrong while setting up notifications.");
             }
         };
 
         init();
 
+        // Foreground notification listener
         notificationListener.current =
             Notifications.addNotificationReceivedListener(notification => {
-                console.log("Notification received:", notification);
+                console.log("📩 Notification received (foreground):", notification);
             });
 
+        // User interaction listener
         responseListener.current =
             Notifications.addNotificationResponseReceivedListener(response => {
-                console.log("User interacted with notification:", response.trigger);
-                console.log("User interacted with notification:", response);
+                console.log("👆 User tapped notification:", response);
+                // Handle navigation based on notification data
+                const data = response.notification.request.content.data;
+                if (data?.screen) {
+                    // Navigate to specific screen
+                    console.log("Navigate to:", data.screen);
+                }
             });
 
         return () => {
             if (notificationListener.current) {
-                notificationListener.current.remove();
+                Notifications.removeNotificationSubscription(notificationListener.current);
             }
             if (responseListener.current) {
-                responseListener.current.remove();
+                Notifications.removeNotificationSubscription(responseListener.current);
             }
         };
     }, []);
@@ -74,11 +80,11 @@ export default function useNotifications() {
 async function registerForPushNotificationsAsync() {
     try {
         if (!Device.isDevice) {
-            Alert.alert("Must use physical device for Push Notifications");
+            console.warn("⚠️ Must use physical device for Push Notifications");
             return null;
         }
 
-        // Ask for permissions
+        // Check existing permissions
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
 
@@ -88,9 +94,25 @@ async function registerForPushNotificationsAsync() {
         }
 
         if (finalStatus !== "granted") {
-            // Alert.alert("Permission Denied", "Failed to get push token for notifications.");
-            console.log("Failed to get push token for notifications. Permission denied.");
+            console.log("❌ Notification permission denied");
             return null;
+        }
+
+        console.log("✅ Notification permission granted");
+
+        // Android: Create high-priority notification channel
+        if (Platform.OS === "android") {
+            await Notifications.setNotificationChannelAsync("default", {
+                name: "Default Notifications",
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: "#E0B820",
+                sound: "default",
+                enableVibrate: true,
+                showBadge: true,
+                lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+            });
+            console.log("✅ Android notification channel created");
         }
 
         // Get push token
@@ -99,14 +121,16 @@ async function registerForPushNotificationsAsync() {
             Constants?.easConfig?.projectId;
 
         if (!projectId) {
-            throw new Error("Expo Project ID not found in Constants.");
+            throw new Error("Expo Project ID not found in Constants");
         }
 
-        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId,
+        });
+
         return tokenData.data;
     } catch (error) {
-        console.error("Error registering for push notifications:", error);
-        // Alert.alert("Notification Setup Error", "Unable to register for push notifications.");
+        console.error("❌ Error registering for push notifications:", error);
         return null;
     }
 }

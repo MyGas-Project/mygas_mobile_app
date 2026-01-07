@@ -352,6 +352,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? 0 : 20,
   },
   keyboardView: {
     flex: 1,
