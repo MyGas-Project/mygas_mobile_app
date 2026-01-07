@@ -21,6 +21,7 @@ import RewardDetails from "../screens/dashboard/RewardDetails";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "../context/AuthContext";
 import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
+import CommingSoonScreen from "./CommingSoonComponent";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -146,9 +147,14 @@ const BottomTabNavigator = () => {
         component={NewsScreen}
         options={{ unmountOnBlur: true }}
       />
-      <Tab.Screen
+      {/* <Tab.Screen
         name="Redemption"
         component={userInfo?.is_guest == 1 ? GuestRedemptionScreen : RedemptionScreen}
+        options={{ unmountOnBlur: true }}
+      /> */}
+      <Tab.Screen
+        name="Redemption"
+        component={CommingSoonScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen
