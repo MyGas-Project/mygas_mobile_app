@@ -84,7 +84,7 @@ export default function PhoneLogin({ navigation }) {
 
         try {
             setIsLoading(true);
-            
+
             const cleanedPhone = phoneNumber.replace(/\D/g, "");
             console.log(cleanedPhone);
             const { statusCode, data } = await phoneLoginVerification(cleanedPhone);
@@ -146,6 +146,13 @@ export default function PhoneLogin({ navigation }) {
                                         {/* Header Section */}
                                         <View style={styles.headerSection}>
                                             <View style={styles.logoRow}>
+                                                <TouchableOpacity
+                                                    style={styles.backButton}
+                                                    onPress={() => navigation.goBack()}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Icon name="arrow-back" size={24} color="#FFFFFF" />
+                                                </TouchableOpacity>
                                                 <View style={styles.logoWrapper}>
                                                     <Image
                                                         source={require('../../../assets/heart_logo.png')}
@@ -315,6 +322,20 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: Platform.OS === 'android' ? 0 : 20,
     },
+    backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        marginRight: 14,
+    },
     keyboardView: {
         flex: 1,
     },
@@ -325,7 +346,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: isSmallDevice ? 20 : 28,
-        paddingTop: Platform.OS === 'android' ? 40 : 20,
+        paddingTop: Platform.OS === 'android' ? 40 : 35,
     },
     headerSection: {
         marginBottom: isSmallDevice ? 20 : 28,
@@ -409,7 +430,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     phoneSection: {
-        marginVertical: isSmallDevice ? 12 : 16, // Reduced from 20 : 28
+        marginVertical: isSmallDevice ? 12 : 16,
     },
     phoneVisual: {
         borderRadius: 20,
@@ -421,8 +442,8 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     phoneGradient: {
-        padding: isSmallDevice ? 16 : 18, // Reduced from 24
-        minHeight: isSmallDevice ? 140 : 160, // Reduced from 180 : 200
+        padding: isSmallDevice ? 16 : 18,
+        minHeight: isSmallDevice ? 140 : 160,
     },
     phoneContent: {
         flex: 1,
@@ -430,22 +451,22 @@ const styles = StyleSheet.create({
     },
     phoneIconContainer: {
         alignItems: 'center',
-        marginBottom: 8, // Reduced from 12
+        marginBottom: 8,
     },
     phoneIconCircle: {
-        width: 60, // Reduced from 80
-        height: 60, // Reduced from 80
+        width: 60,
+        height: 60,
         backgroundColor: 'rgba(139, 44, 46, 0.1)',
-        borderRadius: 30, // Reduced from 40
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
     },
     phoneMiddle: {
         alignItems: 'center',
-        marginVertical: 10, // Reduced from 16
+        marginVertical: 10,
     },
     phoneNumberDisplay: {
-        fontSize: isSmallDevice ? 20 : 24, // Reduced from 22 : 26
+        fontSize: isSmallDevice ? 20 : 24,
         fontWeight: '700',
         color: '#8B2C2E',
         letterSpacing: 1.5,
@@ -471,10 +492,10 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     phoneLogoSmall: {
-        width: 32, // Reduced from 36
-        height: 32, // Reduced from 36
+        width: 32,
+        height: 32,
         backgroundColor: '#8B2C2E',
-        borderRadius: 16, // Reduced from 18
+        borderRadius: 16,
         padding: 6,
     },
     phoneLogoImage: {

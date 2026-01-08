@@ -118,7 +118,6 @@ export default function App() {
         setMaintenance(false);
       }
     };
-
     checkMaintenance();
 
     // AsyncStorage.clear();
