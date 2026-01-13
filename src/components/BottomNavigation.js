@@ -147,16 +147,16 @@ const BottomTabNavigator = () => {
         component={NewsScreen}
         options={{ unmountOnBlur: true }}
       />
-      {/* <Tab.Screen
+      <Tab.Screen
         name="Redemption"
         component={userInfo?.is_guest == 1 ? GuestRedemptionScreen : RedemptionScreen}
         options={{ unmountOnBlur: true }}
-      /> */}
-      <Tab.Screen
+      />
+      {/* <Tab.Screen
         name="Redemption"
         component={CommingSoonScreen}
         options={{ unmountOnBlur: true }}
-      />
+      /> */}
       <Tab.Screen
         name="Stations"
         component={StationsScreeen}

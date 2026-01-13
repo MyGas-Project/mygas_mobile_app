@@ -23,6 +23,8 @@ import { AuthContext } from "../../context/AuthContext";
 import { AUTH_URL, BASE_URL, processResponse } from "../../config";
 import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import AgreementScreen from "../AgreementScreen";
 
 const Stack = createNativeStackNavigator();
 const { width, height } = Dimensions.get("window");
@@ -547,11 +549,11 @@ const Step4 = ({ navigation, route }) => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!Batch2Form?.email || Batch2Form.email.trim() === "") {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(Batch2Form.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
+    // if (!Batch2Form?.email || Batch2Form.email.trim() === "") {
+    //   newErrors.email = "Email is required";
+    // } else if (!emailRegex.test(Batch2Form.email)) {
+    //   newErrors.email = "Please enter a valid email address";
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -604,7 +606,7 @@ const Step4 = ({ navigation, route }) => {
 
                 <View style={responsiveStyles.formWrapper}>
                   <View style={responsiveStyles.inputGroup}>
-                    <Text style={responsiveStyles.label}>Email Address</Text>
+                    <Text style={responsiveStyles.label}>Email Address (optional)</Text>
                     <TextInput
                       style={[
                         responsiveStyles.input,
@@ -672,11 +674,11 @@ const Step5 = ({ navigation, route }) => {
   const handleConfirm = async () => {
     setLoadingState(true);
 
-    if (reconfirmPassword !== finalForm.password) {
-      Alert.alert("Password Mismatch", "Passwords do not match");
-      setLoadingState(false);
-      return;
-    }
+    // if (reconfirmPassword !== finalForm.password) {
+    //   Alert.alert("Password Mismatch", "Passwords do not match");
+    //   setLoadingState(false);
+    //   return;
+    // }
 
     const res = await registerStep2(finalForm);
 
@@ -729,7 +731,7 @@ const Step5 = ({ navigation, route }) => {
 
                 <View style={responsiveStyles.formWrapper}>
                   <View style={responsiveStyles.inputGroup}>
-                    <Text style={responsiveStyles.label}>Enter your password</Text>
+                    <Text style={responsiveStyles.label}>Enter your password (optional)</Text>
                     <TextInput
                       style={responsiveStyles.input}
                       onChangeText={(password) => {
@@ -745,7 +747,7 @@ const Step5 = ({ navigation, route }) => {
                   </View>
 
                   <View style={responsiveStyles.inputGroup}>
-                    <Text style={responsiveStyles.label}>Re-enter your password</Text>
+                    <Text style={responsiveStyles.label}>Re-enter your password (optional)</Text>
                     <TextInput
                       style={responsiveStyles.input}
                       secureTextEntry={true}
@@ -835,8 +837,8 @@ const Step6 = ({ navigation, route }) => {
       wheel_type_id: selectedWheelType.id
     }
     const res = await registerStep3(data);
-    if (res.statusCode == 201) {
-      navigation.navigate("Step7", { user_id: user_id });
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      navigation.navigate('AgreementScreen', { label: 'register_2' });
     } else {
       setLoadingState(false);
       Alert.alert("Error", res.data.message);
@@ -1031,6 +1033,7 @@ export default function RegisterScreen() {
       <Stack.Screen name="Step4" component={Step4} />
       <Stack.Screen name="Step5" component={Step5} />
       <Stack.Screen name="Step6" component={Step6} />
+      <Stack.Screen name="AgreementScreen" component={AgreementScreen} />
       <Stack.Screen name="Step7" component={Step7} />
     </Stack.Navigator>
   );

@@ -45,6 +45,9 @@ export default function AgreementScreen({ navigation, route }) {
                 case 'register':
                     navigation.navigate('Register');
                     break;
+                case 'register_2':
+                    navigation.navigate("Step7");
+                    break;
                 default:
                     break;
             }

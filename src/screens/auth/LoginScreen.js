@@ -65,8 +65,8 @@ export default function LoginScreen({ navigation }) {
 
     if (!password.trim()) {
       newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (password.length < 5) {
+      newErrors.password = "Password must be at least 5 characters";
     }
 
     setErrors(newErrors);
@@ -288,16 +288,19 @@ export default function LoginScreen({ navigation }) {
                       </View>
 
                       {/* Card Login Button */}
-                      <TouchableOpacity
-                        style={styles.cardLoginButton}
-                        onPress={handleCardLogin}
-                        activeOpacity={0.8}
-                      >
-                        <Icon name="card-outline" size={20} color="#FFFFFF" style={styles.cardIcon} />
-                        <Text style={styles.cardLoginText}>
-                          LOGIN USING PHONE
-                        </Text>
-                      </TouchableOpacity>
+                      <View style={styles.cardLoginContainer}>
+                        <Text style={styles.cardLoginLabel}>For existing card holder</Text>
+                        <TouchableOpacity
+                          style={styles.cardLoginButton}
+                          onPress={handleCardLogin}
+                          activeOpacity={0.8}
+                        >
+                          <Icon name="card-outline" size={20} color="#FFFFFF" style={styles.cardIcon} />
+                          <Text style={styles.cardLoginText}>
+                            LOGIN USING MOBILE NUMBER
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
 
                       {/* Sign Up Link */}
                       <View style={styles.signupContainer}>
@@ -578,6 +581,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     opacity: 0.8,
   },
+  cardLoginContainer: {
+    marginBottom: 8,
+  },
+  cardLoginLabel: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    opacity: 0.85,
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
   cardLoginButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -597,10 +612,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   cardLoginText: {
-    fontSize: isSmallDevice ? 16 : 18,
+    fontSize: isSmallDevice ? 14 : 16,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 2.5,
+    letterSpacing: 2,
   },
   signupContainer: {
     flexDirection: 'row',

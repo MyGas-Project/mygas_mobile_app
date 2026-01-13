@@ -20,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuthContext } from "../../context/AuthContext";
 import Icon from 'react-native-vector-icons/Ionicons';
+import { AUTH_URL, processResponse } from "../../config";
 
 const { width, height } = Dimensions.get('window');
 
@@ -132,12 +133,33 @@ export default function OTPverification({ navigation, route }) {
         try {
             setIsLoading(true);
 
-            Alert.alert(
-                "OTP Sent",
-                "A new verification code has been sent to your phone number",
-                [{ text: "OK", style: "default" }]
-            );
-
+            const card_login = true;
+            fetch(`${AUTH_URL}resent-otp-code`, {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                method: "POST",
+                body: JSON.stringify({
+                    phone_number: data.phone_number,
+                    card_login: card_login
+                })
+            })
+                .then(processResponse)
+                .then((res) => {
+                    const { statusCode, data } = res;
+                    if (statusCode == 201 || statusCode == 200) {
+                        Alert.alert(
+                            "OTP Sent",
+                            "A new verification code has been sent to your phone number",
+                            [{ text: "OK", style: "default" }]
+                        );
+                    }
+                })
+                .catch((err) => {
+                    Alert("Error", "Failed to resend OTP. Please try again.");
+                    console.log("resent-otp-code error: ", err);
+                });
             setTimer(60);
             setCanResend(false);
             setOtp(["", "", "", "", "", ""]);
@@ -153,6 +175,7 @@ export default function OTPverification({ navigation, route }) {
                     return prev - 1;
                 });
             }, 1000);
+
         } catch (error) {
             Alert.alert(
                 "Error",
