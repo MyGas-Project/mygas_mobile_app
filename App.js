@@ -1,96 +1,49 @@
 import React, { useState, useEffect } from "react";
+import { AppState } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider } from "./src/context/AuthContext";
 import { ThemeProvider } from "./src/context/ThemeContext";
-import LocationGate from "./src/context/LocationGate";
-import Navigation from "./src/components/Navigation";
-import { StatusBar } from "expo-status-bar";
-import ConnectionLoss from "./src/screens/ConnectionLoss";
-import ServerMaintenance from "./src/screens/ServerBusy";
-import useNotifications from "./src/lib/Notification";
 import { NotificationProvider } from "./src/context/ActivityNotif";
 import { PointsDetailsProvider } from "./src/context/PointsDetails";
-import { Alert, AppState } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import Navigation from "./src/components/Navigation";
+import ConnectionLoss from "./src/screens/ConnectionLoss";
+import ServerMaintenance from "./src/screens/ServerBusy";
+import QRCustomer from "./src/screens/QRCustomer";
+import useNotifications from "./src/lib/Notification";
 import { initPusher, disconnectPusher } from "./src/lib/Websockets";
 import { PATH_URL } from "./src/config";
-import { CheckServerMaintenance } from "./src/lib/CheckServerMaintenance";
-// import * as TrackingTransparency from 'expo-tracking-transparency';
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CheckServerMaintenance, listenToMaintenanceUpdates } from "./src/lib/CheckServerMaintenance";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [serverUp, setServerUp] = useState(true);
-  const [appState, setAppState] = useState(AppState.currentState);
   const [maintenance, setMaintenance] = useState(false);
+  const [hasBarcode, setHasBarcode] = useState(null); // null = loading
+  const [appState, setAppState] = useState(AppState.currentState);
 
   useNotifications();
 
-  useEffect(() => {
-    let intervalId = null;
-
-    const checkServerHealth = async () => {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000); // timeout after 5s
-
-        const response = await fetch(`${PATH_URL}health`, {
-          method: "GET",
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          console.warn("Server responded with error:", response.status);
-          setServerUp(false);
-          return;
-        }
-
-        const data = await response.json();
-        // console.log(data);
-
-        if (data.status === "UP") {
-          // console.log("Server is healthy, stopping interval check.");
-          setServerUp(true);
-
-          if (intervalId) {
-            clearInterval(intervalId);
-            intervalId = null;
-          }
-        } else {
-          console.warn("⚠️ Server health not OK:", data);
-          setServerUp(false);
-        }
-
-      } catch (error) {
-        console.error("Server health check failed:", error.message);
-        setServerUp(false);
-
-        if (!intervalId) {
-          intervalId = setInterval(checkServerHealth, 30000);
-        }
-      }
-    };
-
-    checkServerHealth();
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+  useEffect(function () {
+    AsyncStorage.getItem("userBarcode").then(function (barcode) {
+      setHasBarcode(barcode);
+    });
   }, []);
 
-  useEffect(() => {
+  useEffect(function () {
     initPusher();
 
-    NetInfo.fetch().then((state) => {
+    NetInfo.fetch().then(function (state) {
       setIsConnected(state.isConnected && state.isInternetReachable);
     });
 
-    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+    const unsubscribeNetInfo = NetInfo.addEventListener(function (state) {
       setIsConnected(state.isConnected && state.isInternetReachable);
     });
 
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
+    const subscription = AppState.addEventListener("change", function (nextAppState) {
       if (appState.match(/inactive|background/) && nextAppState === "active") {
         console.log("📱 App moved to foreground → Re-init Pusher");
         initPusher();
@@ -102,64 +55,102 @@ export default function App() {
       setAppState(nextAppState);
     });
 
-    return () => {
+    return function () {
       unsubscribeNetInfo();
       subscription.remove();
     };
+  }, [appState]);
+
+  useEffect(function () {
+    var intervalId = null;
+
+    function checkServerHealth() {
+      const controller = new AbortController();
+      const timeout = setTimeout(function () {
+        controller.abort();
+      }, 5000);
+
+      fetch(PATH_URL + "health", { method: "GET", signal: controller.signal })
+        .then(function (response) {
+          clearTimeout(timeout);
+          if (!response.ok) {
+            console.warn("Server responded with error:", response.status);
+            setServerUp(false);
+            return;
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (data && data.status === "UP") {
+            setServerUp(true);
+            if (intervalId) {
+              clearInterval(intervalId);
+              intervalId = null;
+            }
+          } else if (data) {
+            console.warn("⚠️ Server health not OK:", data);
+            setServerUp(false);
+          }
+        })
+        .catch(function (error) {
+          console.error("Server health check failed:", error.message);
+          setServerUp(false);
+          if (!intervalId) {
+            intervalId = setInterval(checkServerHealth, 30000);
+          }
+        });
+    }
+
+    checkServerHealth();
+
+    return function () {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
-  useEffect(() => {
-    const checkMaintenance = async () => {
-      const result = await CheckServerMaintenance();
-      // console.log("maintenance check:", result.result[0].value);
-      if(result.result[0].value === "true"){
+  useEffect(function () {
+    CheckServerMaintenance().then(function (result) {
+      if (result.result[0].value === "true") {
         setMaintenance(true);
-      }else{
+      } else {
         setMaintenance(false);
       }
-    };
-    checkMaintenance();
+    });
+  }, []);
 
-    // AsyncStorage.clear();
-  }, []);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-
-  // Conditional rendering
-  let ScreenToRender = <Navigation />;
+  var ScreenToRender = <Navigation />;
 
   if (!isConnected) {
-    ScreenToRender = (
-      <ConnectionLoss
-        onRetry={async () => {
-          const state = await NetInfo.fetch();
-          if (state.isConnected && state.isInternetReachable) {
-            setIsConnected(true);
-            initPusher();
-          }
-        }}
-      />
-    );
-  } 
+    if (hasBarcode == null) {
+      ScreenToRender = (
+        <ConnectionLoss
+          onRetry={function () {
+            NetInfo.fetch().then(function (state) {
+              if (state.isConnected && state.isInternetReachable) {
+                setIsConnected(true);
+                initPusher();
+              }
+            });
+          }}
+        />
+      );
+    } else {
+      ScreenToRender = <QRCustomer customerBarcode={hasBarcode} />;
+    }
+  }
 
   if (!serverUp) {
     ScreenToRender = <ServerMaintenance />;
   }
-
-  // if (!maintenance) {
-  //   ScreenToRender = <ServerMaintenance />;
-  // }
 
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <StatusBar hidden={true} />
         <AuthProvider>
-          {/* <LocationGate> */}
           <NotificationProvider>
-            <PointsDetailsProvider>
-              {ScreenToRender}
-            </PointsDetailsProvider>
+            <PointsDetailsProvider>{ScreenToRender}</PointsDetailsProvider>
           </NotificationProvider>
-          {/* </LocationGate> */}
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

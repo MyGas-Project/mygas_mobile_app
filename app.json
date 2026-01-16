@@ -3,7 +3,7 @@
     "name": "mygas",
     "slug": "mygas",
     "scheme": "mygas",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/logo.jpg",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "buildNumber": "3",
+      "buildNumber": "6",
       "supportsTablet": false,
       "bundleIdentifier": "com.mediaone.mygas",
       "infoPlist": {
@@ -28,8 +28,19 @@
       }
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 5,
       "googleServicesFile": "./android/app/google-services.json",
+      "minSdkVersion": 21,
+      "buildProperties": {
+        "ndk": {
+          "abiFilters": [
+            "armeabi-v7a",
+            "arm64-v8a",
+            "x86",
+            "x86_64"
+          ]
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/mygas_adaptive_icon.png",
         "backgroundColor": "#ffffff"
@@ -62,7 +73,8 @@
           "icon": "./assets/mygas_adaptive_icon.png",
           "color": "#ffffff"
         }
-      ]
+      ],
+      "expo-build-properties"
     ],
     "extra": {
       "eas": {

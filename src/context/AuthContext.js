@@ -138,6 +138,17 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, card_login = false) => {
     try {
+      const deviceInfo = {
+        brand: Device.brand,
+        manufacturer: Device.manufacturer,
+        modelName: Device.modelName,
+        modelId: Device.modelId,
+        osName: Device.osName,
+        osVersion: Device.osVersion,
+        deviceYearClass: Device.deviceYearClass,
+        isDevice: Device.isDevice,
+      };
+
       fetch(`${AUTH_URL}login-customer`, {
         method: "POST",
         headers: {
@@ -147,7 +158,8 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           cred: email,
           password: password,
-          card_login: card_login
+          card_login: card_login,
+          phone_body: JSON.stringify(deviceInfo),
         }),
       })
         .then(processResponse)
@@ -190,9 +202,13 @@ export const AuthProvider = ({ children }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${data.token}`,
         },
-      }).then(processResponse).then((res) => {
+      }).then(processResponse).then(async (res) => {
         const { statusCode, data } = res;
         setUserDetails(data.data);
+        const barCodeUser = await AsyncStorage.getItem("userBarcode");
+        if (!barCodeUser) {
+          await AsyncStorage.setItem("userBarcode", data.data.bar_code);
+        }
       }).catch(error => {
         console.error(error);
       });
@@ -222,13 +238,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   const phoneLoginVerification = (data) => {
+    const deviceInfo = {
+      brand: Device.brand,
+      manufacturer: Device.manufacturer,
+      modelName: Device.modelName,
+      modelId: Device.modelId,
+      osName: Device.osName,
+      osVersion: Device.osVersion,
+      deviceYearClass: Device.deviceYearClass,
+      isDevice: Device.isDevice,
+    };
     return fetch(`${AUTH_URL}login-using-barcode`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ phone_number: data }),
+      body: JSON.stringify({ phone_number: data, phone_body: JSON.stringify(deviceInfo) }),
     })
       .then(processResponse)
       .then((res) => {
@@ -252,7 +278,7 @@ export const AuthProvider = ({ children }) => {
     setUserInfo(null);
     setUserDetails(null);
     const allKeys = await AsyncStorage.getAllKeys();
-    const keysToRemove = allKeys.filter(key => !['newUser', 'card_login', 'agreementAccepted'].includes(key));
+    const keysToRemove = allKeys.filter(key => !['newUser', 'card_login', 'agreementAccepted', 'userBarcode', 'mobileSettings'].includes(key));
     await AsyncStorage.multiRemove(keysToRemove);
 
     try {
@@ -278,7 +304,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = await AsyncStorage.getItem("expoPushToken");
       console.log(token);
-      
+
       fetch(`${AUTH_URL}save-token`, {
         method: "POST",
         headers: {

@@ -22,6 +22,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "../context/AuthContext";
 import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
 import CommingSoonScreen from "./CommingSoonComponent";
+import { CheckServerMaintenance, listenToMaintenanceUpdates } from "../lib/CheckServerMaintenance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -131,6 +133,47 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 
 const BottomTabNavigator = () => {
   const { userInfo } = useContext(AuthContext);
+  const [redemption, setRedemption] = useState(null);
+  const [news, setNews] = useState(null);
+  const [station, setStation] = useState(null);
+  const [activity, setActivity] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = listenToMaintenanceUpdates(async (latestSettings) => {
+      const moduleSettings = latestSettings.result.filter(item => /^module_.*_enabled$/.test(item.key));
+      const fieldsToKeep = ["key", "value"];
+      // Filter dynamically
+      const filteredSettings = moduleSettings.map(item =>
+        Object.fromEntries(
+          Object.entries(item).filter(([k]) => fieldsToKeep.includes(k))
+        )
+      );
+      // setMobileSettings(filteredSettings);
+      setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      // console.log(filteredSettings);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    CheckServerMaintenance().then(function (result) {
+      const moduleSettings = result.result.filter(item => /^module_.*_enabled$/.test(item.key));
+      const fieldsToKeep = ["key", "value"];
+      // Filter dynamically
+      const filteredSettings = moduleSettings.map(item =>
+        Object.fromEntries(
+          Object.entries(item).filter(([k]) => fieldsToKeep.includes(k))
+        )
+      );
+      // setMobileSettings(filteredSettings);
+      setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      // console.log("settings: ", moduleSettings);
+    });
+  }, []);
+
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -149,9 +192,20 @@ const BottomTabNavigator = () => {
       />
       <Tab.Screen
         name="Redemption"
-        component={userInfo?.is_guest == 1 ? GuestRedemptionScreen : RedemptionScreen}
+        component={
+          redemption?.value === "1"
+            ? userInfo?.is_guest === 1
+              ? GuestRedemptionScreen
+              : RedemptionScreen
+            : CommingSoonScreen
+        }
         options={{ unmountOnBlur: true }}
       />
+      {/* <Tab.Screen
+        name="Redemption"
+        component={userInfo?.is_guest == 1 ? GuestRedemptionScreen : RedemptionScreen}
+        options={{ unmountOnBlur: true }}
+      /> */}
       {/* <Tab.Screen
         name="Redemption"
         component={CommingSoonScreen}

@@ -1,6 +1,3 @@
-// ============================================
-// Updated PointsDetailsProvider
-// ============================================
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { BASE_URL, processResponse } from '../config';
 import { AuthContext } from './AuthContext';

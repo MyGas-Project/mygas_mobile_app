@@ -34,7 +34,7 @@ const scale = (size) => {
   return size * 1.05;
 };
 
-export default function NewsScreen() {
+export default function NewsScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +129,7 @@ export default function NewsScreen() {
       >
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={() => console.log(`Viewing ${item.title}`)}
+          onPress={() => navigation.navigate('NewsDetailScreen', { news: item }) }
         >
           {/* Image Section */}
           <View style={custom_styles.imageContainer}>
@@ -192,7 +192,7 @@ export default function NewsScreen() {
         .then((res) => {
           const { statusCode, data } = res;
           setBlogs(data.data);
-          console.log(data);
+          // console.log(data);
         })
         .catch(error => {
           console.error(error);
@@ -333,7 +333,7 @@ export default function NewsScreen() {
       </Animated.View>
 
       {/* Bottom spacing for navigation */}
-      <View style={{ height: 70 }} />
+      {/* <View style={{ height: "15%" }} /> */}
     </View>
   );
 }
@@ -375,7 +375,7 @@ const custom_styles = StyleSheet.create({
     zIndex: 1
   },
   scrollContent: {
-    paddingBottom: scale(20)
+    paddingBottom: scale("35%")
   },
   headerSection: {
     alignItems: "center",

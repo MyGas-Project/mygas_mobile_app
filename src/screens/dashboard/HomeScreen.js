@@ -142,6 +142,7 @@ export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showFlashDetails, setShowFlashDetails] = useState(false);
   const [stationCount, setStationCount] = useState(0);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     const loadCardLogin = async () => {
@@ -190,6 +191,57 @@ export default function HomeScreen({ navigation }) {
       });
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const getAllProducts = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}customer/get-products`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
+
+      const res = await processResponse(response);
+      const { statusCode, data } = res;
+      // console.log("getAllProducts: ", statusCode);
+      if (statusCode === 200) {
+        // Transform API data to match the expected format
+        const transformedProducts = data.data.inventories.map((item) => ({
+          default_id: item.id,
+          id: item.inventory_id,
+          name: item.name,
+          description: item.description || "No description available",
+          points: item.promo_points || item.points || 0,
+          originalPoints: item.promo_points ? item.points : null,
+          image: item.image_path,
+          category: "Products", // You can add category logic here if available from API
+          quantity: parseFloat(item.total_quantity) || 0,
+          isWeeklyPromo: item.is_weekly_promo === 1 && item.promo_points !== null,
+          promoDescription: item.promo_descriptions,
+          promoStartDate: item.promo_start_date,
+          promoEndDate: item.promo_end_date,
+          sellingPrice: item.unit_cost,
+          stationNames: item.station_names,
+          stationId: item.station_id,
+        }))
+          .sort((a, b) => b.default_id - a.default_id)
+          .slice(0, 5);
+
+        setProducts(transformedProducts);
+        // console.log("getAllProducts: ", transformedProducts);
+      } else {
+        setProducts([]);
+        console.error("Failed to fetch products:", data);
+      }
+    } catch (error) {
+      console.error("getAllProducts error:", error);
     }
   };
 
@@ -248,6 +300,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadAllData();
+    getAllProducts();
     // console.log(userDetails);
   }, []);
 
@@ -393,6 +446,7 @@ export default function HomeScreen({ navigation }) {
                     source={userDetails?.availment_id == 3 ? require("../../../assets/diamond_card.png") : require("../../../assets/regular_card.png")}
                     resizeMode="contain"
                     style={[custom_styles.pointsCard, { backgroundColor: 'transparent' }]}
+                    blurRadius={1.45}
                   >
                     {/* Floating Particles Effect Overlay */}
                     <View style={custom_styles.cardOverlay}>
@@ -483,147 +537,179 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
 
+                {userInfo?.is_guest == 1 ? (
+                  <GuestRewardsComponent />
+                ) : (
+                  // <>
+                  //   <View style={custom_styles.sectionContainer}>
+                  //     <View style={custom_styles.sectionHeader}>
+                  //       <View>
+                  //         <Text style={custom_styles.sectionTitle}>Products</Text>
+                  //         <Text style={custom_styles.sectionSubtitle}>
+                  //           Exclusive products for redemption ✨
+                  //         </Text>
+                  //       </View>
+                  //       <TouchableOpacity
+                  //         style={custom_styles.viewAllButton}
+                  //         activeOpacity={0.7}
+                  //         onPress={() => {
 
-                <View style={custom_styles.sectionContainer}>
-                  <View style={custom_styles.sectionHeader}>
-                    <View>
-                      <Text style={custom_styles.sectionTitle}>REWARDS</Text>
-                      <Text style={custom_styles.sectionSubtitle}>
-                        Exclusive offers for you ✨
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={custom_styles.viewAllButton}
-                      activeOpacity={0.7}
-                      onPress={() => {
+                  //         }}
+                  //       >
+                  //         <Text style={custom_styles.viewAllText}>View All</Text>
+                  //         <Ionicons name="chevron-forward" size={18} color="#E0B820" />
+                  //       </TouchableOpacity>
+                  //     </View>
 
-                      }} // Add navigation if you have a rewards screen
-                    >
-                      <Text style={custom_styles.viewAllText}>View All</Text>
-                      <Ionicons name="chevron-forward" size={18} color="#E0B820" />
-                    </TouchableOpacity>
-                  </View>
+                  //   </View>
+                  //   {products?.length > 0 ? (
+                  //     <FlatList
+                  //       style={custom_styles.rewardsList}
+                  //       data={products}
+                  //       renderItem={({ item, index }) => {
+                  //         const rewardStyle = getRewardStyle(item.type);
+                  //         return (
+                  //           <TouchableOpacity
+                  //             style={[
+                  //               custom_styles.rewardCard,
+                  //               { marginLeft: index === 0 ? 20 : 0 }
+                  //             ]}
+                  //             onPress={() => {
+                  //               console.log("Product selected:", item.name);
+                  //             }}
+                  //             activeOpacity={0.9}
+                  //             disabled={item.quantity === 0}
+                  //           >
+                  //             <View style={custom_styles.rewardImageContainer}>
+                  //               <Image
+                  //                 source={
+                  //                   item.image
+                  //                     ? { uri: item.image }
+                  //                     : require("../../../assets/motorista.png")
+                  //                 }
+                  //                 style={custom_styles.rewardImage}
+                  //               />
+                  //               <LinearGradient
+                  //                 colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  //                 style={custom_styles.imageGradient}
+                  //               />
 
-                  {userInfo?.is_guest == 1 ? (
-                    <GuestRewardsComponent />
-                  ) : (
-                    <>
-                      {rewardsInfo?.length > 0 ? (
-                        <FlatList
-                          style={custom_styles.rewardsList}
-                          data={rewardsInfo}
-                          renderItem={({ item, index }) => {
-                            const rewardStyle = getRewardStyle(item.type);
-                            return (
-                              <TouchableOpacity
-                                style={[
-                                  custom_styles.rewardCard,
-                                  { marginLeft: index === 0 ? 20 : 0 }
-                                ]}
-                                onPress={() => {
-                                  navigation.navigate("RewardDetails", {
-                                    item: {
-                                      id: item.data.id.toString(),
-                                      title: item.data.name,
-                                      description: item.data.description,
-                                      type: item.type,
-                                      points: item.data.points,
-                                      reward_type: item.data.reward_type_name,
-                                      is_active: item.data.is_active
-                                    }
-                                  });
-                                }}
-                                activeOpacity={0.9}
-                                disabled={item.data.is_active === 0}
-                              >
-                                <View style={custom_styles.rewardImageContainer}>
-                                  <Image
-                                    source={require("../../../assets/motorista.png")}
-                                    style={custom_styles.rewardImage}
-                                  />
-                                  <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.7)']}
-                                    style={custom_styles.imageGradient}
-                                  />
-                                  <View style={[custom_styles.categoryBadge, { backgroundColor: rewardStyle.color }]}>
-                                    <Ionicons name={rewardStyle.icon} size={12} color="#FFF" />
-                                  </View>
-                                  {item.data.is_active === 0 && (
-                                    <View style={custom_styles.inactiveBadge}>
-                                      <Text style={custom_styles.inactiveText}>Inactive</Text>
-                                    </View>
-                                  )}
-                                </View>
-                                <View style={custom_styles.rewardContent}>
-                                  <Text style={custom_styles.rewardTitle} numberOfLines={1}>
-                                    {item.data.name}
-                                  </Text>
-                                  <Text style={custom_styles.rewardDescription} numberOfLines={2}>
-                                    {item.data.description}
-                                  </Text>
-                                  <View style={custom_styles.rewardFooter}>
-                                    <View style={custom_styles.pointsBadge}>
-                                      <Ionicons name="star" size={12} color="#E0B820" />
-                                      <Text style={custom_styles.pointsText}>
-                                        {item.data.points} pts
-                                      </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                      <Text style={custom_styles.learnMore}>Learn More</Text>
-                                      <Ionicons name="arrow-forward" size={16} color="#E0B820" />
-                                    </View>
-                                  </View>
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          }}
-                          keyExtractor={(item) => item.data.id.toString()}
-                          horizontal
-                          ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={{ paddingRight: 20 }}
-                          ListEmptyComponent={() => (
-                            <View style={custom_styles.emptyRewards}>
-                              <Ionicons name="gift-outline" size={48} color="#CCC" />
-                              <Text style={custom_styles.emptyText}>No rewards available</Text>
-                              <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
-                            </View>
-                          )}
-                        />
-                      ) : (
-                        <View style={custom_styles.emptyRewards}>
-                          <Ionicons name="gift-outline" size={48} color="#CCC" />
-                          <Text style={custom_styles.emptyText}>No rewards available</Text>
-                          <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
-                        </View>
-                      )}
-                    </>
-                  )}
+                  //               {item.isWeeklyPromo && (
+                  //                 <View style={[custom_styles.categoryBadge, { backgroundColor: '#FF6B6B' }]}>
+                  //                   <Ionicons name="flash" size={12} color="#FFF" />
+                  //                 </View>
+                  //               )}
 
-                </View>
+                  //               {item.quantity === 0 && (
+                  //                 <View style={custom_styles.inactiveBadge}>
+                  //                   <Text style={custom_styles.inactiveText}>Out of Stock</Text>
+                  //                 </View>
+                  //               )}
+
+                  //               {item.quantity > 0 && item.quantity < 10 && (
+                  //                 <View style={[custom_styles.inactiveBadge, { backgroundColor: 'rgba(255, 152, 0, 0.9)' }]}>
+                  //                   <Text style={custom_styles.inactiveText}>Low Stock</Text>
+                  //                 </View>
+                  //               )}
+                  //             </View>
+
+                  //             <View style={custom_styles.rewardContent}>
+                  //               <Text style={custom_styles.rewardTitle} numberOfLines={1}>
+                  //                 {item.name}
+                  //               </Text>
+                  //               <Text style={custom_styles.rewardDescription} numberOfLines={2}>
+                  //                 {item.description}
+                  //               </Text>
+
+                  //               {/* Station Names */}
+                  //               {item.stationNames && (
+                  //                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  //                   <Ionicons name="location" size={10} color="#999" />
+                  //                   <Text style={{ fontSize: 10, color: '#999', marginLeft: 4 }} numberOfLines={1}>
+                  //                     {item.stationNames}
+                  //                   </Text>
+                  //                 </View>
+                  //               )}
+
+                  //               <View style={custom_styles.rewardFooter}>
+                  //                 <View style={custom_styles.pointsBadge}>
+                  //                   <Ionicons name="star" size={12} color="#E0B820" />
+                  //                   <Text style={custom_styles.pointsText}>
+                  //                     {item.originalPoints ? (
+                  //                       <>
+                  //                         <Text style={{ textDecorationLine: 'line-through', color: '#999' }}>
+                  //                           {item.originalPoints}
+                  //                         </Text>
+                  //                         {' '}{item.points}
+                  //                       </>
+                  //                     ) : (
+                  //                       item.points
+                  //                     )} pts
+                  //                   </Text>
+                  //                 </View>
+
+                  //                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  //                   {item.quantity > 0 ? (
+                  //                     <>
+                  //                       <Text style={custom_styles.learnMore}>Redeem</Text>
+                  //                       <Ionicons name="arrow-forward" size={16} color="#E0B820" />
+                  //                     </>
+                  //                   ) : (
+                  //                     <Text style={[custom_styles.learnMore, { color: '#999' }]}>Unavailable</Text>
+                  //                   )}
+                  //                 </View>
+                  //               </View>
+                  //             </View>
+                  //           </TouchableOpacity>
+                  //         );
+                  //       }}
+                  //       keyExtractor={(item) => item.id.toString()}
+                  //       horizontal
+                  //       ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+                  //       showsHorizontalScrollIndicator={false}
+                  //       contentContainerStyle={{ paddingRight: 20 }}
+                  //       ListEmptyComponent={() => (
+                  //         <View style={custom_styles.emptyRewards}>
+                  //           <Ionicons name="gift-outline" size={48} color="#CCC" />
+                  //           <Text style={custom_styles.emptyText}>No rewards available</Text>
+                  //           <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
+                  //         </View>
+                  //       )}
+                  //     />
+                  //   ) : (
+                  //     <View style={custom_styles.emptyRewards}>
+                  //       <Ionicons name="gift-outline" size={48} color="#CCC" />
+                  //       <Text style={custom_styles.emptyText}>No rewards available</Text>
+                  //       <Text style={custom_styles.emptySubtext}>Check back later for exciting offers!</Text>
+                  //     </View>
+                  //   )}
+                  // </>
+                  <>
+                  </>
+                )}
 
                 {/* Promotional Banner */}
                 {/* <View style={custom_styles.promoBanner}>
-                <LinearGradient
-                  colors={['#FFD93D', '#E0B820']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={custom_styles.promoGradient}
-                >
-                  <View style={custom_styles.promoContent}>
-                    <Ionicons name="gift" size={40} color="#FFF" />
-                    <View style={{ flex: 1, marginLeft: 16 }}>
-                      <Text style={custom_styles.promoTitle}>
-                        Special Offer!
-                      </Text>
-                      <Text style={custom_styles.promoText}>
-                        Get 2x points on your next visit
-                      </Text>
+                  <LinearGradient
+                    colors={['#FFD93D', '#E0B820']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={custom_styles.promoGradient}
+                  >
+                    <View style={custom_styles.promoContent}>
+                      <Ionicons name="gift" size={40} color="#FFF" />
+                      <View style={{ flex: 1, marginLeft: 16 }}>
+                        <Text style={custom_styles.promoTitle}>
+                          Special Offer!
+                        </Text>
+                        <Text style={custom_styles.promoText}>
+                          Get 2x points on your next visit
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={24} color="#FFF" />
                     </View>
-                    <Ionicons name="chevron-forward" size={24} color="#FFF" />
-                  </View>
-                </LinearGradient>
-              </View> */}
+                  </LinearGradient>
+                </View> */}
               </>
             )}
           </Animated.ScrollView>
@@ -813,7 +899,10 @@ const custom_styles = StyleSheet.create({
     color: "#966919",
     fontWeight: "900",
     fontSize: 42,
-    letterSpacing: -1
+    letterSpacing: -1,
+    textShadowColor: "#000",
+    textShadowOffset: { width: -1, height: -1 },
+    textShadowRadius: 1
   },
   ptsLabel: {
     backgroundColor: "#000",

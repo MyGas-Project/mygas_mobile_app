@@ -540,7 +540,7 @@ const Step3 = ({ navigation, route }) => {
 };
 
 const Step4 = ({ navigation, route }) => {
-  const { res, data } = route.params;
+  const { res, data } = route?.params;
   const { styles, currentTheme } = useTheme();
   const [Batch2Form, setBatch2Form] = useState(data);
   const [errors, setErrors] = useState({});

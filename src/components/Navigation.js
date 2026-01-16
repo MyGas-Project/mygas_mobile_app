@@ -28,6 +28,8 @@ import OTPverification from "../screens/auth/OTPverification";
 import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
 import AgreementScreen from "../screens/AgreementScreen";
 import PhoneLogin from "../screens/auth/PhoneLogin";
+import NewsDetailScreen from "../screens/dashboard/NewsDetailScreen";
+import QRCustomer from "../screens/QRCustomer";
 
 const Stack = createNativeStackNavigator();
 
@@ -116,24 +118,28 @@ export default function Navigation() {
               component={TransactionDetailsPopup}
               options={{ headerShown: false }}
             />
-
+            <Stack.Screen
+              name="NewsDetailScreen"
+              component={NewsDetailScreen}
+              options={{ headerShown: false }}
+            />
           </>
         ) : (
           <>
-              {!initialRoute && checkAgreement !== 'true' && (
-                <>
-                  <Stack.Screen
-                    name="Welcome"
-                    component={WelcomeScreen}
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="AgreementScreen"
-                    component={AgreementScreen}
-                    options={{ headerShown: false }}
-                  />
-                </>
-              )}
+            {!initialRoute && checkAgreement !== 'true' && (
+              <>
+                <Stack.Screen
+                  name="Welcome"
+                  component={WelcomeScreen}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="AgreementScreen"
+                  component={AgreementScreen}
+                  options={{ headerShown: false }}
+                />
+              </>
+            )}
             <Stack.Screen
               name="Login"
               component={LoginScreen}
@@ -144,11 +150,11 @@ export default function Navigation() {
               component={CardLogin}
               options={{ headerShown: false }}
             />
-              <Stack.Screen
-                name="PhoneLogin"
-                component={PhoneLogin}
-                options={{ headerShown: false }}
-              />
+            <Stack.Screen
+              name="PhoneLogin"
+              component={PhoneLogin}
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="OTPverification"
               component={OTPverification}
@@ -169,7 +175,11 @@ export default function Navigation() {
               component={Step1}
               options={{ headerShown: false }}
             />
-
+            <Stack.Screen
+              name="QRCustomer"
+              component={QRCustomer}
+              options={{ headerShown: false }}
+            />
           </>
         )}
         <Stack.Screen

@@ -1,6 +1,3 @@
-// ============================================
-// UPDATED CART COUNT HELPERS
-// ============================================
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Helper function to get unique cart count (based on unique products)
