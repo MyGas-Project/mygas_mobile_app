@@ -137,6 +137,7 @@ const BottomTabNavigator = () => {
   const [news, setNews] = useState(null);
   const [station, setStation] = useState(null);
   const [activity, setActivity] = useState(null);
+  const [home, setHome] = useState(null);
 
   useEffect(() => {
     const unsubscribe = listenToMaintenanceUpdates(async (latestSettings) => {
@@ -150,6 +151,11 @@ const BottomTabNavigator = () => {
       );
       // setMobileSettings(filteredSettings);
       setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      setNews(filteredSettings.find(item => item.key === "module_my_news_enabled"));
+      setStation(filteredSettings.find(item => item.key === "module_my_stations_enabled"));
+      setActivity(filteredSettings.find(item => item.key === "module_my_activity_enabled"));
+      setHome(filteredSettings.find(item => item.key === "module_home_enabled"));
       // console.log(filteredSettings);
     });
 
@@ -170,6 +176,11 @@ const BottomTabNavigator = () => {
       );
       // setMobileSettings(filteredSettings);
       setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      setNews(filteredSettings.find(item => item.key === "module_my_news_enabled"));
+      setStation(filteredSettings.find(item => item.key === "module_my_stations_enabled"));
+      setActivity(filteredSettings.find(item => item.key === "module_my_activity_enabled"));
+      setHome(filteredSettings.find(item => item.key === "module_home_enabled"));
       // console.log("settings: ", moduleSettings);
     });
   }, []);
@@ -182,12 +193,12 @@ const BottomTabNavigator = () => {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={home?.value === "1" ? HomeScreen : CommingSoonScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen
         name="News"
-        component={NewsScreen}
+        component={news?.value === "1" ? NewsScreen : CommingSoonScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen
@@ -213,12 +224,12 @@ const BottomTabNavigator = () => {
       /> */}
       <Tab.Screen
         name="Stations"
-        component={StationsScreeen}
+        component={station?.value === "1" ? StationsScreeen : CommingSoonScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen
         name="Activity"
-        component={ActivityScreen}
+        component={activity?.value === "1" ? ActivityScreen : CommingSoonScreen}
         options={{ unmountOnBlur: true }}
       />
       <Tab.Screen
