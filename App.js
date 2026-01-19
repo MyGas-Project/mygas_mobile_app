@@ -93,7 +93,7 @@ export default function App() {
           }
         })
         .catch(function (error) {
-          console.error("Server health check failed:", error.message);
+          console.error("Server health check failed:", error);
           setServerUp(false);
           if (!intervalId) {
             intervalId = setInterval(checkServerHealth, 30000);
