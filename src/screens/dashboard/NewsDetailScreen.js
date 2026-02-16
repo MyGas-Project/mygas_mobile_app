@@ -195,6 +195,7 @@ export default function NewsDetailScreen({ navigation, route }) {
                     {/* Main Content */}
                     <Text style={styles.description}>{news.description}</Text>
 
+                    <Text style={styles.description}>{news.content}</Text>
                     {/* Additional Content Sections */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>

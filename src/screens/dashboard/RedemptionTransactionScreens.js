@@ -10,6 +10,7 @@ import {
     FlatList,
     ActivityIndicator,
     Platform,
+    Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +38,8 @@ export default function RedemptionTransactionScreens({ navigation }) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedTab, setSelectedTab] = useState("ready");
+    const [cancellingId, setCancellingId] = useState(null);
+
     const fetchTransactions = useCallback(async (isRefresh = false) => {
         try {
             if (isRefresh) {
@@ -83,6 +86,65 @@ export default function RedemptionTransactionScreens({ navigation }) {
             setRefreshing(false);
         }
     }, []);
+
+    const handleCancelRedemption = useCallback(async (transactionId) => {
+        Alert.alert(
+            "Cancel Redemption",
+            "Are you sure you want to cancel this redemption? Your points will be refunded.",
+            [
+                {
+                    text: "No",
+                    style: "cancel"
+                },
+                {
+                    text: "Yes, Cancel",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setCancellingId(transactionId);
+
+                            // // Replace with your actual API endpoint for cancellation
+                            // const response = await fetch(`${BASE_URL}customer/redemption/${transactionId}/cancel`, {
+                            //     method: "POST",
+                            //     headers: {
+                            //         "Content-Type": "application/json",
+                            //         Accept: "application/json",
+                            //         Authorization: `Bearer ${userInfo.token}`,
+                            //     },
+                            // });
+
+                            // const { statusCode, data } = await processResponse(response);
+
+                            // if (statusCode === 200) {
+                            //     Alert.alert(
+                            //         "Success",
+                            //         "Redemption cancelled successfully. Your points have been refunded.",
+                            //         [{ text: "OK" }]
+                            //     );
+                            //     // Refresh the transactions list
+                            //     fetchTransactions(true);
+                            // } else {
+                            //     Alert.alert(
+                            //         "Error",
+                            //         data?.message || "Failed to cancel redemption. Please try again.",
+                            //         [{ text: "OK" }]
+                            //     );
+                            // }
+                        } catch (error) {
+                            console.log("Error cancelling redemption:", error);
+                            Alert.alert(
+                                "Error",
+                                "Failed to cancel redemption. Please try again.",
+                                [{ text: "OK" }]
+                            );
+                        } finally {
+                            setCancellingId(null);
+                        }
+                    }
+                }
+            ]
+        );
+    }, [userInfo.token, fetchTransactions]);
 
     useEffect(() => {
         fetchTransactions();
@@ -217,15 +279,40 @@ export default function RedemptionTransactionScreens({ navigation }) {
                     </View>
                 </View>
 
-                {/* QR Code Preview (only for ready status) */}
+                {/* QR Code Preview with Cancel Button (only for ready status) */}
                 {transaction.status === "ready" && (
-                    <View style={styles.qrPreviewContainer}>
-                        <Ionicons
-                            name="qr-code-outline"
-                            size={getResponsiveValue(24, 28, 32, 36)}
-                            color="#FF0000"
-                        />
-                        <Text style={styles.qrPreviewText}>Show QR to claim</Text>
+                    <View style={styles.readyActionsContainer}>
+                        <View style={styles.qrPreviewContainer}>
+                            <Ionicons
+                                name="qr-code-outline"
+                                size={getResponsiveValue(20, 24, 28, 30)}
+                                color="#FF0000"
+                            />
+                            <Text style={styles.qrPreviewText}>Show QR to claim</Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            activeOpacity={0.7}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                handleCancelRedemption(transaction.id);
+                            }}
+                            disabled={cancellingId === transaction.id}
+                        >
+                            {cancellingId === transaction.id ? (
+                                <ActivityIndicator size="small" color="#dc3545" />
+                            ) : (
+                                <>
+                                    <Ionicons
+                                        name="close-outline"
+                                        size={getResponsiveValue(16, 18, 20, 22)}
+                                        color="#dc3545"
+                                    />
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 )}
 
@@ -244,16 +331,16 @@ export default function RedemptionTransactionScreens({ navigation }) {
                 )}
 
                 {/* Arrow */}
-                <View style={styles.arrowContainer}>
+                {/* <View style={styles.arrowContainer}>
                     <Ionicons
                         name="chevron-forward"
                         size={getResponsiveValue(20, 24, 28, 32)}
                         color="#999"
                     />
-                </View>
+                </View> */}
             </TouchableOpacity>
         ),
-        []
+        [cancellingId, handleCancelRedemption]
     );
 
     const keyExtractor = useCallback((item) => item.id, []);
@@ -312,24 +399,6 @@ export default function RedemptionTransactionScreens({ navigation }) {
                             Ready ({transactions.filter((t) => t.status === "ready").length})
                         </Text>
                     </TouchableOpacity>
-{/* 
-                    <TouchableOpacity
-                        style={[
-                            styles.tab,
-                            selectedTab === "claimed" && styles.activeTab,
-                        ]}
-                        onPress={() => setSelectedTab("claimed")}
-                        activeOpacity={0.7}
-                    >
-                        <Text
-                            style={[
-                                styles.tabText,
-                                selectedTab === "claimed" && styles.activeTabText,
-                            ]}
-                        >
-                            Claimed ({transactions.filter((t) => t.status === "claimed").length})
-                        </Text>
-                    </TouchableOpacity> */}
 
                     <TouchableOpacity
                         style={[
@@ -653,21 +722,45 @@ const styles = StyleSheet.create({
     pointsValue: {
         color: "#f39c12",
     },
+    readyActionsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: getResponsiveValue(8, 10, 12, 14),
+    },
     qrPreviewContainer: {
+        flex: 1,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: getResponsiveValue(8, 10, 12, 14),
+        gap: getResponsiveValue(6, 8, 10, 12),
         backgroundColor: "#fff5f5",
         borderRadius: getResponsiveValue(8, 10, 12, 14),
-        padding: getResponsiveValue(10, 12, 14, 16),
+        padding: getResponsiveValue(8, 10, 12, 14),
         borderWidth: 1,
         borderColor: "#ffe0e0",
         borderStyle: "dashed",
     },
     qrPreviewText: {
-        fontSize: getResponsiveValue(12, 13, 14, 15),
+        fontSize: getResponsiveValue(11, 12, 13, 14),
         color: "#FF0000",
+        fontWeight: "600",
+    },
+    cancelButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: getResponsiveValue(4, 5, 6, 7),
+        backgroundColor: "#fff",
+        borderRadius: getResponsiveValue(8, 10, 12, 14),
+        paddingVertical: getResponsiveValue(8, 10, 12, 14),
+        paddingHorizontal: getResponsiveValue(10, 12, 14, 16),
+        borderWidth: 1.5,
+        borderColor: "#dc3545",
+        minWidth: getResponsiveValue(70, 80, 90, 100),
+    },
+    cancelButtonText: {
+        fontSize: getResponsiveValue(11, 12, 13, 14),
+        color: "#dc3545",
         fontWeight: "600",
     },
     claimedInfo: {

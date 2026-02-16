@@ -91,7 +91,8 @@ export default function NewsScreen({ navigation }) {
       tag: tag,
       color: color,
       date: formatDate(blog.created_at),
-      author: blog.author
+      author: blog.author,
+      content: blog.content
     };
   });
 
@@ -192,7 +193,6 @@ export default function NewsScreen({ navigation }) {
         .then((res) => {
           const { statusCode, data } = res;
           setBlogs(data.data);
-          // console.log(data);
         })
         .catch(error => {
           console.error(error);

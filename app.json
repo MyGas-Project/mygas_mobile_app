@@ -3,7 +3,7 @@
     "name": "mygas",
     "slug": "mygas",
     "scheme": "mygas",
-    "version": "1.0.6",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/logo.jpg",
     "userInterfaceStyle": "light",
@@ -28,7 +28,7 @@
       }
     },
     "android": {
-      "versionCode": 6,
+      "versionCode": 7,
       "googleServicesFile": "./android/app/google-services.json",
       "minSdkVersion": 21,
       "buildProperties": {

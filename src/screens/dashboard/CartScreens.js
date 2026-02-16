@@ -24,6 +24,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import QrRedemption from './redemption/QrRedemption';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { clearAllCartItems, removeCartItem } from '../../lib/CartCountHelper';
+import Loader from '../../components/Loader';
+import LoadingPage from '../../components/LoadingState';
+import { useRedemption } from '../../hooks/RedemptionHooks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -218,6 +221,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 export default function CartScreens({ navigation, route }) {
     const { userInfo, userDetails } = useContext(AuthContext);
     const { rewards, refreshPoints } = useContext(PointsDetailContext);
+    const { redemptionCount } = useRedemption();
     const station = route?.params?.station;
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -310,7 +314,6 @@ export default function CartScreens({ navigation, route }) {
             if (statusCode === 201 && data?.data) {
                 const transformedData = transformCartData(data.data);
                 setCartItems(transformedData);
-                // console.log(transformedData);
             } else {
                 setCartItems([]);
             }
@@ -502,11 +505,8 @@ export default function CartScreens({ navigation, route }) {
                 {
                     text: 'Redeem',
                     onPress: async () => {
-                        // console.log(cartItems);
-                        // console.log(station);
                         const stored_station = await AsyncStorage.getItem("stationSelected");
                         const parsed_station = stored_station ? JSON.parse(stored_station) : null;
-                        // console.log(parsed_station);
 
                         try {
                             const now = new Date();
@@ -572,11 +572,7 @@ export default function CartScreens({ navigation, route }) {
     }, []);
 
     if (loading) {
-        return (
-            <View style={[styles.container, styles.loadingContainer]}>
-                <Text style={styles.loadingText}>Loading cart...</Text>
-            </View>
-        );
+        return <LoadingPage />
     }
 
     return (
@@ -655,21 +651,37 @@ export default function CartScreens({ navigation, route }) {
                                 </LinearGradient>
                             </View>
 
-                            <TouchableOpacity
-                                style={styles.redemptionButton}
-                                onPress={() => navigation.navigate("RedemptionTransactionScreens")}
-                                activeOpacity={0.7}
-                            >
-                                <LinearGradient
-                                    colors={['#EF4444', '#DC2626']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.redemptionButtonGradient}
+                            <View style={styles.myRedemptionButtonWrapper}>
+                                {redemptionCount > 0 && (
+                                    <View style={styles.redemptionBadgeContainer}>
+                                        <LinearGradient
+                                            colors={["#FBBF24", "#F59E0B"]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.redemptionBadge}
+                                        >
+                                            <Text style={styles.redemptionBadgeText}>
+                                                {redemptionCount > 99 ? '99+' : redemptionCount}
+                                            </Text>
+                                        </LinearGradient>
+                                    </View>
+                                )}
+                                <TouchableOpacity
+                                    style={styles.redemptionButton}
+                                    onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+                                    activeOpacity={0.7}
                                 >
-                                    <Ionicons name="receipt-outline" size={20} color="#fff" />
-                                    <Text style={styles.redemptionButtonText}>My Redemption</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
+                                    <LinearGradient
+                                        colors={['#EF4444', '#DC2626']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.redemptionButtonGradient}
+                                    >
+                                        <Ionicons name="receipt-outline" size={20} color="#fff" />
+                                        <Text style={styles.redemptionButtonText}>My Redemption</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         {/* Cart Items or Empty State */}
@@ -889,6 +901,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: getResponsiveValue(12, 14, 16, 18),
         marginBottom: getResponsiveValue(24, 28, 32, 36),
+        alignItems: 'stretch', // Ensure both items stretch to same height
     },
     pointsCard: {
         flex: 1,
@@ -906,7 +919,12 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    myRedemptionButtonWrapper: {
+        position: 'relative',
+        width: getResponsiveValue(100, 110, 120, 130),
+    },
     redemptionButton: {
+        flex: 1,
         borderRadius: getResponsiveValue(16, 20, 24, 28),
         overflow: 'hidden',
         ...Platform.select({
@@ -922,11 +940,11 @@ const styles = StyleSheet.create({
         }),
     },
     redemptionButtonGradient: {
-        paddingVertical: getResponsiveValue(23, 24, 28, 32),
+        flex: 1, // Changed from fixed padding to flex: 1
         paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
         alignItems: 'center',
         justifyContent: 'center',
-        gap: getResponsiveValue(23, 23, 18, 15),
+        gap: getResponsiveValue(8, 10, 12, 14), // Reduced gap for better spacing
     },
     redemptionButtonText: {
         fontSize: getResponsiveValue(11, 12, 13, 14),
@@ -935,8 +953,44 @@ const styles = StyleSheet.create({
         textAlign: "center",
         lineHeight: getResponsiveValue(14, 16, 18, 20),
     },
+    redemptionBadgeContainer: {
+        position: "absolute",
+        top: getResponsiveValue(-8, -9, -10, -11),
+        right: getResponsiveValue(-8, -9, -10, -11),
+        zIndex: 10,
+    },
+    redemptionBadge: {
+        minWidth: getResponsiveValue(24, 26, 28, 30),
+        height: getResponsiveValue(24, 26, 28, 30),
+        borderRadius: getResponsiveValue(12, 13, 14, 15),
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
+        borderWidth: getResponsiveValue(2.5, 3, 3.5, 4),
+        borderColor: "#fff",
+        ...Platform.select({
+            ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
+    },
+    redemptionBadgeText: {
+        fontSize: getResponsiveValue(11, 12, 13, 14),
+        fontWeight: "900",
+        color: "#fff",
+        textAlign: "center",
+        letterSpacing: -0.3,
+    },
     pointsGradient: {
+        flex: 1, // Changed from fixed padding
         padding: getResponsiveValue(20, 24, 28, 32),
+        justifyContent: 'center', // Center content vertically
     },
     pointsRow: {
         flexDirection: 'row',

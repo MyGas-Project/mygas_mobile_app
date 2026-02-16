@@ -28,6 +28,7 @@ import CartComponent from "../../components/CartComponent";
 import { useFocusEffect } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { clearAllCartItems, getUniqueCartCount } from "../../lib/CartCountHelper";
+import { useRedemption } from "../../hooks/RedemptionHooks";
 
 const { width, height } = Dimensions.get("window");
 
@@ -211,8 +212,8 @@ export default function RedemptionScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    priceRange: "all", // all, under1000, 1000to2500, over2500
-    stockStatus: "all", // all, inStock, lowStock
+    priceRange: "all",
+    stockStatus: "all",
     promoOnly: false,
   });
   const [cartCount, setCartCount] = useState(0);
@@ -572,7 +573,38 @@ export default function RedemptionScreen({ navigation }) {
 
     loadCachedStation();
   }, []);
-  // console.log(cartCount);
+
+  const {
+    redemptionCount,
+    setRedemptionCount
+  } = useRedemption();
+
+  const getRedemptionCount = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}customer/get-count-pending-redemption`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        });
+
+      const { data, statusCode } = await processResponse(response);
+      if (statusCode === 200) {
+        setRedemptionCount(data.data.pending_redemption_count);
+      }
+    } catch (error) {
+      console.error("Error fetching redemption count: ", error);
+    } finally {
+
+    }
+  }
+
+  useEffect(() => {
+    getRedemptionCount();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -647,21 +679,37 @@ export default function RedemptionScreen({ navigation }) {
               </LinearGradient>
             </View>
 
-            <TouchableOpacity
-              style={styles.myRedemptionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate("RedemptionTransactionScreens")}
-            >
-              <LinearGradient
-                colors={["#EF4444", "#DC2626"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.myRedemptionGradient}
+            <View style={styles.myRedemptionButtonWrapper}>
+              {redemptionCount > 0 && (
+                <View style={styles.redemptionBadgeContainer}>
+                  <LinearGradient
+                    colors={["#FBBF24", "#F59E0B"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.redemptionBadge}
+                  >
+                    <Text style={styles.redemptionBadgeText}>
+                      {redemptionCount > 99 ? '99+' : redemptionCount}
+                    </Text>
+                  </LinearGradient>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.myRedemptionButton}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("RedemptionTransactionScreens")}
               >
-                <Ionicons name="gift" size={24} color="#fff" />
-                <Text style={styles.myRedemptionText}>My Redemption</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={["#EF4444", "#DC2626"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.myRedemptionGradient}
+                >
+                  <Ionicons name="gift" size={24} color="#fff" />
+                  <Text style={styles.myRedemptionText}>My Redemption</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Station Selection Section */}
@@ -1134,10 +1182,14 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  myRedemptionButton: {
-    borderRadius: getResponsiveValue(12, 14, 16, 18),
-    overflow: "hidden",
+  myRedemptionButtonWrapper: {
+    position: 'relative',
     width: getResponsiveValue(100, 110, 120, 130),
+  },
+  myRedemptionButton: {
+    flex: 1,
+    borderRadius: getResponsiveValue(12, 14, 16, 18),
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -1164,6 +1216,40 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     lineHeight: getResponsiveValue(12, 14, 16, 18),
+  },
+  redemptionBadgeContainer: {
+    position: "absolute",
+    top: getResponsiveValue(-8, -9, -10, -11),
+    right: getResponsiveValue(-8, -9, -10, -11),
+    zIndex: 10,
+  },
+  redemptionBadge: {
+    minWidth: getResponsiveValue(24, 26, 28, 30),
+    height: getResponsiveValue(24, 26, 28, 30),
+    borderRadius: getResponsiveValue(12, 13, 14, 15),
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
+    borderWidth: getResponsiveValue(2.5, 3, 3.5, 4),
+    borderColor: "#fff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  redemptionBadgeText: {
+    fontSize: getResponsiveValue(11, 12, 13, 14),
+    fontWeight: "900",
+    color: "#fff",
+    textAlign: "center",
+    letterSpacing: -0.3,
   },
   pointsGradient: {
     padding: getResponsiveValue(14, 16, 18, 20),

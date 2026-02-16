@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ActivityIndicator, Animated, Easing } from 'react-native'
 import React, { useEffect, useRef } from 'react'
 
+
 export default function Loader({
     visible = true,
     text = "Loading...",

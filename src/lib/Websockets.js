@@ -4,6 +4,7 @@ import {
 } from "@pusher/pusher-websocket-react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { AppState } from "react-native";
+import { SOCKET_KEY } from "../config";
 
 let initialized = false;
 let reconnectAttempts = 0;
@@ -31,7 +32,7 @@ export async function initPusher() {
         }
 
         await pusher.init({
-            apiKey: "efb45a8d70be75b2c96d",
+            apiKey: SOCKET_KEY,
             cluster: "ap1",
             forceTLS: true,
             onConnectionStateChange: (currentState, prevState) => {

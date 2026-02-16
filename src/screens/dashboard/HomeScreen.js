@@ -514,6 +514,29 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
 
+                {/* Promotional Banner */}
+                <View style={custom_styles.promoBanner}>
+                  <LinearGradient
+                    colors={['#FFD93D', '#E0B820']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={custom_styles.promoGradient}
+                  >
+                    <View style={custom_styles.promoContent}>
+                      <Ionicons name="gift" size={40} color="#FFF" />
+                      <View style={{ flex: 1, marginLeft: 16 }}>
+                        <Text style={custom_styles.promoTitle}>
+                          Special Offer!
+                        </Text>
+                        <Text style={custom_styles.promoText}>
+                          Get 2x points on your next visit
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={24} color="#FFF" />
+                    </View>
+                  </LinearGradient>
+                </View>
+
                 {userInfo?.is_guest == 1 ? (
                   <GuestRewardsComponent />
                 ) : (
@@ -662,29 +685,6 @@ export default function HomeScreen({ navigation }) {
                     )}
                   </>
                 )}
-
-                {/* Promotional Banner */}
-                {/* <View style={custom_styles.promoBanner}>
-                  <LinearGradient
-                    colors={['#FFD93D', '#E0B820']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={custom_styles.promoGradient}
-                  >
-                    <View style={custom_styles.promoContent}>
-                      <Ionicons name="gift" size={40} color="#FFF" />
-                      <View style={{ flex: 1, marginLeft: 16 }}>
-                        <Text style={custom_styles.promoTitle}>
-                          Special Offer!
-                        </Text>
-                        <Text style={custom_styles.promoText}>
-                          Get 2x points on your next visit
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={24} color="#FFF" />
-                    </View>
-                  </LinearGradient>
-                </View> */}
               </>
             )}
           </Animated.ScrollView>

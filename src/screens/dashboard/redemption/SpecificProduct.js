@@ -73,10 +73,8 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
         }
     }, [visible, product, refreshKey]);
 
-    // Separate effect to watch for cart updates from CartScreens
     useEffect(() => {
         if (visible && product && cartUpdateTrigger > 0) {
-            // Add a small delay to ensure AsyncStorage has been updated
             const timer = setTimeout(() => {
                 getCartinLocalStorage();
             }, 100);
@@ -89,11 +87,11 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
 
     const canAfford = userPoints >= (product.points * quantity);
     const isOutOfStock = product.quantity === 0;
-    const maxQuantity = Math.min(product.quantity, 10); // Max 10 items per order
+    const maxQuantity = Math.min(product.quantity, 10);
     const totalPoints = product.points * quantity;
 
     const handleCartUpdatedWithRefresh = () => {
-        setRefreshKey(prev => prev + 1); // Trigger refresh
+        setRefreshKey(prev => prev + 1);
         if (onCartUpdated) {
             onCartUpdated();
         }
@@ -194,7 +192,7 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                 handleCartUpdatedWithRefresh();
                 await getCartinLocalStorage();
                 handleCloseProduct();
-            }else{
+            } else {
                 Alert.alert(
                     'Failed',
                     data.message,
@@ -364,18 +362,14 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                                 </View>
                             )}
 
-                            {/* Cart Quantity Display */}
+                            {/* Cart Quantity Display - Compact */}
                             {cartInLocalStorage && cartInLocalStorage.quantity > 0 && (
                                 <View style={styles.cartInfoSection}>
-                                    <View style={styles.cartInfoHeader}>
-                                        <Ionicons name="cart" size={20} color="#059669" />
-                                        <Text style={styles.cartInfoTitle}>In Your Cart</Text>
-                                    </View>
-
-                                    <View style={styles.cartQuantityContainer}>
-                                        <Text style={styles.cartQuantityLabel}>Quantity:</Text>
-                                        <Text style={styles.cartQuantityValue}>{cartInLocalStorage.quantity}</Text>
-                                    </View>
+                                    <Ionicons name="cart" size={16} color="#059669" />
+                                    <Text style={styles.cartInfoText}>
+                                        <Text style={styles.cartInfoLabel}>In Cart: </Text>
+                                        <Text style={styles.cartInfoValue}>{cartInLocalStorage.quantity}</Text>
+                                    </Text>
                                 </View>
                             )}
 
@@ -749,72 +743,28 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     cartInfoSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#ECFDF5',
-        padding: getResponsiveValue(16, 18, 20, 22),
-        borderRadius: getResponsiveValue(12, 14, 16, 18),
-        marginBottom: getResponsiveValue(20, 24, 28, 32),
-        borderLeftWidth: 4,
+        paddingHorizontal: getResponsiveValue(12, 14, 16, 18),
+        paddingVertical: getResponsiveValue(8, 10, 12, 14),
+        borderRadius: getResponsiveValue(8, 10, 12, 14),
+        marginBottom: getResponsiveValue(16, 18, 20, 22),
+        gap: getResponsiveValue(8, 9, 10, 11),
+        borderLeftWidth: 3,
         borderLeftColor: '#059669',
     },
-    cartInfoHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: getResponsiveValue(12, 14, 16, 18),
-    },
-    cartInfoTitle: {
-        fontSize: getResponsiveValue(16, 17, 18, 19),
-        fontWeight: '700',
-        color: '#059669',
-    },
-    cartQuantityContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: getResponsiveValue(12, 14, 16, 18),
-    },
-    cartQuantityLabel: {
-        fontSize: getResponsiveValue(14, 15, 16, 17),
-        color: '#047857',
-        fontWeight: '600',
-    },
-    cartQuantityValue: {
-        fontSize: getResponsiveValue(20, 22, 24, 26),
-        fontWeight: '800',
-        color: '#059669',
-    },
-    cartPointsInfo: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingTop: getResponsiveValue(12, 14, 16, 18),
-        borderTopWidth: 1,
-        borderTopColor: '#A7F3D0',
-    },
-    cartPointsLabel: {
-        fontSize: getResponsiveValue(14, 15, 16, 17),
-        color: '#047857',
-        fontWeight: '600',
-    },
-    cartPointsDisplay: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    cartPointsIcon: {
-        width: getResponsiveValue(20, 22, 24, 26),
-        height: getResponsiveValue(20, 22, 24, 26),
-        resizeMode: 'contain',
-    },
-    cartPointsValue: {
-        fontSize: getResponsiveValue(18, 19, 20, 21),
-        fontWeight: '800',
-        color: '#059669',
-    },
-    cartPointsSuffix: {
+    cartInfoText: {
         fontSize: getResponsiveValue(13, 14, 15, 16),
         color: '#047857',
-        fontWeight: '600',
+    },
+    cartInfoLabel: {
+        fontWeight: '500',
+    },
+    cartInfoValue: {
+        fontWeight: '800',
+        color: '#059669',
+        fontSize: getResponsiveValue(14, 15, 16, 17),
     },
     pointsSection: {
         backgroundColor: '#FEF3C7',

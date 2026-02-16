@@ -174,7 +174,7 @@ const Step1 = ({ navigation }) => {
                       </View>
                     )}
 
-                    {showDatePicker && (
+                    {/* {showDatePicker && (
                       Platform.OS === "ios" ? (
                         <Modal transparent={true} animationType="slide">
                           <View style={responsiveStyles.modalOverlay}>
@@ -224,7 +224,48 @@ const Step1 = ({ navigation }) => {
                           {Batch1Form?.birthDate || "Select Birth Date"}
                         </Text>
                       </View>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
+                    <View style={[{ with: "auto", flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }]}>
+                      <TextInput
+                        style={[
+                          responsiveStyles.input,
+                          { width: "30%" },
+                          // errors.lastName && responsiveStyles.inputError
+                        ]}
+                        value={""}
+                        keyboardType="numeric"
+                        onChangeText={(year) => {
+
+                        }}
+                        placeholder="Year"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)" />
+                      <TextInput
+                        style={[
+                          responsiveStyles.input,
+                          { width: "30%" },
+                          // errors.lastName && responsiveStyles.inputError
+                        ]}
+                        value={""}
+                        keyboardType="numeric"
+                        onChangeText={(month) => {
+
+                        }}
+                        placeholder="Month"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)" />
+                      <TextInput
+                        style={[
+                          responsiveStyles.input,
+                          { width: "30%" },
+                          // errors.lastName && responsiveStyles.inputError
+                        ]}
+                        value={""}
+                        keyboardType="numeric"
+                        onChangeText={(day) => {
+
+                        }}
+                        placeholder="Day"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)" />
+                    </View>
                   </View>
 
                   <View style={responsiveStyles.buttonGroup}>
@@ -286,6 +327,8 @@ const Step2 = ({ navigation, route }) => {
     if (!validateForm()) {
       return;
     }
+
+    console.log(batch1Final);
 
     setLoadingState(true);
     const { statusCode, data } = await registerStep1(batch1Final);
