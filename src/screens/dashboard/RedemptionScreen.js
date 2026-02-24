@@ -205,7 +205,7 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
 
 export default function RedemptionScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
-  const { rewards, refreshPoints } = useContext(PointsDetailContext);
+  const { rewards, refreshPoints, redemptionCount, getRedemptionCount } = useContext(PointsDetailContext);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -250,6 +250,7 @@ export default function RedemptionScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       refreshCartCount();
+      getRedemptionCount();
       // refreshPoints?.();
     }, [refreshCartCount])
   );
@@ -572,37 +573,6 @@ export default function RedemptionScreen({ navigation }) {
     };
 
     loadCachedStation();
-  }, []);
-
-  const {
-    redemptionCount,
-    setRedemptionCount
-  } = useRedemption();
-
-  const getRedemptionCount = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}customer/get-count-pending-redemption`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        });
-
-      const { data, statusCode } = await processResponse(response);
-      if (statusCode === 200) {
-        setRedemptionCount(data.data.pending_redemption_count);
-      }
-    } catch (error) {
-      console.error("Error fetching redemption count: ", error);
-    } finally {
-
-    }
-  }
-
-  useEffect(() => {
     getRedemptionCount();
   }, []);
 

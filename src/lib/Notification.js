@@ -101,19 +101,19 @@ async function registerForPushNotificationsAsync() {
         console.log("✅ Notification permission granted");
 
         // Android: Create high-priority notification channel
-        // if (Platform.OS === "android") {
-        //     await Notifications.setNotificationChannelAsync("default", {
-        //         name: "Default Notifications",
-        //         importance: Notifications.AndroidImportance.MAX,
-        //         vibrationPattern: [0, 250, 250, 250],
-        //         lightColor: "#E0B820",
-        //         sound: "default",
-        //         enableVibrate: true,
-        //         showBadge: true,
-        //         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        //     });
-        //     console.log("✅ Android notification channel created");
-        // }
+        if (Platform.OS === "android") {
+            await Notifications.setNotificationChannelAsync("default", {
+                name: "Default Notifications",
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: "#E0B820",
+                sound: "default",
+                enableVibrate: true,
+                showBadge: true,
+                lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+            });
+            console.log("✅ Android notification channel created");
+        }
 
         // Get push token
         const projectId =

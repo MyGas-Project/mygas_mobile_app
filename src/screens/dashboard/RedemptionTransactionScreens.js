@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Navbar from "../../components/Navbar";
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL, processResponse } from "../../config";
+import CancelRedemptionModal from "./components/CancelRedemptionModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,7 +39,8 @@ export default function RedemptionTransactionScreens({ navigation }) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedTab, setSelectedTab] = useState("ready");
-    const [cancellingId, setCancellingId] = useState(null);
+    const [cancellingData, setCancellingdata] = useState(null);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     const fetchTransactions = useCallback(async (isRefresh = false) => {
         try {
@@ -57,7 +59,8 @@ export default function RedemptionTransactionScreens({ navigation }) {
                 },
             });
             const { statusCode, data } = await processResponse(response);
-            // console.log(data);
+            // console.log("transactions: ", data);
+
             if (statusCode === 200) {
                 const transformedData = data.data.map((transaction) => {
                     return {
@@ -87,63 +90,9 @@ export default function RedemptionTransactionScreens({ navigation }) {
         }
     }, []);
 
-    const handleCancelRedemption = useCallback(async (transactionId) => {
-        Alert.alert(
-            "Cancel Redemption",
-            "Are you sure you want to cancel this redemption? Your points will be refunded.",
-            [
-                {
-                    text: "No",
-                    style: "cancel"
-                },
-                {
-                    text: "Yes, Cancel",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            setCancellingId(transactionId);
-
-                            // // Replace with your actual API endpoint for cancellation
-                            // const response = await fetch(`${BASE_URL}customer/redemption/${transactionId}/cancel`, {
-                            //     method: "POST",
-                            //     headers: {
-                            //         "Content-Type": "application/json",
-                            //         Accept: "application/json",
-                            //         Authorization: `Bearer ${userInfo.token}`,
-                            //     },
-                            // });
-
-                            // const { statusCode, data } = await processResponse(response);
-
-                            // if (statusCode === 200) {
-                            //     Alert.alert(
-                            //         "Success",
-                            //         "Redemption cancelled successfully. Your points have been refunded.",
-                            //         [{ text: "OK" }]
-                            //     );
-                            //     // Refresh the transactions list
-                            //     fetchTransactions(true);
-                            // } else {
-                            //     Alert.alert(
-                            //         "Error",
-                            //         data?.message || "Failed to cancel redemption. Please try again.",
-                            //         [{ text: "OK" }]
-                            //     );
-                            // }
-                        } catch (error) {
-                            console.log("Error cancelling redemption:", error);
-                            Alert.alert(
-                                "Error",
-                                "Failed to cancel redemption. Please try again.",
-                                [{ text: "OK" }]
-                            );
-                        } finally {
-                            setCancellingId(null);
-                        }
-                    }
-                }
-            ]
-        );
+    const handleCancelRedemption = useCallback(async (transaction) => {
+        setShowCancelModal(true);
+        setCancellingdata(transaction);
     }, [userInfo.token, fetchTransactions]);
 
     useEffect(() => {
@@ -296,11 +245,11 @@ export default function RedemptionTransactionScreens({ navigation }) {
                             activeOpacity={0.7}
                             onPress={(e) => {
                                 e.stopPropagation();
-                                handleCancelRedemption(transaction.id);
+                                handleCancelRedemption(transaction);
                             }}
-                            disabled={cancellingId === transaction.id}
+                            disabled={cancellingData?.id === transaction.id}
                         >
-                            {cancellingId === transaction.id ? (
+                            {cancellingData?.id === transaction.id ? (
                                 <ActivityIndicator size="small" color="#dc3545" />
                             ) : (
                                 <>
@@ -340,7 +289,7 @@ export default function RedemptionTransactionScreens({ navigation }) {
                 </View> */}
             </TouchableOpacity>
         ),
-        [cancellingId, handleCancelRedemption]
+        [cancellingData, handleCancelRedemption]
     );
 
     const keyExtractor = useCallback((item) => item.id, []);
@@ -454,6 +403,7 @@ export default function RedemptionTransactionScreens({ navigation }) {
 
     return (
         <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
+            <CancelRedemptionModal visible={showCancelModal} onClose={() => { setShowCancelModal(false); setCancellingdata(null); onRefresh(); }} transactionData={cancellingData} />
             <ImageBackground
                 resizeMode="stretch"
                 source={require("../../../assets/mygas-header.jpeg")}

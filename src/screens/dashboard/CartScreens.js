@@ -220,8 +220,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 
 export default function CartScreens({ navigation, route }) {
     const { userInfo, userDetails } = useContext(AuthContext);
-    const { rewards, refreshPoints } = useContext(PointsDetailContext);
-    const { redemptionCount } = useRedemption();
+    const { rewards, refreshPoints, redemptionCount, setRedemptionCount, getRedemptionCount } = useContext(PointsDetailContext);
     const station = route?.params?.station;
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -543,6 +542,7 @@ export default function CartScreens({ navigation, route }) {
                                 setTransaction(referenceNumber);
                                 refreshPoints?.();
                                 setShowQR(true);
+                                getRedemptionCount();
                             } else {
                                 showSnackbar(`${data.message}`, 'error');
                                 console.log('Error redeeming items:', data.message);
@@ -568,6 +568,7 @@ export default function CartScreens({ navigation, route }) {
     const keyExtractor = (item) => item.id.toString();
 
     useEffect(() => {
+        getRedemptionCount();
         getCartItems();
     }, []);
 

@@ -14,7 +14,7 @@ import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import ConnectionLoss from "../screens/ConnectionLoss";
 import LoadingPage from "../components/LoadingState";
-import { BASE_URL } from "../config";
+import { AUTH_URL, BASE_URL } from "../config";
 import ServerMaintenance from "../screens/ServerBusy";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
 import TermsCondition from "../screens/TermsCondition";
@@ -30,6 +30,9 @@ import AgreementScreen from "../screens/AgreementScreen";
 import PhoneLogin from "../screens/auth/PhoneLogin";
 import NewsDetailScreen from "../screens/dashboard/NewsDetailScreen";
 import QRCustomer from "../screens/QRCustomer";
+import UpdateModal from "./UpdateModal";
+import DeviceInfo from "react-native-device-info";
+import VersionChecking from "../service/VersionChecking";
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +41,8 @@ export default function Navigation() {
   const [initialRoute, setInitialRoute] = useState(null);
   const [checkingStorage, setCheckingStorage] = useState(true);
   const [checkAgreement, setCheckAgreement] = useState(null);
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const [storeUrl, setStoreUrl] = useState(null);
 
   useEffect(() => {
     const checkIfNewUser = async () => {
@@ -58,9 +63,47 @@ export default function Navigation() {
     checkIfNewUser();
   }, []);
 
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+
+        const response = await fetch(`${AUTH_URL}app-config`);
+        const data = await response.json();
+
+        const minVersion = data?.min_required_version;
+        const currentVersion = DeviceInfo.getVersion();
+        console.log("current version: ", currentVersion);
+
+        if (VersionChecking(currentVersion, minVersion)) {
+          // setForceUpdate(true);
+          if (response.force_update) {
+            setForceUpdate(true);
+          }
+          setStoreUrl(
+            Platform.OS === 'ios'
+              ? data.store_url_ios
+              : data.store_url_android
+          );
+        }
+      } catch (err) {
+        console.log("Version check failed:", err);
+      }
+    };
+
+    checkVersion();
+  }, []);
+
   // Wait for both AuthContext and storage check to complete
   if (isLoading || checkingStorage) {
     return <LoadingPage />;
+  }
+
+  if (forceUpdate) {
+    // return <UpdateModal
+    //   visible={true}
+    //   onClose={() => { }}
+    //   storeUrl={""}
+    // />
   }
 
   return (

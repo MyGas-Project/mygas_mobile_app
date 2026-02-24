@@ -150,7 +150,7 @@ const BottomTabNavigator = () => {
         )
       );
       // setMobileSettings(filteredSettings);
-      setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
+      // setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
       setRedemption(filteredSettings.find(item => item.key === "module_my_redemption_enabled"));
       setNews(filteredSettings.find(item => item.key === "module_my_news_enabled"));
       setStation(filteredSettings.find(item => item.key === "module_my_stations_enabled"));

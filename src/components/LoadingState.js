@@ -1,25 +1,38 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Dimensions } from 'react-native';
+import {
+    View,
+    Text,
+    Animated,
+    Dimensions,
+    StyleSheet,
+    StatusBar,
+    ImageBackground,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LoadingPage = () => {
+const { width, height } = Dimensions.get('window');
+const isSmallDevice = width < 375;
+const isLargeDevice = width >= 414;
+
+const LoadingScreen = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
+    const scaleAnim = useRef(new Animated.Value(0.85)).current;
     const rotateAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
     const dotsAnim = useRef([
         new Animated.Value(0),
         new Animated.Value(0),
-        new Animated.Value(0)
+        new Animated.Value(0),
     ]).current;
 
-    const { width, height } = Dimensions.get('window');
-
     useEffect(() => {
-        // Initial fade in animation
+        // Fade + scale in
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
-                duration: 800,
+                duration: 900,
                 useNativeDriver: true,
             }),
             Animated.spring(scaleAnim, {
@@ -30,20 +43,20 @@ const LoadingPage = () => {
             }),
         ]).start();
 
-        // Continuous rotation animation
+        // Spinner rotation
         const rotateAnimation = Animated.loop(
             Animated.timing(rotateAnim, {
                 toValue: 1,
-                duration: 2000,
+                duration: 1800,
                 useNativeDriver: true,
             })
         );
 
-        // Pulse animation
+        // Pulse on logo glow
         const pulseAnimation = Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, {
-                    toValue: 1.1,
+                    toValue: 1.12,
                     duration: 1000,
                     useNativeDriver: true,
                 }),
@@ -55,31 +68,51 @@ const LoadingPage = () => {
             ])
         );
 
-        // Dots animation
+        // Shimmer on the bar
+        const shimmerAnimation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(shimmerAnim, {
+                    toValue: 1,
+                    duration: 1200,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(shimmerAnim, {
+                    toValue: 0,
+                    duration: 0,
+                    useNativeDriver: false,
+                }),
+            ])
+        );
+
+        // Bouncing dots
         const dotsAnimation = Animated.loop(
-            Animated.stagger(200, dotsAnim.map(dot =>
-                Animated.sequence([
-                    Animated.timing(dot, {
-                        toValue: 1,
-                        duration: 400,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(dot, {
-                        toValue: 0,
-                        duration: 400,
-                        useNativeDriver: true,
-                    }),
-                ])
-            ))
+            Animated.stagger(180,
+                dotsAnim.map(dot =>
+                    Animated.sequence([
+                        Animated.timing(dot, {
+                            toValue: 1,
+                            duration: 380,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(dot, {
+                            toValue: 0,
+                            duration: 380,
+                            useNativeDriver: true,
+                        }),
+                    ])
+                )
+            )
         );
 
         rotateAnimation.start();
         pulseAnimation.start();
+        shimmerAnimation.start();
         dotsAnimation.start();
 
         return () => {
             rotateAnimation.stop();
             pulseAnimation.stop();
+            shimmerAnimation.stop();
             dotsAnimation.stop();
         };
     }, []);
@@ -89,138 +122,281 @@ const LoadingPage = () => {
         outputRange: ['0deg', '360deg'],
     });
 
+    const shimmerWidth = shimmerAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0%', '100%'],
+    });
+
     return (
         <View style={styles.container}>
-            {/* Background gradient effect */}
-            <View style={styles.backgroundOverlay} />
-
-            <Animated.View
-                style={[
-                    styles.contentContainer,
-                    {
-                        opacity: fadeAnim,
-                        transform: [{ scale: scaleAnim }],
-                    },
-                ]}
+            <StatusBar hidden={true} />
+            <ImageBackground
+                source={require('../../assets/office.jpg')}
+                resizeMode='cover'
+                style={styles.backgroundImage}
             >
-                {/* Main loading spinner */}
-                <Animated.View
-                    style={[
-                        styles.spinnerContainer,
-                        {
-                            transform: [
-                                { rotate: spin },
-                                { scale: pulseAnim },
-                            ],
-                        },
+                <LinearGradient
+                    colors={[
+                        'rgba(139, 44, 46, 0.92)',
+                        'rgba(200, 75, 58, 0.85)',
+                        'rgba(232, 137, 94, 0.75)',
+                        'rgba(244, 181, 124, 0.65)'
                     ]}
+                    locations={[0, 0.35, 0.65, 1]}
+                    style={styles.gradient}
                 >
-                    <View style={styles.spinner}>
-                        <View style={styles.spinnerInner} />
-                    </View>
-                </Animated.View>
-
-                {/* Loading text */}
-                <Text style={styles.loadingText}>Loading</Text>
-
-                {/* Animated dots */}
-                <View style={styles.dotsContainer}>
-                    {dotsAnim.map((dot, index) => (
+                    <SafeAreaView style={styles.safeArea} edges={[]}>
                         <Animated.View
-                            key={index}
                             style={[
-                                styles.dot,
+                                styles.content,
                                 {
-                                    opacity: dot,
-                                    transform: [{
-                                        translateY: dot.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [0, -10],
-                                        }),
-                                    }],
+                                    opacity: fadeAnim,
+                                    transform: [{ scale: scaleAnim }],
                                 },
                             ]}
-                        />
-                    ))}
-                </View>
+                        >
+                            {/* Logo Section */}
+                            <View style={styles.logoSection}>
+                                <Animated.View
+                                    style={[
+                                        styles.logoWrapper,
+                                        { transform: [{ scale: pulseAnim }] },
+                                    ]}
+                                >
+                                    {/* Outer spinner ring */}
+                                    <Animated.View
+                                        style={[
+                                            styles.spinnerRing,
+                                            { transform: [{ rotate: spin }] },
+                                        ]}
+                                    />
+                                    {/* Inner glow circle */}
+                                    <View style={styles.logoCircle}>
+                                        <Text style={styles.logoEmoji}>⛽</Text>
+                                    </View>
+                                </Animated.View>
 
-                {/* Subtitle */}
-                <Text style={styles.subtitle}>Please wait while we prepare everything for you</Text>
-            </Animated.View>
+                                <View style={styles.logoTextContainer}>
+                                    <Text style={styles.logoMainText}>MY GAS</Text>
+                                    <Text style={styles.logoSubText}>MOTORISTA APP</Text>
+                                </View>
+                            </View>
+
+                            {/* Center Content */}
+                            <View style={styles.centerSection}>
+                                <Text style={styles.loadingTitle}>Loading</Text>
+                                <View style={styles.underline} />
+
+                                {/* Dots */}
+                                <View style={styles.dotsContainer}>
+                                    {dotsAnim.map((dot, index) => (
+                                        <Animated.View
+                                            key={index}
+                                            style={[
+                                                styles.dot,
+                                                {
+                                                    opacity: dot,
+                                                    transform: [{
+                                                        translateY: dot.interpolate({
+                                                            inputRange: [0, 1],
+                                                            outputRange: [0, -8],
+                                                        }),
+                                                    }],
+                                                },
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+
+                                <Text style={styles.subtitle}>
+                                    Please wait while we prepare everything for you
+                                </Text>
+                            </View>
+
+                            {/* Progress Bar */}
+                            <View style={styles.progressSection}>
+                                <View style={styles.progressBarTrack}>
+                                    <Animated.View
+                                        style={[
+                                            styles.progressBarFill,
+                                            { width: shimmerWidth },
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={styles.progressLabel}>Fueling up...</Text>
+                            </View>
+
+                        </Animated.View>
+                    </SafeAreaView>
+                </LinearGradient>
+            </ImageBackground>
         </View>
     );
 };
 
-const styles = {
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
-        justifyContent: 'center',
+        backgroundColor: '#8B2C2E',
+    },
+    backgroundImage: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+    },
+    gradient: {
+        flex: 1,
+    },
+    safeArea: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: isSmallDevice ? 20 : 28,
+        paddingTop: 60,
+        paddingBottom: 40,
+        justifyContent: 'space-between',
         alignItems: 'center',
+    },
+
+    // Logo
+    logoSection: {
+        alignItems: 'center',
+        gap: 16,
+    },
+    logoWrapper: {
+        width: isSmallDevice ? 110 : 130,
+        height: isSmallDevice ? 110 : 130,
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
     },
-    backgroundOverlay: {
+    spinnerRing: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'radial-gradient(circle at center, rgba(236, 29, 36, 0.1) 0%, rgba(255, 241, 0, 0.05) 50%, transparent 100%)',
+        width: '100%',
+        height: '100%',
+        borderRadius: isSmallDevice ? 55 : 65,
+        borderWidth: 3,
+        borderColor: 'transparent',
+        borderTopColor: '#FFFFFF',
+        borderRightColor: 'rgba(255,255,255,0.4)',
     },
-    contentContainer: {
+    logoCircle: {
+        width: isSmallDevice ? 86 : 100,
+        height: isSmallDevice ? 86 : 100,
+        borderRadius: isSmallDevice ? 43 : 50,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 40,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
     },
-    spinnerContainer: {
-        marginBottom: 40,
+    logoEmoji: {
+        fontSize: isSmallDevice ? 36 : 42,
     },
-    spinner: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 4,
-        borderColor: 'rgba(255, 241, 0, 0.3)',
-        borderTopColor: '#ec1d24',
-        borderRightColor: '#fff100',
-        backgroundColor: 'transparent',
-        position: 'relative',
+    logoTextContainer: {
+        alignItems: 'center',
     },
-    spinnerInner: {
-        position: 'absolute',
-        top: 8,
-        left: 8,
-        right: 8,
-        bottom: 8,
-        borderRadius: 32,
-        backgroundColor: 'rgba(236, 29, 36, 0.1)',
+    logoMainText: {
+        fontSize: isSmallDevice ? 28 : 34,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        letterSpacing: 2,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
-    loadingText: {
-        fontSize: 28,
-        fontWeight: '600',
-        color: '#ffffff',
-        marginBottom: 10,
+    logoSubText: {
+        fontSize: isSmallDevice ? 10 : 11,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        letterSpacing: 3,
+        opacity: 0.9,
+        marginTop: 2,
+    },
+
+    // Center
+    centerSection: {
+        alignItems: 'center',
+    },
+    loadingTitle: {
+        fontSize: isSmallDevice ? 32 : isLargeDevice ? 42 : 38,
+        fontWeight: '900',
+        color: '#FFFFFF',
         letterSpacing: 1,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
+    },
+    underline: {
+        width: 60,
+        height: 4,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 2,
+        marginTop: 8,
+        marginBottom: 20,
     },
     dotsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 20,
+        gap: 8,
     },
     dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#fff100',
-        marginHorizontal: 4,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#FFFFFF',
     },
     subtitle: {
-        fontSize: 16,
-        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: isSmallDevice ? 14 : 15,
+        color: '#FFFFFF',
         textAlign: 'center',
-        lineHeight: 24,
-        maxWidth: 300,
+        lineHeight: 22,
+        fontWeight: '500',
+        opacity: 0.9,
+        maxWidth: 280,
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
-};
 
-export default LoadingPage;
+    // Progress
+    progressSection: {
+        width: '100%',
+        alignItems: 'center',
+        gap: 10,
+    },
+    progressBarTrack: {
+        width: '100%',
+        height: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 3,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 3,
+        shadowColor: '#FFFFFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
+    },
+    progressLabel: {
+        fontSize: 13,
+        color: '#FFFFFF',
+        fontWeight: '600',
+        letterSpacing: 1,
+        opacity: 0.8,
+    },
+});
+
+export default LoadingScreen;
