@@ -8,6 +8,7 @@
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "splash": {
       "image": "./assets/mygas_splash_screen_logo.png",
       "resizeMode": "contain",
@@ -63,7 +64,8 @@
           "color": "#ffffff"
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      "sentry-expo"
     ],
     "extra": {
       "eas": {

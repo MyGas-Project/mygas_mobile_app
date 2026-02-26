@@ -14,7 +14,7 @@ import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import ConnectionLoss from "../screens/ConnectionLoss";
 import LoadingPage from "../components/LoadingState";
-import { AUTH_URL, BASE_URL } from "../config";
+import { AUTH_URL, BASE_URL, processResponse } from "../config";
 import ServerMaintenance from "../screens/ServerBusy";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
 import TermsCondition from "../screens/TermsCondition";
@@ -33,6 +33,7 @@ import QRCustomer from "../screens/QRCustomer";
 import UpdateModal from "./UpdateModal";
 import DeviceInfo from "react-native-device-info";
 import VersionChecking from "../service/VersionChecking";
+import { Platform } from "react-native";
 
 const Stack = createNativeStackNavigator();
 
@@ -66,25 +67,24 @@ export default function Navigation() {
   useEffect(() => {
     const checkVersion = async () => {
       try {
+        const res = await fetch(`${AUTH_URL}app-configuration`);
+        const { data, statusCode } = await processResponse(res);
 
-        const response = await fetch(`${AUTH_URL}app-config`);
-        const data = await response.json();
+        if (statusCode !== 200) return;
 
-        const minVersion = data?.min_required_version;
-        const currentVersion = DeviceInfo.getVersion();
-        console.log("current version: ", currentVersion);
+        const config = data?.message?.[Platform.OS];
+        if (!config) return;
 
-        if (VersionChecking(currentVersion, minVersion)) {
-          // setForceUpdate(true);
-          if (response.force_update) {
-            setForceUpdate(true);
-          }
-          setStoreUrl(
-            Platform.OS === 'ios'
-              ? data.store_url_ios
-              : data.store_url_android
-          );
-        }
+        const current = DeviceInfo.getVersion();
+        const latest = config?.[`${Platform.OS}_app_ver`];
+        const url = config?.track_view_url;
+
+        if (!latest || !url) return;
+        if (!VersionChecking(latest, current)) return;
+
+        console.log(`Update required: ${latest} > ${current}`);
+        setStoreUrl(url);
+        // setForceUpdate(true);
       } catch (err) {
         console.log("Version check failed:", err);
       }
@@ -99,11 +99,11 @@ export default function Navigation() {
   }
 
   if (forceUpdate) {
-    // return <UpdateModal
-    //   visible={true}
-    //   onClose={() => { }}
-    //   storeUrl={""}
-    // />
+    return <UpdateModal
+      visible={true}
+      onClose={() => { }}
+      storeUrl={storeUrl}
+    />
   }
 
   return (

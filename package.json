@@ -42,8 +42,8 @@
     "react-native-dropdown-picker": "^5.4.6",
     "react-native-dropdown-select-list": "^2.0.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-maps": "1.20.1",
     "react-native-neat-date-picker": "^1.6.0",
+    "react-native-otp-entry": "^1.8.5",
     "react-native-qrcode-svg": "^6.3.20",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
@@ -51,7 +51,8 @@
     "react-native-svg": "15.12.1",
     "react-native-view-shot": "4.0.3",
     "react-native-web": "^0.21.0",
-    "react-native-worklets": "0.5.1"
+    "react-native-worklets": "0.5.1",
+    "sentry-expo": "~7.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -79,8 +79,9 @@ export default function NewsScreen({ navigation }) {
   };
 
   // Transform API data to match component structure
-  const newsData = blogs.map(blog => {
+  const newsData = blogs?.map(blog => {
     const { tag, color } = getRandomTagAndColor();
+    console.log(blog);
     return {
       id: blog.id.toString(),
       title: blog.title,

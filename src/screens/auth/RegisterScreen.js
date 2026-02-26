@@ -25,6 +25,7 @@ import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AgreementScreen from "../AgreementScreen";
+import { OtpInput } from "react-native-otp-entry";
 
 const Stack = createNativeStackNavigator();
 const { width, height } = Dimensions.get("window");
@@ -41,6 +42,9 @@ const Step1 = ({ navigation }) => {
   const [date, setDate] = useState(new Date());
   const [showTooltip, setShowTooltip] = useState(false);
   const [errors, setErrors] = useState({});
+  const [birthYear, setBirthYear] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthDay, setBirthDay] = useState("");
 
   const validateForm = () => {
     const newErrors = {};
@@ -60,6 +64,19 @@ const Step1 = ({ navigation }) => {
   const handleNext = () => {
     if (validateForm()) {
       navigation.navigate("Step2", { Batch1Form });
+    }
+  };
+
+  const updateBirthDate = (year, month, day) => {
+    if (year.length === 4 && month && day) {
+      const formattedMonth = month.padStart(2, "0");
+      const formattedDay = day.padStart(2, "0");
+      setBatch1Form({
+        ...Batch1Form,
+        birthDate: `${year}-${formattedMonth}-${formattedDay}`,
+      });
+    } else {
+      setBatch1Form({ ...Batch1Form, birthDate: null });
     }
   };
 
@@ -232,10 +249,12 @@ const Step1 = ({ navigation }) => {
                           { width: "30%" },
                           // errors.lastName && responsiveStyles.inputError
                         ]}
-                        value={""}
+                        value={birthYear}
+                        maxLength={4}
                         keyboardType="numeric"
-                        onChangeText={(year) => {
-
+                        onChangeText={(text) => {
+                          setBirthYear(text);
+                          updateBirthDate(text, birthMonth, birthDay);
                         }}
                         placeholder="Year"
                         placeholderTextColor="rgba(255, 255, 255, 0.5)" />
@@ -245,10 +264,12 @@ const Step1 = ({ navigation }) => {
                           { width: "30%" },
                           // errors.lastName && responsiveStyles.inputError
                         ]}
-                        value={""}
+                        value={birthMonth}
+                        maxLength={2}
                         keyboardType="numeric"
-                        onChangeText={(month) => {
-
+                        onChangeText={(text) => {
+                          setBirthMonth(text);
+                          updateBirthDate(birthYear, text, birthDay);
                         }}
                         placeholder="Month"
                         placeholderTextColor="rgba(255, 255, 255, 0.5)" />
@@ -258,10 +279,12 @@ const Step1 = ({ navigation }) => {
                           { width: "30%" },
                           // errors.lastName && responsiveStyles.inputError
                         ]}
-                        value={""}
+                        value={birthDay}
+                        maxLength={2}
                         keyboardType="numeric"
-                        onChangeText={(day) => {
-
+                        onChangeText={(text) => {
+                          setBirthDay(text);
+                          updateBirthDate(birthYear, birthMonth, text);
                         }}
                         placeholder="Day"
                         placeholderTextColor="rgba(255, 255, 255, 0.5)" />
@@ -302,7 +325,7 @@ const Step1 = ({ navigation }) => {
 
 const Step2 = ({ navigation, route }) => {
   const { styles, currentTheme } = useTheme();
-  const { Batch1Form } = route.params;
+  const { Batch1Form } = route?.params || {};
   const [batch1Final, setBatch1Final] = useState(Batch1Form);
   const { registerStep1 } = useContext(AuthContext);
   const [loadingState, setLoadingState] = useState(false);
@@ -333,11 +356,13 @@ const Step2 = ({ navigation, route }) => {
     setLoadingState(true);
     const { statusCode, data } = await registerStep1(batch1Final);
 
+    console.log(data);
     if (statusCode == 201) {
       setLoadingState(false);
       navigation.navigate("Step3", { data: data, batch1form: batch1Final });
     } else {
       setLoadingState(false);
+      setBatch1Final({ ...batch1Final, mobileNumber: '' });
       Alert.alert("Error", data.message);
     }
   };
@@ -452,9 +477,9 @@ const Step2 = ({ navigation, route }) => {
 
 const Step3 = ({ navigation, route }) => {
   const { styles, currentTheme, mainTheme } = useTheme();
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [code, setCode] = useState(null);
   const inputs = useRef([]);
-  const { data, batch1form } = route.params;
+  const { data, batch1form } = route?.params || {};
   const { verifyCode } = useContext(AuthContext);
   const [loadingState, setLoadingState] = useState(false);
 
@@ -530,7 +555,25 @@ const Step3 = ({ navigation, route }) => {
 
                 <View style={responsiveStyles.formWrapper}>
                   <View style={responsiveStyles.codeContainer}>
-                    {code.map((digit, index) => (
+                    <OtpInput
+                      numberOfDigits={6}
+                      // onTextChange={(text) => console.log(text)}
+                      onFilled={(text) => setCode(text)}
+                      focusColor="orange"
+                      autoFocus={true}
+                      textInputProps={{
+                        accessibilityLabel: "One-Time Password",
+                      }}
+                      textProps={{
+                        accessibilityRole: "text",
+                        accessibilityLabel: "OTP digit",
+                        allowFontScaling: false,
+                      }}
+                      theme={{
+                        pinCodeContainerStyle: responsiveStyles.codeInputFilled,
+                      }}
+                    />
+                    {/* {code.map((digit, index) => (
                       <TextInput
                         key={index}
                         ref={(ref) => (inputs.current[index] = ref)}
@@ -544,7 +587,7 @@ const Step3 = ({ navigation, route }) => {
                         onChangeText={(text) => handleChange(text, index)}
                         onKeyPress={(e) => handleKeyPress(e, index)}
                       />
-                    ))}
+                    ))} */}
                   </View>
 
                   <View style={responsiveStyles.buttonGroup}>

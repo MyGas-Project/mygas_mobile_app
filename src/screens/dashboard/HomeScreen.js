@@ -183,8 +183,6 @@ export default function HomeScreen({ navigation }) {
         },
       }).then(processResponse).then((res) => {
         const { statusCode, data } = res;
-        // console.log("user details: ", data.result);
-        // console.log(userInfo);
         setRewardsInfo(data.result);
       }).catch(error => {
         console.error(error);
@@ -203,7 +201,7 @@ export default function HomeScreen({ navigation }) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${userInfo.token}`,
+            Authorization: `Bearer ${userInfo?.token}`,
           },
         }
       );
@@ -225,17 +223,13 @@ export default function HomeScreen({ navigation }) {
   const loadAllData = async () => {
     setIsLoading(true);
     try {
-      // Wait for all API calls to complete
       await Promise.all([
         fetchRewards(),
         refreshPoints?.()
-        // Add other API calls here if needed
-        // fetchOtherData(),
       ]);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
-      // Add a minimum loading time for better UX
       setTimeout(() => {
         setIsLoading(false);
       }, 800);
@@ -278,7 +272,6 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     loadAllData();
     getAllProducts();
-    // console.log(userDetails);
   }, []);
 
   return (
@@ -514,27 +507,15 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
 
-                {/* Promotional Banner */}
-                <View style={custom_styles.promoBanner}>
-                  <LinearGradient
-                    colors={['#FFD93D', '#E0B820']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={custom_styles.promoGradient}
-                  >
-                    <View style={custom_styles.promoContent}>
-                      <Ionicons name="gift" size={40} color="#FFF" />
-                      <View style={{ flex: 1, marginLeft: 16 }}>
-                        <Text style={custom_styles.promoTitle}>
-                          Special Offer!
-                        </Text>
-                        <Text style={custom_styles.promoText}>
-                          Get 2x points on your next visit
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={24} color="#FFF" />
-                    </View>
-                  </LinearGradient>
+                {/* Promotional Banner - No Active Promos */}
+                <View style={[custom_styles.promoBanner, custom_styles.promoBannerEmpty]}>
+                  <View style={custom_styles.promoEmptyContent}>
+                    <Ionicons name="pricetag-outline" size={36} color="#CCC" />
+                    <Text style={custom_styles.promoEmptyTitle}>No Active Promo Offers</Text>
+                    <Text style={custom_styles.promoEmptyText}>
+                      Check back later for exciting deals! 🎉
+                    </Text>
+                  </View>
                 </View>
 
                 {userInfo?.is_guest == 1 ? (
@@ -1054,10 +1035,34 @@ const custom_styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     elevation: 4,
-    shadowColor: "#E0B820",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.08,
     shadowRadius: 8
+  },
+  promoBannerEmpty: {
+    backgroundColor: "#FFF",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+  },
+  promoEmptyContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+  },
+  promoEmptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#999",
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  promoEmptyText: {
+    fontSize: 12,
+    color: "#BBB",
+    textAlign: "center",
   },
   promoGradient: {
     padding: 20

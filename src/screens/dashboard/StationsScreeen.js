@@ -37,7 +37,7 @@ const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 414;
 const isLargeDevice = SCREEN_WIDTH >= 414;
 const isTablet = SCREEN_WIDTH >= 768;
 
-export default function StationsScreen() {
+export default function StationsScreen({ navigation }) {
   const { userInfo, userDetails } = useContext(AuthContext);
   const { styles } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
