@@ -330,7 +330,7 @@ export default function SpecificProduct({ visible, product, onClose, onCartUpdat
                             </View>
 
                             {/* Product Description */}
-                            {/* <Text style={styles.productDescription}>{product.description}</Text> */}
+                            <Text style={styles.productDescription}>{product.description}</Text>
 
                             {/* Promo Information */}
                             {product.isWeeklyPromo && (

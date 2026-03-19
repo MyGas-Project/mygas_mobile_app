@@ -148,9 +148,9 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
         <Text style={styles.productName} numberOfLines={2}>
           {product.name}
         </Text>
-        {/* <Text style={styles.productDescription} numberOfLines={2}>
+        <Text style={styles.productDescription} numberOfLines={2}>
           {product.description}
-        </Text> */}
+        </Text>
 
         {/* Promo Date Display */}
         {product.isWeeklyPromo && promoDateText && (
