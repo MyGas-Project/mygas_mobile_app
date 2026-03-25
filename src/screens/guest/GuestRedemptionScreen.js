@@ -71,7 +71,7 @@ export default function GuestRedemptionScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Enhanced Header */}
-      <ImageBackground
+      {/* <ImageBackground
         resizeMode="stretch"
         source={require('../../../assets/mygas-header.jpeg')}
         style={styles.header}
@@ -90,7 +90,7 @@ export default function GuestRedemptionScreen({ navigation }) {
         <View style={{ position: 'absolute', right: 0, top: 0 }}>
           <Navbar hideBack />
         </View>
-      </ImageBackground>
+      </ImageBackground> */}
 
       <ScrollView
         style={styles.scrollContainer}

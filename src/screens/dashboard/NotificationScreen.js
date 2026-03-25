@@ -374,7 +374,7 @@ const NotificationScreen = ({ nav }) => {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <Animated.View style={{ opacity: headerOpacity }}>
+      {/* <Animated.View style={{ opacity: headerOpacity }}>
         <ImageBackground
           resizeMode="stretch"
           source={require("../../../assets/mygas-header.jpeg")}
@@ -395,7 +395,11 @@ const NotificationScreen = ({ nav }) => {
             onNotifPress={() => console.log("Notifications tapped")}
           />
         </ImageBackground>
-      </Animated.View>
+      </Animated.View> */}
+      <Navbar
+        onProfilePress={() => console.log("Profile tapped")}
+        onNotifPress={() => console.log("Notifications tapped")}
+      />
 
       {/* Main Content */}
       <Animated.View
@@ -449,7 +453,7 @@ const NotificationScreen = ({ nav }) => {
       </Animated.View>
     </View>
   );
-}; 
+};
 
 const custom_styles = StyleSheet.create({
   container: {

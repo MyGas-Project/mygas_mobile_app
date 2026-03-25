@@ -268,7 +268,7 @@ const ProfileScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ImageBackground
+      {/* <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
         style={profile_styles.top_bar}
@@ -284,7 +284,8 @@ const ProfileScreen = () => {
           style={profile_styles.logo}
         />
         <Navbar />
-      </ImageBackground>
+      </ImageBackground> */}
+      <Navbar />
 
       <Animated.View
         style={[

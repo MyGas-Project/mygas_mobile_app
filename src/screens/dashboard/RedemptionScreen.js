@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useContext, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useContext, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  Animated,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -224,6 +226,11 @@ export default function RedemptionScreen({ navigation }) {
   const [stationFilterProduct, setStationFilterProduct] = useState(null);
   const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
+  // ✅ FIX: Only keep headerOpacity animation — removed cardContainerTranslateY
+  // which was the cause of the header being cut and rounded corners disappearing on scroll
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0.8], extrapolate: "clamp" });
+
   // Update the refreshCartCount function:
   const refreshCartCount = useCallback(async () => {
     try {
@@ -251,7 +258,6 @@ export default function RedemptionScreen({ navigation }) {
     useCallback(() => {
       refreshCartCount();
       getRedemptionCount();
-      // refreshPoints?.();
     }, [refreshCartCount])
   );
 
@@ -276,9 +282,7 @@ export default function RedemptionScreen({ navigation }) {
 
       const res = await processResponse(response);
       const { statusCode, data } = res;
-      // console.log("getAllProducts: ", statusCode);
       if (statusCode === 200) {
-        // Transform API data to match the expected format
         const transformedProducts = data.data.inventories.map((item) => ({
           id: item.inventory_id,
           name: item.name,
@@ -286,7 +290,7 @@ export default function RedemptionScreen({ navigation }) {
           points: item.promo_points || item.points || 0,
           originalPoints: item.promo_points ? item.points : null,
           image: item.image_path,
-          category: "Products", // You can add category logic here if available from API
+          category: "Products",
           quantity: parseFloat(item.total_quantity) || 0,
           isWeeklyPromo: item.is_weekly_promo === 1 && item.promo_points !== null,
           promoDescription: item.promo_descriptions,
@@ -311,15 +315,11 @@ export default function RedemptionScreen({ navigation }) {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      // Category filter
       const categoryMatch = selectedCategory === "All" || product.category === selectedCategory;
-
-      // Search filter
       const searchMatch = searchQuery === "" ||
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Price range filter
       let priceMatch = true;
       if (filters.priceRange === "under1000") {
         priceMatch = product.points < 1000;
@@ -329,7 +329,6 @@ export default function RedemptionScreen({ navigation }) {
         priceMatch = product.points > 2500;
       }
 
-      // Stock status filter
       let stockMatch = true;
       if (filters.stockStatus === "inStock") {
         stockMatch = product.quantity > 5;
@@ -337,7 +336,6 @@ export default function RedemptionScreen({ navigation }) {
         stockMatch = product.quantity > 0 && product.quantity <= 5;
       }
 
-      // Promo filter
       const promoMatch = !filters.promoOnly || product.isWeeklyPromo;
 
       return categoryMatch && searchMatch && priceMatch && stockMatch && promoMatch;
@@ -389,7 +387,6 @@ export default function RedemptionScreen({ navigation }) {
 
       const res = await processResponse(response);
       const { statusCode } = res;
-      // console.log(res);
 
       if (statusCode === 200) {
         Alert.alert(
@@ -405,9 +402,7 @@ export default function RedemptionScreen({ navigation }) {
                 await clearAllCartItems();
                 setCartCount(0);
                 await AsyncStorage.removeItem("stationSelected");
-                // Clear the local state
                 setSelectedStation(null);
-                // setProducts([]);
                 setLoading(false);
                 getAllProducts();
               }
@@ -416,68 +411,10 @@ export default function RedemptionScreen({ navigation }) {
         );
       } else {
         await AsyncStorage.removeItem("stationSelected");
-        // Clear the local state
         setSelectedStation(null);
-        // setProducts([]);
         setLoading(false);
         getAllProducts();
       }
-      // if (selectedStation !== null) {
-      //   Alert.alert(
-      //     'Notice',
-      //     'Are you sure you want to change station? all carts that have been saved will be cleared out',
-      //     [
-      //       { text: 'Cancel', style: 'cancel' },
-      //       {
-      //         text: 'Proceed',
-      //         style: 'destructive',
-      //         onPress: async () => {
-      //           try {
-      //             const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
-      //               method: "DELETE",
-      //               headers: {
-      //                 "Content-Type": "application/json",
-      //                 Accept: "application/json",
-      //                 Authorization: `Bearer ${userInfo.token}`,
-      //               },
-      //               body: JSON.stringify({
-      //                 bar_code: userDetails.bar_code,
-      //               })
-      //             });
-
-      //             const res = await processResponse(response);
-      //             const { statusCode } = res;
-      //             // console.log(res);
-
-      //             if (statusCode === 200) {
-      //               // Clear localStorage
-      //               await AsyncStorage.removeItem('carts');
-      //               await clearAllCartItems();
-      //               setCartCount(0);
-      //             }
-      //             await AsyncStorage.removeItem("stationSelected");
-      //             // Clear the local state
-      //             setSelectedStation(null);
-      //             // setProducts([]);
-      //             setLoading(false);
-      //             getAllProducts();
-      //           } catch (error) {
-      //             setLoading(false);
-      //             console.error(error);
-      //           }
-      //         }
-      //       }
-      //     ]
-      //   );
-      // } else {
-      //   await AsyncStorage.removeItem("stationSelected");
-      //   // Clear the local state
-      //   setSelectedStation(null);
-      //   // setProducts([]);
-      //   setLoading(false);
-      //   getAllProducts();
-      // }
-      // console.log("Station cleared successfully");
     } catch (error) {
       console.error("Error clearing station:", error);
     }
@@ -515,12 +452,9 @@ export default function RedemptionScreen({ navigation }) {
               text: 'Proceed',
               style: 'destructive',
               onPress: async () => {
-                // Clear the cached station from AsyncStorage
                 await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
                 setSelectedStation(data.station);
                 getAllProducts(data.station);
-
-                // Clear localStorage
                 await AsyncStorage.removeItem('carts');
                 await clearAllCartItems();
                 setCartCount(0);
@@ -529,7 +463,6 @@ export default function RedemptionScreen({ navigation }) {
           ]
         );
       } else {
-        // Clear the cached station from AsyncStorage
         await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
         setSelectedStation(data.station);
         getAllProducts(data.station);
@@ -537,7 +470,6 @@ export default function RedemptionScreen({ navigation }) {
     } catch (error) {
       console.error(error);
     }
-
   }, []);
 
   const renderProductItem = useCallback(({ item }) => (
@@ -561,7 +493,6 @@ export default function RedemptionScreen({ navigation }) {
           setSelectedStation(stationSelected);
           getAllProducts(stationSelected);
         } else {
-          // No cached station, just stop loading
           getAllProducts();
           setLoading(false);
         }
@@ -578,345 +509,321 @@ export default function RedemptionScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Enhanced Header */}
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.header}
-      >
-
-        <LinearGradient
-          colors={["rgba(249, 250, 141, 0.95)", "rgba(249, 250, 141, 0.7)", "transparent"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.headerGradient}
-        />
-
-        <Image
-          source={require("../../../assets/mygas_logo.png")}
-          style={styles.logo}
-        />
-        <View style={{ position: "absolute", right: 0, top: 0 }}>
-          <Navbar hideBack />
-        </View>
-      </ImageBackground>
-
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.contentContainer}>
-          {/* Low Points Alert */}
-          {userPoints < 10 && (
-            <View style={styles.lowPointsAlert}>
-              <LinearGradient
-                colors={["#FEE2E2", "#FECACA"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.lowPointsGradient}
-              >
-                <Ionicons name="warning" size={18} color="#DC2626" />
-                <Text style={styles.lowPointsText}>You have low points</Text>
-              </LinearGradient>
-            </View>
+      <View style={styles.cardContainer}>
+        <Animated.ScrollView
+          style={{ flex: 1, width: "100%" }}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
           )}
-
-          {/* Enhanced Points Display */}
-          <View style={styles.pointsCardContainer}>
-            <View style={styles.pointsCard}>
-              <LinearGradient
-                colors={["#FEF3C7", "#FDE68A"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.pointsGradient}
-              >
-                <View style={styles.pointsContent}>
-                  <View>
-                    <Text style={styles.pointsTitle}>Available Points</Text>
-                    <View style={styles.pointsValueContainer}>
-                      <Image
-                        source={require("../../../assets/my.png")}
-                        style={styles.pointsIcon}
-                      />
-                      <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.pointsIconContainer}>
-                    <Ionicons name="wallet" size={32} color="#F59E0B" />
-                  </View>
-                </View>
-              </LinearGradient>
-            </View>
-
-            <View style={styles.myRedemptionButtonWrapper}>
-              {redemptionCount > 0 && (
-                <View style={styles.redemptionBadgeContainer}>
-                  <LinearGradient
-                    colors={["#FBBF24", "#F59E0B"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.redemptionBadge}
-                  >
-                    <Text style={styles.redemptionBadgeText}>
-                      {redemptionCount > 99 ? '99+' : redemptionCount}
-                    </Text>
-                  </LinearGradient>
-                </View>
-              )}
-              <TouchableOpacity
-                style={styles.myRedemptionButton}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate("RedemptionTransactionScreens")}
-              >
+          scrollEventThrottle={16}
+        >
+          <View style={styles.contentContainer}>
+            {/* Low Points Alert */}
+            {userPoints < 10 && (
+              <View style={styles.lowPointsAlert}>
                 <LinearGradient
-                  colors={["#EF4444", "#DC2626"]}
+                  colors={["#FEE2E2", "#FECACA"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.lowPointsGradient}
+                >
+                  <Ionicons name="warning" size={18} color="#DC2626" />
+                  <Text style={styles.lowPointsText}>You have low points</Text>
+                </LinearGradient>
+              </View>
+            )}
+
+            <View style={styles.pointsCardContainer}>
+              <View style={styles.pointsCard}>
+                <LinearGradient
+                  colors={["#FEF3C7", "#FDE68A"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.myRedemptionGradient}
+                  style={styles.pointsGradient}
                 >
-                  <Ionicons name="gift" size={24} color="#fff" />
-                  <Text style={styles.myRedemptionText}>My Redemption</Text>
+                  <View style={styles.pointsContent}>
+                    <View>
+                      <Text style={styles.pointsTitle}>Available Points</Text>
+                      <View style={styles.pointsValueContainer}>
+                        <Image
+                          source={require("../../../assets/my.png")}
+                          style={styles.pointsIcon}
+                        />
+                        <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.pointsIconContainer}>
+                      <Ionicons name="wallet" size={32} color="#F59E0B" />
+                    </View>
+                  </View>
                 </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
+              </View>
 
-          {/* Station Selection Section */}
-          <TouchableOpacity
-            style={styles.stationSelectionCard}
-            onPress={() => setShowStationModal(true)}
-            activeOpacity={0.7}
-          >
-            <LinearGradient
-              colors={selectedStation ? ["#FEE2E2", "#FEF2F2"] : ["#F3F4F6", "#F9FAFB"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.stationSelectionGradient}
+              <View style={styles.myRedemptionButtonWrapper}>
+                {redemptionCount > 0 && (
+                  <View style={styles.redemptionBadgeContainer}>
+                    <LinearGradient
+                      colors={["#FBBF24", "#F59E0B"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.redemptionBadge}
+                    >
+                      <Text style={styles.redemptionBadgeText}>
+                        {redemptionCount > 99 ? '99+' : redemptionCount}
+                      </Text>
+                    </LinearGradient>
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.myRedemptionButton}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+                >
+                  <LinearGradient
+                    colors={["#EF4444", "#DC2626"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.myRedemptionGradient}
+                  >
+                    <Ionicons name="gift" size={24} color="#fff" />
+                    <Text style={styles.myRedemptionText}>My Redemption</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.stationSelectionCard}
+              onPress={() => setShowStationModal(true)}
+              activeOpacity={0.7}
             >
-              <View style={styles.stationSelectionContent}>
-                <View style={[
-                  styles.stationIconContainer,
-                  selectedStation && styles.stationIconContainerActive
-                ]}>
+              <LinearGradient
+                colors={selectedStation ? ["#FEE2E2", "#FEF2F2"] : ["#F3F4F6", "#F9FAFB"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.stationSelectionGradient}
+              >
+                <View style={styles.stationSelectionContent}>
+                  <View style={[
+                    styles.stationIconContainer,
+                    selectedStation && styles.stationIconContainerActive
+                  ]}>
+                    <Ionicons
+                      name="location"
+                      size={24}
+                      color={selectedStation ? "#EF4444" : "#9CA3AF"}
+                    />
+                  </View>
+                  <View style={styles.stationTextContainer}>
+                    <Text style={styles.stationLabel}>Redemption Station</Text>
+                    {selectedStation ? (
+                      <View style={styles.selectedStationInfo}>
+                        <Text style={styles.selectedStationName} numberOfLines={1}>
+                          {selectedStation.station_name}
+                        </Text>
+                        <View style={styles.selectedStationBadge}>
+                          <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                          <Text style={styles.selectedStationBadgeText}>Selected</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={styles.stationPlaceholder}>
+                        Tap to select your preferred station
+                      </Text>
+                    )}
+                  </View>
                   <Ionicons
-                    name="location"
-                    size={24}
+                    name="chevron-forward"
+                    size={20}
                     color={selectedStation ? "#EF4444" : "#9CA3AF"}
                   />
                 </View>
-                <View style={styles.stationTextContainer}>
-                  <Text style={styles.stationLabel}>Redemption Station</Text>
-                  {selectedStation ? (
-                    <View style={styles.selectedStationInfo}>
-                      <Text style={styles.selectedStationName} numberOfLines={1}>
-                        {selectedStation.station_name}
-                      </Text>
-                      <View style={styles.selectedStationBadge}>
-                        <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                        <Text style={styles.selectedStationBadgeText}>Selected</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <Text style={styles.stationPlaceholder}>
-                      Tap to select your preferred station
-                    </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <View style={styles.productsSection}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>All Rewards</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Browse and redeem exciting rewards
+                  </Text>
+                </View>
+                <View style={styles.productCountBadge}>
+                  <Text style={styles.productCountText}>
+                    {filteredProducts.length} items
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.searchContainer}>
+                <View style={styles.searchInputWrapper}>
+                  <Ionicons name="search" size={20} color="#9CA3AF" />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search rewards..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  {searchQuery !== "" && (
+                    <TouchableOpacity onPress={() => setSearchQuery("")}>
+                      <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
                   )}
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={selectedStation ? "#EF4444" : "#9CA3AF"}
-                />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
 
-          {/* Products Section */}
-          <View style={styles.productsSection}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>All Rewards</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Browse and redeem exciting rewards
-                </Text>
-              </View>
-              <View style={styles.productCountBadge}>
-                <Text style={styles.productCountText}>
-                  {filteredProducts.length} items
-                </Text>
-              </View>
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchInputWrapper}>
-                <Ionicons name="search" size={20} color="#9CA3AF" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search rewards..."
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery !== "" && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")}>
-                    <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
-                onPress={() => setShowFilters(true)}
-              >
-                <Ionicons
-                  name="options"
-                  size={20}
-                  color={hasActiveFilters ? "#fff" : "#374151"}
-                />
-                {hasActiveFilters && (
-                  <View style={styles.filterDot} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <View style={styles.activeFiltersContainer}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.activeFiltersScroll}
+                <TouchableOpacity
+                  style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+                  onPress={() => setShowFilters(true)}
                 >
-                  {filters.priceRange !== "all" && (
-                    <View style={styles.activeFilterChip}>
-                      <Text style={styles.activeFilterText}>
-                        {filters.priceRange === "under1000" && "Under 1,000 pts"}
-                        {filters.priceRange === "1000to2500" && "1,000-2,500 pts"}
-                        {filters.priceRange === "over2500" && "Over 2,500 pts"}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setFilters({ ...filters, priceRange: "all" })}
-                      >
-                        <Ionicons name="close" size={14} color="#6B7280" />
-                      </TouchableOpacity>
-                    </View>
+                  <Ionicons
+                    name="options"
+                    size={20}
+                    color={hasActiveFilters ? "#fff" : "#374151"}
+                  />
+                  {hasActiveFilters && (
+                    <View style={styles.filterDot} />
                   )}
-
-                  {filters.stockStatus !== "all" && (
-                    <View style={styles.activeFilterChip}>
-                      <Text style={styles.activeFilterText}>
-                        {filters.stockStatus === "inStock" && "In Stock"}
-                        {filters.stockStatus === "lowStock" && "Low Stock"}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setFilters({ ...filters, stockStatus: "all" })}
-                      >
-                        <Ionicons name="close" size={14} color="#6B7280" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {filters.promoOnly && (
-                    <View style={styles.activeFilterChip}>
-                      <Text style={styles.activeFilterText}>Promo Items</Text>
-                      <TouchableOpacity
-                        onPress={() => setFilters({ ...filters, promoOnly: false })}
-                      >
-                        <Ionicons name="close" size={14} color="#6B7280" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  <TouchableOpacity
-                    style={styles.clearFiltersButton}
-                    onPress={clearFilters}
-                  >
-                    <Text style={styles.clearFiltersText}>Clear All</Text>
-                  </TouchableOpacity>
-                </ScrollView>
+                </TouchableOpacity>
               </View>
-            )}
 
-            {/* Enhanced Category Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoriesScroll}
-              contentContainerStyle={styles.categoriesContainer}
-            >
-              {categories.map((category) => {
-                const categoryCount = products.filter(p =>
-                  category === "All" || p.category === category
-                ).length;
-
-                return (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.categoryChip,
-                      selectedCategory === category && styles.categoryChipActive,
-                    ]}
-                    onPress={() => setSelectedCategory(category)}
-                    activeOpacity={0.7}
+              {hasActiveFilters && (
+                <View style={styles.activeFiltersContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.activeFiltersScroll}
                   >
-                    <Text
-                      style={[
-                        styles.categoryChipText,
-                        selectedCategory === category && styles.categoryChipTextActive,
-                      ]}
+                    {filters.priceRange !== "all" && (
+                      <View style={styles.activeFilterChip}>
+                        <Text style={styles.activeFilterText}>
+                          {filters.priceRange === "under1000" && "Under 1,000 pts"}
+                          {filters.priceRange === "1000to2500" && "1,000-2,500 pts"}
+                          {filters.priceRange === "over2500" && "Over 2,500 pts"}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setFilters({ ...filters, priceRange: "all" })}
+                        >
+                          <Ionicons name="close" size={14} color="#6B7280" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {filters.stockStatus !== "all" && (
+                      <View style={styles.activeFilterChip}>
+                        <Text style={styles.activeFilterText}>
+                          {filters.stockStatus === "inStock" && "In Stock"}
+                          {filters.stockStatus === "lowStock" && "Low Stock"}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setFilters({ ...filters, stockStatus: "all" })}
+                        >
+                          <Ionicons name="close" size={14} color="#6B7280" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {filters.promoOnly && (
+                      <View style={styles.activeFilterChip}>
+                        <Text style={styles.activeFilterText}>Promo Items</Text>
+                        <TouchableOpacity
+                          onPress={() => setFilters({ ...filters, promoOnly: false })}
+                        >
+                          <Ionicons name="close" size={14} color="#6B7280" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.clearFiltersButton}
+                      onPress={clearFilters}
                     >
-                      {category}
-                    </Text>
-                    <View style={[
-                      styles.categoryCountBadge,
-                      selectedCategory === category && styles.categoryCountBadgeActive
-                    ]}>
-                      <Text style={[
-                        styles.categoryCountText,
-                        selectedCategory === category && styles.categoryCountTextActive
-                      ]}>
-                        {categoryCount}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Products Grid */}
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#EF4444" />
-                <Text style={styles.loadingText}>Loading products...</Text>
-              </View>
-            ) : filteredProducts.length === 0 ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconContainer}>
-                  <Ionicons name="gift-outline" size={64} color="#D1D5DB" />
+                      <Text style={styles.clearFiltersText}>Clear All</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
                 </View>
-                <Text style={styles.emptyTitle}>No Rewards Available</Text>
-                <Text style={styles.emptySubtitle}>
-                  Check back soon for exciting new rewards!
-                </Text>
-              </View>
-            ) : (
-              <FlatList
-                data={filteredProducts}
-                renderItem={renderProductItem}
-                keyExtractor={keyExtractor}
-                numColumns={getColumnCount()}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.productRow}
-                contentContainerStyle={styles.productsGrid}
-              />
-            )}
-          </View>
-        </View>
-      </ScrollView>
+              )}
 
-      {/* Filter Modal */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.categoriesScroll}
+                contentContainerStyle={styles.categoriesContainer}
+              >
+                {categories.map((category) => {
+                  const categoryCount = products.filter(p =>
+                    category === "All" || p.category === category
+                  ).length;
+
+                  return (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.categoryChip,
+                        selectedCategory === category && styles.categoryChipActive,
+                      ]}
+                      onPress={() => setSelectedCategory(category)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryChipText,
+                          selectedCategory === category && styles.categoryChipTextActive,
+                        ]}
+                      >
+                        {category}
+                      </Text>
+                      <View style={[
+                        styles.categoryCountBadge,
+                        selectedCategory === category && styles.categoryCountBadgeActive
+                      ]}>
+                        <Text style={[
+                          styles.categoryCountText,
+                          selectedCategory === category && styles.categoryCountTextActive
+                        ]}>
+                          {categoryCount}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#EF4444" />
+                  <Text style={styles.loadingText}>Loading products...</Text>
+                </View>
+              ) : filteredProducts.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconContainer}>
+                    <Ionicons name="gift-outline" size={64} color="#D1D5DB" />
+                  </View>
+                  <Text style={styles.emptyTitle}>No Rewards Available</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Check back soon for exciting new rewards!
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={filteredProducts}
+                  renderItem={renderProductItem}
+                  keyExtractor={keyExtractor}
+                  numColumns={getColumnCount()}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.productRow}
+                  contentContainerStyle={styles.productsGrid}
+                />
+              )}
+            </View>
+          </View>
+        </Animated.ScrollView>
+      </View>
+
       <Modal
         visible={showFilters}
         animationType="slide"
@@ -933,7 +840,6 @@ export default function RedemptionScreen({ navigation }) {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {/* Price Range Filter */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Price Range</Text>
                 <View style={styles.filterOptions}>
@@ -970,7 +876,6 @@ export default function RedemptionScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Stock Status Filter */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Stock Status</Text>
                 <View style={styles.filterOptions}>
@@ -1006,7 +911,6 @@ export default function RedemptionScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Promo Filter */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Special Offers</Text>
                 <TouchableOpacity
@@ -1091,6 +995,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
+
+  // ✅ FIX: Removed marginTop: -30 overlap trick and translateY animation.
+  // The card now fills the full screen from top. The header (ImageBackground)
+  // above it handles the visual overlap. overflow: "hidden" ensures rounded
+  // corners are always respected regardless of scroll position.
+  cardContainer: {
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    overflow: "hidden", // ✅ KEY FIX: clips content to rounded corners on scroll
+    position: "relative",
+    zIndex: 1,
+    marginTop: -30, // keeps the overlap with the header image
+  },
+
   header: {
     height: getResponsiveValue(140, 160, 190, 210),
     width: "100%",
@@ -1123,13 +1044,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: getResponsiveValue(40, 50, 60, 70),
   },
+
+  // ✅ FIX: Removed borderTopLeftRadius and borderTopRightRadius from contentContainer.
+  // The cardContainer already handles the rounded corners with overflow: hidden.
+  // Having radius on both caused visual doubling and the inner radius would show
+  // a straight edge on scroll since it was separate from the clipping boundary.
   contentContainer: {
     backgroundColor: "#F9FAFB",
-    borderTopLeftRadius: getResponsiveValue(24, 28, 32, 36),
-    borderTopRightRadius: getResponsiveValue(24, 28, 32, 36),
     paddingHorizontal: getResponsiveValue(16, 20, 28, 36),
     paddingTop: getResponsiveValue(24, 28, 32, 36),
   },
+
   pointsCardContainer: {
     flexDirection: "row",
     gap: getResponsiveValue(12, 14, 16, 18),
@@ -1262,6 +1187,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  stationSelectionCard: {
+    borderRadius: getResponsiveValue(16, 18, 20, 22),
+    overflow: "hidden",
+    marginBottom: getResponsiveValue(20, 24, 28, 32),
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   stationSelectionGradient: {
     padding: getResponsiveValue(18, 20, 22, 24),
@@ -1572,7 +1513,6 @@ const styles = StyleSheet.create({
   productCardDisabled: {
     opacity: 0.6,
   },
-
   imageContainer: {
     position: "relative",
     width: "100%",

@@ -81,11 +81,11 @@ export default function NewsScreen({ navigation }) {
   // Transform API data to match component structure
   const newsData = blogs?.map(blog => {
     const { tag, color } = getRandomTagAndColor();
-    console.log(blog);
+    // console.log("blogs & news: ", blog);
     return {
       id: blog.id.toString(),
       title: blog.title,
-      description: blog.description || blog.content,
+      description: blog.description,
       image: blog.image_path
         ? { uri: blog.image_path }
         : require("../../../assets/lubes-engine.jpg"), // Fallback image
@@ -93,7 +93,8 @@ export default function NewsScreen({ navigation }) {
       color: color,
       date: formatDate(blog.created_at),
       author: blog.author,
-      content: blog.content
+      content: blog.content,
+      category: blog.category_name
     };
   });
 
@@ -218,7 +219,7 @@ export default function NewsScreen({ navigation }) {
       <StatusBar barStyle="light-content" />
 
       {/* Header matching HomeScreen */}
-      <Animated.View style={{ opacity: headerOpacity }}>
+      {/* <Animated.View style={{ opacity: headerOpacity }}>
         <ImageBackground
           resizeMode="stretch"
           source={require("../../../assets/mygas-header.jpeg")}
@@ -240,7 +241,7 @@ export default function NewsScreen({ navigation }) {
             onNotifPress={() => console.log("Notifications tapped")}
           />
         </ImageBackground>
-      </Animated.View>
+      </Animated.View> */}
 
       {/* Main Content */}
       <Animated.View

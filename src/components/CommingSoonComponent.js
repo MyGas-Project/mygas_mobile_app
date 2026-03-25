@@ -33,7 +33,7 @@ export default function CommingSoonScreen({ navigation, route }) {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <ImageBackground
+            {/* <ImageBackground
                 resizeMode="stretch"
                 source={require('../../assets/mygas-header.jpeg')}
                 style={styles.header}
@@ -53,7 +53,7 @@ export default function CommingSoonScreen({ navigation, route }) {
                 <View style={styles.navbarContainer}>
                     <Navbar hideBack={true} />
                 </View>
-            </ImageBackground>
+            </ImageBackground> */}
 
             {/* Content */}
             <ScrollView

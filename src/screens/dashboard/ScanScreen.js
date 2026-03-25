@@ -32,23 +32,11 @@ export default function ScanScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
-      <ImageBackground
-        resizeMode="stretch"
-        source={require("../../../assets/mygas-header.jpeg")}
-        style={styles.top_bar}
-      >
-        <LinearGradient
-          colors={["rgb(249, 250, 141)", "transparent"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1.4 }}
-          style={{ position: "absolute", top: 0, bottom: 0, right: 0, left: 0 }}
-        />
-        <Navbar
-          onProfilePress={() => console.log("Profile tapped")}
-          onNotifPress={() => console.log("Notifications tapped")}
-        />
-      </ImageBackground>
-
+      <Navbar
+        onProfilePress={() => console.log("Profile tapped")}
+        onNotifPress={() => console.log("Notifications tapped")}
+      />
+      
       <Animated.View
         style={[
           custom_styles.cardContainer,

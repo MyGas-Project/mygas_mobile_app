@@ -62,8 +62,9 @@ export default function NewsDetailScreen({ navigation, route }) {
 
     const handleShare = async () => {
         try {
+            // console.log("share news: ", news);
             await Share.share({
-                message: `${PATH_URL}`,
+                message: `${PATH_URL}?tags=${encodeURIComponent(news.tag)}&category=${encodeURIComponent(news.category)}&title=${encodeURIComponent(news.title)}`,
                 title: news.title
             });
         } catch (error) {

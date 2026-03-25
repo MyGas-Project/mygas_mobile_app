@@ -24,6 +24,7 @@ import GuestRedemptionScreen from "../screens/guest/GuestRedemptionScreen";
 import CommingSoonScreen from "./CommingSoonComponent";
 import { CheckServerMaintenance, listenToMaintenanceUpdates } from "../lib/CheckServerMaintenance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Navbar from "./Navbar";
 
 const icons = {
   services: require("../../assets/car.png"),
@@ -188,7 +189,13 @@ const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
+      screenOptions={{
+        headerShown: true, 
+        tabBarHideOnKeyboard: true, 
+        header: () => {
+          return <Navbar hideBack />
+        }
+      }}
       initialRouteName="Home"
     >
       <Tab.Screen

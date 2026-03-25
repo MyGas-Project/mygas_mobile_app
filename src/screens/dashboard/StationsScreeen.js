@@ -314,7 +314,7 @@ export default function StationsScreen({ navigation }) {
           />
         </View>
       )}
-      <ImageBackground
+      {/* <ImageBackground
         resizeMode="stretch"
         source={require("../../../assets/mygas-header.jpeg")}
         style={custom_styles.top_bar}
@@ -334,7 +334,7 @@ export default function StationsScreen({ navigation }) {
           onProfilePress={() => console.log("Profile tapped")}
           onNotifPress={() => console.log("Notifications tapped")}
         />
-      </ImageBackground>
+      </ImageBackground> */}
 
       <Animated.View
         style={[

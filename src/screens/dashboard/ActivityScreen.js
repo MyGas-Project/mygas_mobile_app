@@ -1,4 +1,4 @@
-import { View, ImageBackground, StyleSheet, Text, Dimensions, Image, Animated, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { View, ImageBackground, StyleSheet, Text, Dimensions, Image, Animated, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme } from '../../context/ThemeContext'
@@ -8,39 +8,22 @@ import { BASE_URL, processResponse } from '../../config';
 import DatePicker from 'react-native-neat-date-picker';
 import { NotificationContext } from '../../context/ActivityNotif';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Improved responsive system
 const isTablet = SCREEN_WIDTH >= 768;
 const MAX_CONTENT_WIDTH = 500;
 
-// Simple responsive function
 const responsive = (mobile, tablet = mobile) => isTablet ? tablet : mobile;
 
 export default function ActivityScreen({ navigation }) {
     const { userInfo, userDetails } = useContext(AuthContext);
     const { styles } = useTheme();
     const scrollY = useRef(new Animated.Value(0)).current;
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    const headerOpacity = scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [1, 0.9],
-        extrapolate: 'clamp',
-    });
 
     const [groupedTransactions, setGroupedTransactions] = useState([]);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedRange, setSelectedRange] = useState('This Month');
     const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-        }).start();
-    }, []);
 
     const getUserTransactions = async (startDate, endDate) => {
         try {
@@ -54,7 +37,6 @@ export default function ActivityScreen({ navigation }) {
                 }
             }).then(processResponse).then((res) => {
                 const { statusCode, data } = res;
-                // console.log(data.result);
                 if (statusCode === 200) {
                     const grouped = groupByDate(data.result);
                     setGroupedTransactions(grouped);
@@ -77,23 +59,18 @@ export default function ActivityScreen({ navigation }) {
     const getGroupLabel = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
-
         const toDateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
         const today = toDateOnly(now);
         const yesterday = toDateOnly(new Date(now.setDate(now.getDate() - 1)));
         const target = toDateOnly(date);
-
         if (target.getTime() === today.getTime()) return "Today";
         if (target.getTime() === yesterday.getTime()) return "Yesterday";
-
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return target.toLocaleDateString(undefined, options);
     };
 
     const groupByDate = (transactions) => {
         if (!transactions || transactions.length === 0) return [];
-
         const groupedMap = {};
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
@@ -105,9 +82,7 @@ export default function ActivityScreen({ navigation }) {
         });
 
         Object.keys(groupedMap).forEach(date => {
-            groupedMap[date].sort((a, b) => {
-                return new Date(b.datetime).getTime() - new Date(a.datetime).getTime();
-            });
+            groupedMap[date].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
         });
 
         const sortedDates = Object.keys(groupedMap).sort((a, b) => {
@@ -126,18 +101,14 @@ export default function ActivityScreen({ navigation }) {
     const formatDateTime = (dateStr, timeStr) => {
         const [year, month, day] = dateStr.split('-');
         const [hour, minute] = timeStr.split(':');
-
         const date = new Date(year, month - 1, day, hour, minute);
-
-        const options = {
+        return date.toLocaleString(undefined, {
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
             minute: 'numeric',
             hour12: true,
-        };
-
-        return date.toLocaleString(undefined, options);
+        });
     };
 
     useEffect(() => {
@@ -163,224 +134,194 @@ export default function ActivityScreen({ navigation }) {
                     selectedDateBackgroundColor: '#fe0002',
                     confirmButtonColor: '#fe0002',
                 }}
-                onCancel={() => { setShowDatePicker(false); }}
+                onCancel={() => setShowDatePicker(false)}
                 onConfirm={(e) => {
                     setShowDatePicker(false);
                     setSelectedRange(`${e.startDateString} - ${e.endDateString}`);
                     getUserTransactions(e.startDateString, e.endDateString);
                 }}
             />
+
             <View style={custom_styles.container}>
-                <Animated.View style={{ opacity: headerOpacity }}>
-                    <ImageBackground
-                        resizeMode='stretch'
-                        source={require('../../../assets/mygas-header.jpeg')}
-                        style={custom_styles.top_bar}
+                <View style={custom_styles.cardContainer}>
+                    <Animated.ScrollView
+                        style={{ flex: 1, width: '100%' }}
+                        contentContainerStyle={{ paddingBottom: 100 }}
+                        showsVerticalScrollIndicator={false}
+                        onScroll={Animated.event(
+                            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                            { useNativeDriver: true }
+                        )}
+                        scrollEventThrottle={16}
                     >
-                        <LinearGradient
-                            colors={['rgb(249, 250, 141)', 'transparent']}
-                            start={{ x: 0.5, y: 0 }}
-                            end={{ x: 0.5, y: 1.4 }}
-                            style={custom_styles.gradient}
-                        />
-                        <Image
-                            source={require("../../../assets/mygas_logo.png")}
-                            style={custom_styles.logo}
-                        />
-                        <Navbar
-                            hideBack
-                            onProfilePress={() => console.log("Profile tapped")}
-                            onNotifPress={() => console.log("Notifications tapped")}
-                        />
-                    </ImageBackground>
-                </Animated.View>
+                        <View style={custom_styles.contentContainer}>
 
-                <Animated.View style={[custom_styles.contentContainer, { opacity: fadeAnim }]}>
-                    <View style={custom_styles.contentWrapper}>
-                        <View style={custom_styles.headerSection}>
-                            <Text style={custom_styles.title}>Activity</Text>
-                            <Text style={custom_styles.subtitle}>Track your MyGas points history</Text>
-                        </View>
-
-                        {isLoading ? (
-                            <View style={custom_styles.loadingContainer}>
-                                <ActivityIndicator size="large" color="#fe0002" />
-                                <Text style={custom_styles.loadingText}>Loading transactions...</Text>
+                            {/* Page Header */}
+                            <View style={custom_styles.headerSection}>
+                                <Text style={custom_styles.title}>Activity</Text>
+                                <Text style={custom_styles.subtitle}>Track your MyGas points history</Text>
                             </View>
-                        ) : (
-                            <Animated.ScrollView
-                                onScroll={Animated.event(
-                                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                                    { useNativeDriver: true }
-                                )}
-                                scrollEventThrottle={16}
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={custom_styles.scrollContent}
-                            >
-                                <View style={custom_styles.filterCard}>
-                                    <View style={custom_styles.filterRow}>
-                                        <Text style={custom_styles.filterLabel}>Filter by Date</Text>
-                                        <TouchableOpacity
-                                            style={custom_styles.filterBtn}
-                                            onPress={() => { setShowDatePicker(true); }}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={custom_styles.filterBtnText} numberOfLines={1}>
-                                                {selectedRange}
-                                            </Text>
-                                            <Text style={custom_styles.filterIcon}>📅</Text>
-                                        </TouchableOpacity>
-                                    </View>
+
+                            {/* Filter Card */}
+                            <View style={custom_styles.filterCard}>
+                                <View style={custom_styles.filterRow}>
+                                    <Text style={custom_styles.filterLabel}>Filter by Date</Text>
+                                    <TouchableOpacity
+                                        style={custom_styles.filterBtn}
+                                        onPress={() => setShowDatePicker(true)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={custom_styles.filterBtnText} numberOfLines={1}>
+                                            {selectedRange}
+                                        </Text>
+                                        <Text style={custom_styles.filterIcon}>📅</Text>
+                                    </TouchableOpacity>
                                 </View>
+                            </View>
 
-                                {groupedTransactions && groupedTransactions.length > 0 ? (
-                                    groupedTransactions.map((group, index) => (
-                                        <View key={index} style={custom_styles.dateGroup}>
-                                            <View style={custom_styles.dateHeader}>
-                                                <View style={custom_styles.dateBadge}>
-                                                    <Text style={custom_styles.dateText}>{group.date}</Text>
-                                                </View>
-                                                <View style={custom_styles.dateLine} />
+                            {/* Content */}
+                            {isLoading ? (
+                                <View style={custom_styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color="#fe0002" />
+                                    <Text style={custom_styles.loadingText}>Loading transactions...</Text>
+                                </View>
+                            ) : groupedTransactions && groupedTransactions.length > 0 ? (
+                                groupedTransactions.map((group, index) => (
+                                    <View key={index} style={custom_styles.dateGroup}>
+
+                                        <View style={custom_styles.dateHeader}>
+                                            <View style={custom_styles.dateBadge}>
+                                                <Text style={custom_styles.dateText}>{group.date}</Text>
                                             </View>
+                                            <View style={custom_styles.dateLine} />
+                                        </View>
 
-                                            {[...group.items].reverse().map((item, ind) => (
-                                                <View key={ind} style={custom_styles.transactionCard}>
-                                                    <View style={custom_styles.cardHeader}>
-                                                        <View style={custom_styles.iconWrapper}>
-                                                            <Image
-                                                                source={require('../../../assets/mygas_logo.png')}
-                                                                style={custom_styles.stationIcon}
-                                                            />
-                                                        </View>
-                                                        <View style={custom_styles.headerInfo}>
-                                                            <Text style={custom_styles.stationName} numberOfLines={1}>
-                                                                {item.service === 'Adjustment' ? 'MyGas Credit/Debit Memo' : item.station_name}
-                                                            </Text>
-                                                            <Text style={custom_styles.dateTime} numberOfLines={1}>
-                                                                {formatDateTime(item.date, item.time)}
-                                                            </Text>
-                                                        </View>
+                                        {[...group.items].reverse().map((item, ind) => (
+                                            <View key={ind} style={custom_styles.transactionCard}>
+
+                                                <View style={custom_styles.cardHeader}>
+                                                    <View style={custom_styles.iconWrapper}>
+                                                        <Image
+                                                            source={require('../../../assets/mygas_logo.png')}
+                                                            style={custom_styles.stationIcon}
+                                                        />
                                                     </View>
-
-                                                    <View style={custom_styles.cardDivider} />
-
-                                                    <View style={custom_styles.cardBody}>
-                                                        <View style={custom_styles.infoRow}>
-                                                            <Text style={custom_styles.infoLabel}>Transaction</Text>
-                                                            <Text style={custom_styles.infoValue} numberOfLines={1}>
-                                                                {item.transaction_number}
-                                                            </Text>
-                                                        </View>
-                                                        <View style={custom_styles.infoRow}>
-                                                            <Text style={custom_styles.infoLabel}>Service</Text>
-                                                            <Text style={custom_styles.infoValue} numberOfLines={1}>
-                                                                {item.service}
-                                                            </Text>
-                                                        </View>
-                                                        <View style={custom_styles.infoRow}>
-                                                            <Text style={custom_styles.infoLabel}>Amount</Text>
-                                                            <Text style={custom_styles.amountValue}>
-                                                                ₱{parseFloat(item.amount).toFixed(2)}
-                                                            </Text>
-                                                        </View>
+                                                    <View style={custom_styles.headerInfo}>
+                                                        <Text style={custom_styles.stationName} numberOfLines={1}>
+                                                            {item.service === 'Adjustment' ? 'MyGas Credit/Debit Memo' : item.station_name}
+                                                        </Text>
+                                                        <Text style={custom_styles.dateTime} numberOfLines={1}>
+                                                            {formatDateTime(item.date, item.time)}
+                                                        </Text>
                                                     </View>
+                                                </View>
 
-                                                    <View style={[
-                                                        custom_styles.pointsBadge,
+                                                <View style={custom_styles.cardDivider} />
+
+                                                <View style={custom_styles.cardBody}>
+                                                    <View style={custom_styles.infoRow}>
+                                                        <Text style={custom_styles.infoLabel}>Transaction</Text>
+                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                            {item.transaction_number}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={custom_styles.infoRow}>
+                                                        <Text style={custom_styles.infoLabel}>Service</Text>
+                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                            {item.service}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={custom_styles.infoRow}>
+                                                        <Text style={custom_styles.infoLabel}>Amount</Text>
+                                                        <Text style={custom_styles.amountValue}>
+                                                            ₱{parseFloat(item.amount).toFixed(2)}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+
+                                                <View style={[
+                                                    custom_styles.pointsBadge,
+                                                    {
+                                                        backgroundColor:
+                                                            item.service === 'Cash Redeem' ? '#FFE5E5' :
+                                                                item.service === 'Adjustment' ? '#E3F2FD' :
+                                                                    '#FFF8E1'
+                                                    }
+                                                ]}>
+                                                    <Text style={[
+                                                        custom_styles.pointsValue,
                                                         {
-                                                            backgroundColor:
-                                                                item.service === 'Cash Redeem' ? '#FFE5E5' :
-                                                                    item.service === 'Adjustment' ? '#E3F2FD' :
-                                                                        '#FFF8E1'
+                                                            color:
+                                                                item.service === 'Cash Redeem' ? '#D32F2F' :
+                                                                    item.service === 'Adjustment'
+                                                                        ? (parseFloat(item.points) >= 0 ? '#1976D2' : '#D32F2F')
+                                                                        : '#F57C00'
                                                         }
                                                     ]}>
-                                                        <Text style={[
-                                                            custom_styles.pointsValue,
-                                                            {
-                                                                color:
-                                                                    item.service === 'Cash Redeem' ? '#D32F2F' :
-                                                                        item.service === 'Adjustment' ? (parseFloat(item.points) >= 0 ? '#1976D2' : '#D32F2F') :
-                                                                            '#F57C00'
-                                                            }
-                                                        ]}>
-                                                            {item.service === 'Cash Redeem' || parseFloat(item.points) < 0 ? '' : '+'}{item.points}
-                                                        </Text>
-                                                        <Text style={custom_styles.pointsText}>
-                                                            {item.service === 'Cash Redeem' ? 'redeemed' :
-                                                                item.service === 'Adjustment' ? (parseFloat(item.points) >= 0 ? 'credit' : 'debit') :
-                                                                    'earned'}
-                                                        </Text>
-                                                    </View>
+                                                        {item.service === 'Cash Redeem' || parseFloat(item.points) < 0 ? '' : '+'}{item.points}
+                                                    </Text>
+                                                    <Text style={custom_styles.pointsText}>
+                                                        {item.service === 'Cash Redeem' ? 'redeemed' :
+                                                            item.service === 'Adjustment'
+                                                                ? (parseFloat(item.points) >= 0 ? 'credit' : 'debit')
+                                                                : 'earned'}
+                                                    </Text>
                                                 </View>
-                                            ))}
-                                        </View>
-                                    ))
-                                ) : (
-                                    <View style={custom_styles.emptyState}>
-                                        <View style={custom_styles.emptyIcon}>
-                                            <Text style={custom_styles.emptyIconText}>📊</Text>
-                                        </View>
-                                        <Text style={custom_styles.emptyTitle}>No Activity Yet</Text>
-                                        <Text style={custom_styles.emptySubtitle}>
-                                            Your transaction history will appear here
-                                        </Text>
+
+                                            </View>
+                                        ))}
                                     </View>
-                                )}
-                                <View style={{ height: 100 }} />
-                            </Animated.ScrollView>
-                        )}
-                    </View>
-                </Animated.View>
+                                ))
+                            ) : (
+                                <View style={custom_styles.emptyState}>
+                                    <View style={custom_styles.emptyIcon}>
+                                        <Text style={custom_styles.emptyIconText}>📊</Text>
+                                    </View>
+                                    <Text style={custom_styles.emptyTitle}>No Activity Yet</Text>
+                                    <Text style={custom_styles.emptySubtitle}>
+                                        Your transaction history will appear here
+                                    </Text>
+                                </View>
+                            )}
+
+                        </View>
+                    </Animated.ScrollView>
+                </View>
+
             </View>
         </>
-    )
+    );
 }
 
 const custom_styles = StyleSheet.create({
+
+    // Same as RedemptionScreen container
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F9FAFB',
     },
-    top_bar: {
-        height: responsive(140, 160),
-        width: '100%',
-        position: 'relative',
-    },
-    gradient: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        right: 0,
-        left: 0,
-    },
-    logo: {
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: [
-            { translateX: -32.5 },
-            { translateY: -32.5 }
-        ],
-        width: 65,
-        height: 65,
-        resizeMode: "contain",
-        zIndex: 2,
-    },
-    contentContainer: {
+
+    // Identical to RedemptionScreen's cardContainer
+    cardContainer: {
         flex: 1,
+        alignItems: 'center',
         marginTop: -30,
         backgroundColor: '#F8F9FA',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        paddingTop: 24,
-        alignItems: 'center',
+        overflow: 'hidden', // KEY — keeps corners clipped during scroll
+        position: 'relative',
+        zIndex: 1,
     },
-    contentWrapper: {
-        width: '100%',
-        maxWidth: MAX_CONTENT_WIDTH,
-        flex: 1,
+
+    // Identical to RedemptionScreen's contentContainer (no borderTopRadius)
+    contentContainer: {
+        backgroundColor: '#F9FAFB',
         paddingHorizontal: responsive(16, 20),
+        paddingTop: responsive(24, 28),
+        width: '100%',
     },
+
     headerSection: {
         marginBottom: 20,
     },
@@ -401,11 +342,15 @@ const custom_styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+            },
+            android: { elevation: 2 },
+        }),
     },
     filterRow: {
         flexDirection: 'row',
@@ -451,9 +396,6 @@ const custom_styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '500',
     },
-    scrollContent: {
-        paddingBottom: 20,
-    },
     dateGroup: {
         marginBottom: 24,
     },
@@ -485,13 +427,17 @@ const custom_styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
-        elevation: 3,
         borderWidth: 1,
         borderColor: '#F3F4F6',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+            },
+            android: { elevation: 3 },
+        }),
     },
     cardHeader: {
         flexDirection: 'row',

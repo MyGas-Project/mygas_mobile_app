@@ -404,7 +404,7 @@ export default function RedemptionTransactionScreens({ navigation }) {
     return (
         <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
             <CancelRedemptionModal visible={showCancelModal} onClose={() => { setShowCancelModal(false); setCancellingdata(null); onRefresh(); }} transactionData={cancellingData} />
-            <ImageBackground
+            {/* <ImageBackground
                 resizeMode="stretch"
                 source={require("../../../assets/mygas-header.jpeg")}
                 style={styles.top_bar}
@@ -424,7 +424,12 @@ export default function RedemptionTransactionScreens({ navigation }) {
                     onProfilePress={() => console.log("Profile tapped")}
                     onNotifPress={() => console.log("Notifications tapped")}
                 />
-            </ImageBackground>
+            </ImageBackground> */}
+            <Navbar
+                onBackPress={() => navigation.goBack()}
+                onProfilePress={() => console.log("Profile tapped")}
+                onNotifPress={() => console.log("Notifications tapped")}
+            />
 
             <View style={styles.cardContainer}>
                 <FlatList

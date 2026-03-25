@@ -580,7 +580,7 @@ export default function CartScreens({ navigation, route }) {
         <SafeAreaProvider>
             <View style={styles.container}>
                 {/* Header */}
-                <ImageBackground
+                {/* <ImageBackground
                     resizeMode="stretch"
                     source={require('../../../assets/mygas-header.jpeg')}
                     style={styles.header}
@@ -599,7 +599,11 @@ export default function CartScreens({ navigation, route }) {
                         onProfilePress={() => console.log('Profile tapped')}
                         onNotifPress={() => console.log('Notifications tapped')}
                     />
-                </ImageBackground>
+                </ImageBackground> */}
+                <Navbar
+                    onProfilePress={() => console.log('Profile tapped')}
+                    onNotifPress={() => console.log('Notifications tapped')}
+                />
                 <ScrollView
                     style={styles.scrollContainer}
                     contentContainerStyle={styles.scrollContent}
