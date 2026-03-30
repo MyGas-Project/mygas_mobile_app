@@ -2,12 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function PromoBanner() {
+export default function PromoBanner({ }) {
   return (
     <View style={[styles.promoBanner, styles.promoBannerEmpty]}>
       <View style={styles.promoEmptyContent}>
         <Ionicons name="pricetag-outline" size={36} color="#CCC" />
-        <Text style={styles.promoEmptyTitle}>No Active Promo Offers</Text>
+        <Text style={styles.promoEmptyTitle}>No Active Promo Offers </Text>
         <Text style={styles.promoEmptyText}>Check back later for exciting deals! 🎉</Text>
       </View>
     </View>

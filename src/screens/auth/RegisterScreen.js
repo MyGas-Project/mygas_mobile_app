@@ -27,6 +27,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AgreementScreen from "../AgreementScreen";
 import { OtpInput } from "react-native-otp-entry";
 
+import { Popover } from 'heroui-native';
+
 const Stack = createNativeStackNavigator();
 const { width, height } = Dimensions.get("window");
 
@@ -167,9 +169,10 @@ const Step1 = ({ navigation }) => {
                   </View>
 
                   <View style={responsiveStyles.inputGroup}>
-                    <View style={responsiveStyles.labelRow}>
+                    {/* <View style={responsiveStyles.labelRow}>
                       <Text style={responsiveStyles.label}>
-                        Birth Date <Text style={responsiveStyles.optionalText}>(Optional)</Text>
+                        Birth Date 
+                        <Text style={responsiveStyles.optionalText}>(Optional)</Text>
                       </Text>
                       <TouchableOpacity
                         onPress={() => setShowTooltip(!showTooltip)}
@@ -189,7 +192,39 @@ const Step1 = ({ navigation }) => {
                           your celebration even sweeter.
                         </Text>
                       </View>
-                    )}
+                    )} */}
+                    <View style={responsiveStyles.labelRow}>
+                      <Text style={responsiveStyles.label}>
+                        Birth Date
+                      </Text>
+                      <Popover>
+                        <Popover.Trigger asChild>
+                          <TouchableOpacity style={responsiveStyles.infoButton}>
+                            <View style={responsiveStyles.infoIcon}>
+                              <Text style={responsiveStyles.infoIconText}>i</Text>
+                            </View>
+                          </TouchableOpacity>
+                        </Popover.Trigger>
+                        <Popover.Portal>
+                          <Popover.Overlay />
+                          <Popover.Content
+                            presentation="popover"
+                            placement="bottom"
+                            align="start"
+                            width={270}
+                            className="gap-1 rounded-xl px-3 py-3"
+                          >
+                            {/* <Popover.Close className="absolute top-2 right-2 z-50" /> */}
+                            <Popover.Title>Birthday Promos 🎉</Popover.Title>
+                            <Popover.Description>
+                              Get ready for exclusive promos in your birth month! By adding your
+                              birthdate, you'll unlock special offers and rewards to make
+                              your celebration even sweeter.
+                            </Popover.Description>
+                          </Popover.Content>
+                        </Popover.Portal>
+                      </Popover>
+                    </View>
 
                     {/* {showDatePicker && (
                       Platform.OS === "ios" ? (

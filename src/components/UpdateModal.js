@@ -6,326 +6,379 @@ import {
     Dimensions,
     StyleSheet,
     StatusBar,
-    ImageBackground,
+    Animated,
+    Easing,
 } from 'react-native'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
-import Icon from 'react-native-vector-icons/Ionicons'
 
 const { width } = Dimensions.get('window')
+const isTablet = width > 768
 const isSmallDevice = width < 375
-const isLargeDevice = width >= 414
 
 export default function UpdateScreen({ storeUrl }) {
+    const fadeAnim = useRef(new Animated.Value(0)).current
+    const slideAnim = useRef(new Animated.Value(24)).current
+    const badgeDotAnim = useRef(new Animated.Value(1)).current
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            }),
+        ]).start()
+
+        const pulse = Animated.loop(
+            Animated.sequence([
+                Animated.timing(badgeDotAnim, { toValue: 0.3, duration: 600, useNativeDriver: true }),
+                Animated.timing(badgeDotAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+            ])
+        )
+        pulse.start()
+        return () => pulse.stop()
+    }, [])
+
     const handleUpdate = () => {
-        if (storeUrl) {
-            Linking.openURL(storeUrl)
-        }
+        if (storeUrl) Linking.openURL(storeUrl)
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar hidden={true} />
-            <ImageBackground
-                source={require('../../assets/office.jpg')}
-                resizeMode='cover'
-                style={styles.backgroundImage}
+        <SafeAreaView style={styles.root}>
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+            {/* Full-bleed diagonal stripes */}
+            <View style={styles.stripesOverlay} pointerEvents="none">
+                <View style={styles.stripesInner}>
+                    {Array.from({ length: 60 }).map((_, i) => (
+                        <View key={i} style={styles.stripe} />
+                    ))}
+                </View>
+            </View>
+
+            <Animated.View
+                style={[
+                    styles.container,
+                    { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+                ]}
             >
-                <LinearGradient
-                    colors={[
-                        'rgba(139, 44, 46, 0.92)',
-                        'rgba(200, 75, 58, 0.85)',
-                        'rgba(232, 137, 94, 0.75)',
-                        'rgba(244, 181, 124, 0.65)'
-                    ]}
-                    locations={[0, 0.35, 0.65, 1]}
-                    style={styles.gradient}
+                {/* Badge */}
+                <View style={styles.badge}>
+                    <Animated.View style={[styles.badgeDot, { opacity: badgeDotAnim }]} />
+                    <Text style={styles.badgeText}>SYSTEM NOTICE</Text>
+                </View>
+
+                {/* Warning card */}
+                <View style={styles.warningCard}>
+                    <Text style={styles.warningIcon}>⚠</Text>
+                    <Text style={styles.warningText}>A new version is required to continue</Text>
+                </View>
+
+                {/* Headline */}
+                <View style={styles.headlineBlock}>
+                    <Text style={styles.headlineTop}>UPDATE</Text>
+                    <Text style={styles.headlineBottom}>REQUIRED</Text>
+                </View>
+
+                {/* Divider */}
+                <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <View style={styles.dividerDiamond} />
+                    <View style={styles.dividerLine} />
+                </View>
+
+                {/* Description */}
+                <Text style={styles.description}>
+                    To keep fueling your experience, please update MyGas to the latest version. This update is required to continue using the app.
+                </Text>
+
+                {/* Info block */}
+                <View style={styles.infoBlock}>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoDot} />
+                        <Text style={styles.infoText}>New version available in the store</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoDot} />
+                        <Text style={styles.infoText}>Current version is no longer supported</Text>
+                    </View>
+                </View>
+
+                {/* Status cards */}
+                <View style={styles.cards}>
+                    <View style={[styles.card, { backgroundColor: '#dc2626' }]}>
+                        <Text style={[styles.cardLabel, { color: 'rgba(255,255,255,0.6)' }]}>STATUS</Text>
+                        <Text style={[styles.cardValue, { color: '#ffffff' }]}>OUTDATED</Text>
+                    </View>
+                    <View style={[styles.card, { backgroundColor: '#fbbf24' }]}>
+                        <Text style={[styles.cardLabel, { color: '#92400e' }]}>ACTION</Text>
+                        <Text style={[styles.cardValue, { color: '#1c1917' }]}>REQUIRED</Text>
+                    </View>
+                    <View style={[styles.card, { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#e5e7eb' }]}>
+                        <Text style={[styles.cardLabel, { color: '#9f1239' }]}>STORE</Text>
+                        <Text style={[styles.cardValue, { color: '#dc2626' }]}>AVAILABLE</Text>
+                    </View>
+                </View>
+
+                {/* Update button */}
+                <TouchableOpacity
+                    style={styles.updateButton}
+                    onPress={handleUpdate}
+                    activeOpacity={0.85}
                 >
-                    <SafeAreaView style={styles.safeArea} edges={[]}>
-                        <View style={styles.content}>
+                    <Text style={styles.updateButtonText}>UPDATE NOW</Text>
+                </TouchableOpacity>
 
-                            {/* Logo Section */}
-                            <View style={styles.headerSection}>
-                                <View style={styles.logoRow}>
-                                    <View style={styles.logoWrapper}>
-                                        <Icon name="flame-outline" size={isSmallDevice ? 28 : 32} color="#FFFFFF" />
-                                    </View>
-                                    <View style={styles.logoTextContainer}>
-                                        <Text style={styles.logoMainText}>MY GAS</Text>
-                                        <Text style={styles.logoSubText}>MOTORISTA APP</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            {/* Center Card */}
-                            <View style={styles.card}>
-
-                                {/* Icon */}
-                                <View style={styles.iconWrapper}>
-                                    <Icon name="rocket-outline" size={isSmallDevice ? 40 : 48} color="#FFFFFF" />
-                                </View>
-
-                                {/* Badge */}
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>UPDATE REQUIRED</Text>
-                                </View>
-
-                                {/* Title */}
-                                <Text style={styles.title}>New Version{'\n'}Available</Text>
-                                <View style={styles.underline} />
-
-                                {/* Message */}
-                                <Text style={styles.message}>
-                                    To keep fueling your experience, please update MyGas to the latest version. This update is required to continue using the app.
-                                </Text>
-
-                                {/* Divider */}
-                                <View style={styles.dividerContainer}>
-                                    <View style={styles.dividerLine} />
-                                    <Text style={styles.dividerText}>ACTION NEEDED</Text>
-                                    <View style={styles.dividerLine} />
-                                </View>
-
-                                {/* Update Button */}
-                                <TouchableOpacity
-                                    style={styles.updateButton}
-                                    onPress={handleUpdate}
-                                    activeOpacity={0.8}
-                                >
-                                    <LinearGradient
-                                        colors={['#FFFFFF', '#F8F8F8']}
-                                        style={styles.buttonGradient}
-                                    >
-                                        <Icon name="download-outline" size={20} color="#8B2C2E" style={{ marginRight: 8 }} />
-                                        <Text style={styles.updateButtonText}>UPDATE NOW</Text>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-
-                                {/* Footer note */}
-                                <Text style={styles.footerText}>
-                                    You must update to continue using the app.
-                                </Text>
-
-                            </View>
-
-                            {/* Bottom version note */}
-                            <View style={styles.bottomSection}>
-                                <Text style={styles.versionText}>A newer version is available in the store.</Text>
-                            </View>
-
-                        </View>
-                    </SafeAreaView>
-                </LinearGradient>
-            </ImageBackground>
-        </View>
+                <Text style={styles.footerText}>You must update to continue using the app</Text>
+            </Animated.View>
+        </SafeAreaView>
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
+    root: {
         flex: 1,
-        backgroundColor: '#8B2C2E',
-    },
-    backgroundImage: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-    },
-    gradient: {
-        flex: 1,
-    },
-    safeArea: {
-        flex: 1,
-        paddingTop: 0,
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: isSmallDevice ? 20 : 28,
-        paddingTop: 40,
-        paddingBottom: 20,
-        justifyContent: 'space-between',
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
     },
 
-    // Header
-    headerSection: {
-        marginBottom: 8,
+    // Stripes
+    stripesOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
     },
-    logoRow: {
+    stripesInner: {
+        position: 'absolute',
+        top: -500,
+        left: -500,
+        right: -500,
+        bottom: -500,
+        flexDirection: 'column',
+        transform: [{ rotate: '-35deg' }],
+    },
+    stripe: {
+        height: 28,
+        marginBottom: 28,
+        backgroundColor: 'rgba(220,38,38,0.045)',
+    },
+
+    // Main container
+    container: {
+        alignItems: 'center',
+        paddingHorizontal: isTablet ? 60 : 24,
+        paddingVertical: 48,
+        maxWidth: isTablet ? 600 : width,
+        width: '100%',
+        gap: 22,
+        zIndex: 10,
+    },
+
+    // Badge
+    badge: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    logoWrapper: {
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        borderRadius: 16,
-        padding: 10,
-        marginRight: 14,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    logoTextContainer: {
-        justifyContent: 'center',
-    },
-    logoMainText: {
-        fontSize: isSmallDevice ? 22 : 26,
-        fontWeight: '900',
-        color: '#FFFFFF',
-        letterSpacing: 1,
-        lineHeight: isSmallDevice ? 26 : 30,
-        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
-    },
-    logoSubText: {
-        fontSize: isSmallDevice ? 9 : 10,
-        fontWeight: '700',
-        color: '#FFFFFF',
-        letterSpacing: 2,
-        opacity: 0.95,
-    },
-
-    // Card
-    card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 24,
-        padding: isSmallDevice ? 24 : 28,
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 10,
-    },
-    iconWrapper: {
-        width: isSmallDevice ? 80 : 90,
-        height: isSmallDevice ? 80 : 90,
-        borderRadius: 45,
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 18,
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    badge: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 8,
-        paddingHorizontal: 14,
+        gap: 8,
+        backgroundColor: '#fef9c3',
+        borderWidth: 2,
+        borderColor: '#fbbf24',
+        borderRadius: 4,
+        paddingHorizontal: 16,
         paddingVertical: 5,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    badgeDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: '#dc2626',
     },
     badgeText: {
-        color: '#FFFFFF',
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 2,
-    },
-    title: {
-        fontSize: isSmallDevice ? 32 : isLargeDevice ? 42 : 38,
-        fontWeight: '900',
-        color: '#FFFFFF',
-        letterSpacing: 1,
-        textAlign: 'center',
-        lineHeight: isSmallDevice ? 38 : 48,
-        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
-    },
-    underline: {
-        width: 80,
-        height: 4,
-        backgroundColor: '#FFFFFF',
-        marginTop: 8,
-        marginBottom: 16,
-        borderRadius: 2,
-        elevation: 2,
-    },
-    message: {
-        fontSize: isSmallDevice ? 14 : 15,
-        color: '#FFFFFF',
-        textAlign: 'center',
-        lineHeight: 22,
+        fontFamily: 'monospace',
+        fontSize: 10,
         fontWeight: '500',
-        opacity: 0.95,
-        paddingHorizontal: 4,
-        textShadowColor: 'rgba(0, 0, 0, 0.2)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
+        letterSpacing: 2,
+        color: '#92400e',
     },
-    dividerContainer: {
+
+    // Warning card
+    warningCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 24,
+        gap: 12,
+        backgroundColor: '#fbbf24',
+        borderWidth: 2,
+        borderColor: '#f59e0b',
+        borderRadius: 6,
+        paddingHorizontal: 20,
+        paddingVertical: 11,
         width: '100%',
+        maxWidth: 420,
+    },
+    warningIcon: {
+        fontSize: 14,
+        color: '#1c1917',
+    },
+    warningText: {
+        fontFamily: 'monospace',
+        fontSize: 11,
+        fontWeight: '500',
+        letterSpacing: 1,
+        color: '#1c1917',
+        flexShrink: 1,
+    },
+
+    // Headline
+    headlineBlock: {
+        alignItems: 'center',
+    },
+    headlineTop: {
+        fontSize: isTablet ? 96 : isSmallDevice ? 56 : 68,
+        fontWeight: '900',
+        letterSpacing: 6,
+        color: '#111827',
+        lineHeight: isTablet ? 84 : isSmallDevice ? 50 : 60,
+        textAlign: 'center',
+    },
+    headlineBottom: {
+        fontSize: isTablet ? 96 : isSmallDevice ? 52 : 64,
+        fontWeight: '900',
+        letterSpacing: 6,
+        color: '#dc2626',
+        lineHeight: isTablet ? 84 : isSmallDevice ? 46 : 58,
+        textAlign: 'center',
+    },
+
+    // Divider
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        width: '100%',
+        maxWidth: 380,
     },
     dividerLine: {
         flex: 1,
-        height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        height: 2,
+        backgroundColor: '#dc2626',
+        opacity: 0.4,
     },
-    dividerText: {
-        marginHorizontal: 12,
-        fontSize: 11,
-        color: '#FFFFFF',
-        fontWeight: '700',
-        opacity: 0.8,
-        letterSpacing: 1.5,
-    },
-    updateButton: {
-        borderRadius: 16,
-        width: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 10,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        paddingVertical: isSmallDevice ? 17 : 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        borderRadius: 16,
-    },
-    updateButtonText: {
-        fontSize: isSmallDevice ? 16 : 18,
-        fontWeight: '900',
-        color: '#8B2C2E',
-        letterSpacing: 2.5,
-    },
-    footerText: {
-        marginTop: 16,
-        fontSize: 12,
-        color: '#FFFFFF',
-        opacity: 0.8,
-        textAlign: 'center',
-        fontWeight: '500',
-        lineHeight: 18,
+    dividerDiamond: {
+        width: 8,
+        height: 8,
+        backgroundColor: '#fbbf24',
+        borderWidth: 2,
+        borderColor: '#dc2626',
+        transform: [{ rotate: '45deg' }],
     },
 
-    // Bottom
-    bottomSection: {
+    // Description
+    description: {
+        fontSize: 13,
+        color: '#6b7280',
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 380,
+    },
+
+    // Info block
+    infoBlock: {
+        width: '100%',
+        maxWidth: 420,
+        backgroundColor: '#f9fafb',
+        borderWidth: 2,
+        borderColor: '#e5e7eb',
+        borderRadius: 8,
+        paddingHorizontal: 22,
+        paddingVertical: 18,
+        gap: 10,
+    },
+    infoRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.2)',
-        marginTop: 8,
+        gap: 10,
     },
-    versionText: {
-        fontSize: 12,
-        color: '#FFFFFF',
-        opacity: 0.7,
+    infoDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#dc2626',
+        flexShrink: 0,
+    },
+    infoText: {
+        fontFamily: 'monospace',
+        fontSize: 11,
         fontWeight: '500',
-        letterSpacing: 0.3,
+        color: '#374151',
     },
-})
+
+    // Status cards
+    cards: {
+        flexDirection: 'row',
+        gap: 10,
+        width: '100%',
+        maxWidth: 420,
+    },
+    card: {
+        flex: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    cardLabel: {
+        fontFamily: 'monospace',
+        fontSize: 9,
+        letterSpacing: 2,
+        fontWeight: '500',
+        marginBottom: 6,
+    },
+    cardValue: {
+        fontFamily: 'monospace',
+        fontSize: 10,
+        fontWeight: '500',
+    },
+
+    // Update button
+    updateButton: {
+        backgroundColor: '#dc2626',
+        borderRadius: 6,
+        paddingVertical: 14,
+        paddingHorizontal: 40,
+        width: '100%',
+        maxWidth: 420,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#b91c1c',
+    },
+    updateButtonText: {
+        fontFamily: 'monospace',
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#ffffff',
+        letterSpacing: 2,
+    },
+
+    footerText: {
+        fontSize: 11,
+        color: '#9ca3af',
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+});

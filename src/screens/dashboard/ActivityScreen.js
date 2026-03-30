@@ -1,23 +1,37 @@
-import { View, ImageBackground, StyleSheet, Text, Dimensions, Image, Animated, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native'
-import React, { useContext, useEffect, useRef, useState } from 'react'
-import { LinearGradient } from 'expo-linear-gradient'
-import { useTheme } from '../../context/ThemeContext'
+import {
+    View,
+    StyleSheet,
+    Text,
+    Dimensions,
+    Image,
+    Animated,
+    ScrollView,
+    Platform,
+    RefreshControl
+} from 'react-native';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import Navbar from '../../components/Navbar';
 import { AuthContext } from '../../context/AuthContext';
 import { BASE_URL, processResponse } from '../../config';
 import DatePicker from 'react-native-neat-date-picker';
 import { NotificationContext } from '../../context/ActivityNotif';
 
+// HeroUI Native imports
+import {
+    Card,
+    Chip,
+    Button,
+    Separator,
+    Spinner,
+} from 'heroui-native';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const isTablet = SCREEN_WIDTH >= 768;
-const MAX_CONTENT_WIDTH = 500;
-
-const responsive = (mobile, tablet = mobile) => isTablet ? tablet : mobile;
+const responsive = (mobile, tablet = mobile) => (isTablet ? tablet : mobile);
 
 export default function ActivityScreen({ navigation }) {
-    const { userInfo, userDetails } = useContext(AuthContext);
-    const { styles } = useTheme();
+    const { userInfo } = useContext(AuthContext);
     const scrollY = useRef(new Animated.Value(0)).current;
 
     const [groupedTransactions, setGroupedTransactions] = useState([]);
@@ -25,32 +39,36 @@ export default function ActivityScreen({ navigation }) {
     const [selectedRange, setSelectedRange] = useState('This Month');
     const [isLoading, setIsLoading] = useState(true);
 
+    const [refreshing, setRefreshing] = useState(false);
+
+    const cardContainerTranslateY = scrollY.interpolate({ inputRange: [-50, 0, 50], outputRange: [20, 0, -20], extrapolate: "clamp" });
+
     const getUserTransactions = async (startDate, endDate) => {
         try {
             setIsLoading(true);
-            await fetch(`${BASE_URL}customer/activity?date_start=${startDate}&date_end=${endDate}`, {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${userInfo.token}`,
+            await fetch(
+                `${BASE_URL}customer/activity?date_start=${startDate}&date_end=${endDate}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${userInfo.token}`,
+                    },
                 }
-            }).then(processResponse).then((res) => {
-                const { statusCode, data } = res;
-                if (statusCode === 200) {
-                    const grouped = groupByDate(data.result);
-                    setGroupedTransactions(grouped);
-                } else {
-                    setGroupedTransactions([]);
-                }
-            }).catch(error => {
-                console.error(error);
-                setGroupedTransactions([]);
-            }).finally(() => {
-                setIsLoading(false);
-            });
-        } catch (error) {
-            console.error(error);
+            )
+                .then(processResponse)
+                .then((res) => {
+                    const { statusCode, data } = res;
+                    if (statusCode === 200) {
+                        setGroupedTransactions(groupByDate(data.result));
+                    } else {
+                        setGroupedTransactions([]);
+                    }
+                })
+                .catch(() => setGroupedTransactions([]))
+                .finally(() => setIsLoading(false));
+        } catch {
             setGroupedTransactions([]);
             setIsLoading(false);
         }
@@ -59,21 +77,26 @@ export default function ActivityScreen({ navigation }) {
     const getGroupLabel = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
-        const toDateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const toDateOnly = (d) =>
+            new Date(d.getFullYear(), d.getMonth(), d.getDate());
         const today = toDateOnly(now);
-        const yesterday = toDateOnly(new Date(now.setDate(now.getDate() - 1)));
+        const yesterday = toDateOnly(
+            new Date(now.setDate(now.getDate() - 1))
+        );
         const target = toDateOnly(date);
-        if (target.getTime() === today.getTime()) return "Today";
-        if (target.getTime() === yesterday.getTime()) return "Yesterday";
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return target.toLocaleDateString(undefined, options);
+        if (target.getTime() === today.getTime()) return 'Today';
+        if (target.getTime() === yesterday.getTime()) return 'Yesterday';
+        return target.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
     };
 
     const groupByDate = (transactions) => {
         if (!transactions || transactions.length === 0) return [];
         const groupedMap = {};
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
+        const todayStr = new Date().toISOString().split('T')[0];
 
         transactions.forEach((item) => {
             const dateKey = new Date(item.date).toISOString().split('T')[0];
@@ -81,8 +104,12 @@ export default function ActivityScreen({ navigation }) {
             groupedMap[dateKey].push(item);
         });
 
-        Object.keys(groupedMap).forEach(date => {
-            groupedMap[date].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+        Object.keys(groupedMap).forEach((date) => {
+            groupedMap[date].sort(
+                (a, b) =>
+                    new Date(b.datetime).getTime() -
+                    new Date(a.datetime).getTime()
+            );
         });
 
         const sortedDates = Object.keys(groupedMap).sort((a, b) => {
@@ -116,18 +143,41 @@ export default function ActivityScreen({ navigation }) {
     }, []);
 
     const { notifCount } = useContext(NotificationContext);
-
     useEffect(() => {
-        if (notifCount > 0) {
-            getUserTransactions();
-        }
+        if (notifCount > 0) getUserTransactions();
     }, [notifCount]);
+
+    // Derives HeroUI Chip color/variant for the points badge
+    const getPointsChipProps = (service, points) => {
+        if (service === 'Cash Redeem') {
+            return { color: 'danger', variant: 'soft', label: 'redeemed', prefix: '' };
+        }
+        if (service === 'Adjustment') {
+            const isCredit = parseFloat(points) >= 0;
+            return {
+                color: isCredit ? 'accent' : 'danger',
+                variant: 'soft',
+                label: isCredit ? 'credit' : 'debit',
+                prefix: isCredit ? '+' : '',
+            };
+        }
+        return { color: 'warning', variant: 'soft', label: 'earned', prefix: '+' };
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await getUserTransactions();
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     return (
         <>
             <DatePicker
                 isVisible={showDatePicker}
-                mode={'range'}
+                mode="range"
                 colorOptions={{
                     headerColor: '#fe0002',
                     weekDaysColor: '#fe0002',
@@ -137,171 +187,250 @@ export default function ActivityScreen({ navigation }) {
                 onCancel={() => setShowDatePicker(false)}
                 onConfirm={(e) => {
                     setShowDatePicker(false);
-                    setSelectedRange(`${e.startDateString} - ${e.endDateString}`);
+                    setSelectedRange(
+                        `${e.startDateString} – ${e.endDateString}`
+                    );
                     getUserTransactions(e.startDateString, e.endDateString);
                 }}
             />
 
-            <View style={custom_styles.container}>
-                <View style={custom_styles.cardContainer}>
+            <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+                <Animated.View style={[styles.cardContainer, { transform: [{ translateY: cardContainerTranslateY }] }]}>
                     <Animated.ScrollView
                         style={{ flex: 1, width: '100%' }}
-                        contentContainerStyle={{ paddingBottom: 100 }}
+                        contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         onScroll={Animated.event(
                             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
                             { useNativeDriver: true }
                         )}
                         scrollEventThrottle={16}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                tintColor="#fe0002"
+                                colors={["#fe0002"]}
+                            />
+                        }
                     >
-                        <View style={custom_styles.contentContainer}>
+                        {/* ── Page Header ── */}
+                        <View style={styles.headerSection}>
+                            <Text style={styles.title}>Activity</Text>
+                            <Text style={styles.subtitle}>
+                                Track your MyGas points history
+                            </Text>
+                        </View>
 
-                            {/* Page Header */}
-                            <View style={custom_styles.headerSection}>
-                                <Text style={custom_styles.title}>Activity</Text>
-                                <Text style={custom_styles.subtitle}>Track your MyGas points history</Text>
-                            </View>
-
-                            {/* Filter Card */}
-                            <View style={custom_styles.filterCard}>
-                                <View style={custom_styles.filterRow}>
-                                    <Text style={custom_styles.filterLabel}>Filter by Date</Text>
-                                    <TouchableOpacity
-                                        style={custom_styles.filterBtn}
+                        {/* ── Filter Card ── */}
+                        <Card style={styles.filterCard}>
+                            <Card.Body>
+                                <View style={styles.filterRow}>
+                                    <Text style={styles.filterLabel}>
+                                        Filter by Date
+                                    </Text>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
                                         onPress={() => setShowDatePicker(true)}
-                                        activeOpacity={0.7}
+                                        feedbackVariant="scale-highlight"
+                                        style={styles.filterBtn}
                                     >
-                                        <Text style={custom_styles.filterBtnText} numberOfLines={1}>
+                                        <Button.Label
+                                            numberOfLines={1}
+                                            style={styles.filterBtnText}
+                                        >
                                             {selectedRange}
-                                        </Text>
-                                        <Text style={custom_styles.filterIcon}>📅</Text>
-                                    </TouchableOpacity>
+                                        </Button.Label>
+                                        <Text style={styles.calendarIcon}>📅</Text>
+                                    </Button>
                                 </View>
+                            </Card.Body>
+                        </Card>
+
+                        {/* ── Content ── */}
+                        {isLoading ? (
+                            <View style={styles.loadingContainer}>
+                                <Spinner size="lg" color="#fe0002" />
+                                <Text style={styles.loadingText}>
+                                    Loading transactions…
+                                </Text>
                             </View>
+                        ) : groupedTransactions.length > 0 ? (
+                            groupedTransactions.map((group, index) => (
+                                <View key={index} style={styles.dateGroup}>
 
-                            {/* Content */}
-                            {isLoading ? (
-                                <View style={custom_styles.loadingContainer}>
-                                    <ActivityIndicator size="large" color="#fe0002" />
-                                    <Text style={custom_styles.loadingText}>Loading transactions...</Text>
-                                </View>
-                            ) : groupedTransactions && groupedTransactions.length > 0 ? (
-                                groupedTransactions.map((group, index) => (
-                                    <View key={index} style={custom_styles.dateGroup}>
+                                    {/* Date header row */}
+                                    <View style={styles.dateHeader}>
+                                        <Chip
+                                            variant="primary"
+                                            color="default"
+                                            size="sm"
+                                            animation="disable-all"
+                                        >
+                                            <Chip.Label style={styles.dateChipLabel}>
+                                                {group.date}
+                                            </Chip.Label>
+                                        </Chip>
+                                        <View style={styles.dateLine} />
+                                    </View>
 
-                                        <View style={custom_styles.dateHeader}>
-                                            <View style={custom_styles.dateBadge}>
-                                                <Text style={custom_styles.dateText}>{group.date}</Text>
-                                            </View>
-                                            <View style={custom_styles.dateLine} />
-                                        </View>
+                                    {/* Transaction cards */}
+                                    {[...group.items].reverse().map((item, ind) => {
+                                        const chipProps = getPointsChipProps(
+                                            item.service,
+                                            item.points
+                                        );
 
-                                        {[...group.items].reverse().map((item, ind) => (
-                                            <View key={ind} style={custom_styles.transactionCard}>
-
-                                                <View style={custom_styles.cardHeader}>
-                                                    <View style={custom_styles.iconWrapper}>
+                                        return (
+                                            <Card
+                                                key={ind}
+                                                variant="default"
+                                                style={styles.transactionCard}
+                                            >
+                                                {/* Card Header — station + time */}
+                                                <Card.Header style={styles.cardHeaderRow}>
+                                                    <View style={styles.iconWrapper}>
                                                         <Image
                                                             source={require('../../../assets/mygas_logo.png')}
-                                                            style={custom_styles.stationIcon}
+                                                            style={styles.stationIcon}
                                                         />
                                                     </View>
-                                                    <View style={custom_styles.headerInfo}>
-                                                        <Text style={custom_styles.stationName} numberOfLines={1}>
-                                                            {item.service === 'Adjustment' ? 'MyGas Credit/Debit Memo' : item.station_name}
+                                                    <View style={styles.headerInfo}>
+                                                        <Text
+                                                            style={styles.stationName}
+                                                            numberOfLines={1}
+                                                        >
+                                                            {item.service === 'Adjustment'
+                                                                ? 'MyGas Credit/Debit Memo'
+                                                                : item.station_name}
                                                         </Text>
-                                                        <Text style={custom_styles.dateTime} numberOfLines={1}>
-                                                            {formatDateTime(item.date, item.time)}
+                                                        <Text
+                                                            style={styles.dateTime}
+                                                            numberOfLines={1}
+                                                        >
+                                                            {formatDateTime(
+                                                                item.date,
+                                                                item.time
+                                                            )}
                                                         </Text>
                                                     </View>
-                                                </View>
+                                                </Card.Header>
 
-                                                <View style={custom_styles.cardDivider} />
+                                                <Separator className="my-2" />
 
-                                                <View style={custom_styles.cardBody}>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Transaction</Text>
-                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                {/* Card Body — transaction details */}
+                                                <Card.Body style={styles.cardBodyGap}>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.infoLabel}>
+                                                            Transaction
+                                                        </Text>
+                                                        <Text
+                                                            style={styles.infoValue}
+                                                            numberOfLines={1}
+                                                        >
                                                             {item.transaction_number}
                                                         </Text>
                                                     </View>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Service</Text>
-                                                        <Text style={custom_styles.infoValue} numberOfLines={1}>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.infoLabel}>
+                                                            Service
+                                                        </Text>
+                                                        <Text
+                                                            style={styles.infoValue}
+                                                            numberOfLines={1}
+                                                        >
                                                             {item.service}
                                                         </Text>
                                                     </View>
-                                                    <View style={custom_styles.infoRow}>
-                                                        <Text style={custom_styles.infoLabel}>Amount</Text>
-                                                        <Text style={custom_styles.amountValue}>
-                                                            ₱{parseFloat(item.amount).toFixed(2)}
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.infoLabel}>
+                                                            Points Amount
                                                         </Text>
+                                                        {/* <Text style={styles.amountValue}>
+                                                            {parseFloat(
+                                                                item.amount
+                                                            ).toFixed(2)}
+                                                        </Text> */}
+                                                        <Chip
+                                                            variant={chipProps.variant}
+                                                            color={chipProps.color}
+                                                            size="md"
+                                                            animation="disable-all"
+                                                            style={styles.pointsChip}
+                                                        >
+                                                            <Chip.Label
+                                                                style={styles.pointsValue}
+                                                            >
+                                                                {chipProps.prefix}
+                                                                {item.points}
+                                                            </Chip.Label>
+                                                            <Chip.Label
+                                                                style={styles.pointsUnit}
+                                                            >
+                                                                {chipProps.label}
+                                                            </Chip.Label>
+                                                        </Chip>
                                                     </View>
-                                                </View>
+                                                </Card.Body>
 
-                                                <View style={[
-                                                    custom_styles.pointsBadge,
-                                                    {
-                                                        backgroundColor:
-                                                            item.service === 'Cash Redeem' ? '#FFE5E5' :
-                                                                item.service === 'Adjustment' ? '#E3F2FD' :
-                                                                    '#FFF8E1'
-                                                    }
-                                                ]}>
-                                                    <Text style={[
-                                                        custom_styles.pointsValue,
-                                                        {
-                                                            color:
-                                                                item.service === 'Cash Redeem' ? '#D32F2F' :
-                                                                    item.service === 'Adjustment'
-                                                                        ? (parseFloat(item.points) >= 0 ? '#1976D2' : '#D32F2F')
-                                                                        : '#F57C00'
-                                                        }
-                                                    ]}>
-                                                        {item.service === 'Cash Redeem' || parseFloat(item.points) < 0 ? '' : '+'}{item.points}
-                                                    </Text>
-                                                    <Text style={custom_styles.pointsText}>
-                                                        {item.service === 'Cash Redeem' ? 'redeemed' :
-                                                            item.service === 'Adjustment'
-                                                                ? (parseFloat(item.points) >= 0 ? 'credit' : 'debit')
-                                                                : 'earned'}
-                                                    </Text>
-                                                </View>
-
-                                            </View>
-                                        ))}
-                                    </View>
-                                ))
-                            ) : (
-                                <View style={custom_styles.emptyState}>
-                                    <View style={custom_styles.emptyIcon}>
-                                        <Text style={custom_styles.emptyIconText}>📊</Text>
-                                    </View>
-                                    <Text style={custom_styles.emptyTitle}>No Activity Yet</Text>
-                                    <Text style={custom_styles.emptySubtitle}>
-                                        Your transaction history will appear here
-                                    </Text>
+                                                {/* Card Footer — points badge */}
+                                                {/* <Card.Footer style={styles.cardFooter}>
+                                                    <Chip
+                                                        variant={chipProps.variant}
+                                                        color={chipProps.color}
+                                                        size="md"
+                                                        animation="disable-all"
+                                                        style={styles.pointsChip}
+                                                    >
+                                                        <Chip.Label
+                                                            style={styles.pointsValue}
+                                                        >
+                                                            {chipProps.prefix}
+                                                            {item.points}
+                                                        </Chip.Label>
+                                                        <Chip.Label
+                                                            style={styles.pointsUnit}
+                                                        >
+                                                            {chipProps.label}
+                                                        </Chip.Label>
+                                                    </Chip>
+                                                </Card.Footer> */}
+                                            </Card>
+                                        );
+                                    })}
                                 </View>
-                            )}
-
-                        </View>
+                            ))
+                        ) : (
+                            /* ── Empty State ── */
+                            <View style={styles.emptyState}>
+                                <View style={styles.emptyIconCircle}>
+                                    <Text style={styles.emptyIconText}>📊</Text>
+                                </View>
+                                <Text style={styles.emptyTitle}>No Activity Yet</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    Your transaction history will appear here
+                                </Text>
+                            </View>
+                        )}
                     </Animated.ScrollView>
-                </View>
+                </Animated.View>
 
+                <View style={{ height: '5%' }} />
             </View>
         </>
     );
 }
 
-const custom_styles = StyleSheet.create({
-
-    // Same as RedemptionScreen container
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F9FAFB',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        marginTop: -30,
+        overflow: 'hidden',
     },
-
-    // Identical to RedemptionScreen's cardContainer
     cardContainer: {
         flex: 1,
         alignItems: 'center',
@@ -309,19 +438,17 @@ const custom_styles = StyleSheet.create({
         backgroundColor: '#F8F9FA',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        overflow: 'hidden', // KEY — keeps corners clipped during scroll
+        overflow: 'hidden',
         position: 'relative',
         zIndex: 1,
     },
-
-    // Identical to RedemptionScreen's contentContainer (no borderTopRadius)
-    contentContainer: {
-        backgroundColor: '#F9FAFB',
+    scrollContent: {
         paddingHorizontal: responsive(16, 20),
         paddingTop: responsive(24, 28),
-        width: '100%',
+        paddingBottom: 100,
     },
 
+    // Header
     headerSection: {
         marginBottom: 20,
     },
@@ -337,20 +464,11 @@ const custom_styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '500',
     },
+
+    // Filter
     filterCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 16,
         marginBottom: 20,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-            },
-            android: { elevation: 2 },
-        }),
+        borderRadius: 16,
     },
     filterRow: {
         flexDirection: 'row',
@@ -364,38 +482,34 @@ const custom_styles = StyleSheet.create({
         flex: 1,
     },
     filterBtn: {
-        backgroundColor: '#F3F4F6',
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
+        maxWidth: '60%',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        maxWidth: '60%',
+        gap: 6,
     },
     filterBtnText: {
         fontSize: 13,
-        color: '#1F2937',
         fontWeight: '600',
         flexShrink: 1,
     },
-    filterIcon: {
-        fontSize: 16,
+    calendarIcon: {
+        fontSize: 15,
     },
+
+    // Loading
     loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
         paddingVertical: 80,
+        gap: 16,
     },
     loadingText: {
-        marginTop: 16,
         fontSize: 15,
         color: '#6B7280',
         fontWeight: '500',
     },
+
+    // Date group
     dateGroup: {
         marginBottom: 24,
     },
@@ -403,16 +517,10 @@ const custom_styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 16,
+        gap: 12,
     },
-    dateBadge: {
-        backgroundColor: '#1F2937',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-    dateText: {
-        fontSize: 13,
-        color: '#FFFFFF',
+    dateChipLabel: {
+        fontSize: 12,
         fontWeight: '700',
         letterSpacing: 0.3,
     },
@@ -420,15 +528,12 @@ const custom_styles = StyleSheet.create({
         flex: 1,
         height: 1,
         backgroundColor: '#E5E7EB',
-        marginLeft: 12,
     },
+
+    // Transaction card
     transactionCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 16,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#F3F4F6',
+        borderRadius: 16,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -439,10 +544,10 @@ const custom_styles = StyleSheet.create({
             android: { elevation: 3 },
         }),
     },
-    cardHeader: {
+    cardHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        gap: 12,
     },
     iconWrapper: {
         width: 44,
@@ -451,7 +556,6 @@ const custom_styles = StyleSheet.create({
         backgroundColor: '#FEF3C7',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
     },
     stationIcon: {
         width: 26,
@@ -472,14 +576,10 @@ const custom_styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '500',
     },
-    cardDivider: {
-        height: 1,
-        backgroundColor: '#F3F4F6',
-        marginBottom: 12,
-    },
-    cardBody: {
+
+    // Card body
+    cardBodyGap: {
         gap: 10,
-        marginBottom: 12,
     },
     infoRow: {
         flexDirection: 'row',
@@ -504,32 +604,37 @@ const custom_styles = StyleSheet.create({
         color: '#1A1A1A',
         fontWeight: '800',
     },
-    pointsBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
+
+    // Points badge (chip)
+    cardFooter: {
+        alignItems: 'flex-start',
+    },
+    pointsChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
         borderRadius: 12,
-        gap: 8,
+        flexDirection: 'row',
+        gap: 6,
     },
     pointsValue: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '800',
     },
-    pointsText: {
-        fontSize: 12,
-        color: '#6B7280',
+    pointsUnit: {
+        fontSize: 11,
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        opacity: 0.7,
     },
+
+    // Empty state
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 80,
     },
-    emptyIcon: {
+    emptyIconCircle: {
         width: 70,
         height: 70,
         borderRadius: 35,

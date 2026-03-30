@@ -1,229 +1,330 @@
-import { StyleSheet, Text, View, Dimensions, StatusBar, Image } from 'react-native';
-import React from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet, Text, View, Dimensions, StatusBar, Animated, Easing } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const isTablet = width > 768;
 
 export default function ServerBusy() {
+    const [dots, setDots] = useState('');
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(24)).current;
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    const startTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    useEffect(() => {
+        // Fade + slide in
+        Animated.parallel([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]).start();
+
+        // Pulse dot
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, { toValue: 0.3, duration: 600, useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+            ])
+        ).start();
+
+        // Animated dots
+        const interval = setInterval(() => {
+            setDots(d => d.length >= 3 ? '' : d + '.');
+        }, 600);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#F54927" />
+        <View style={styles.root}>
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-            {/* Background Gradient */}
-            <LinearGradient
-                colors={['#F54927', '#FF6B4A', '#F54927']}
-                style={styles.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            />
-
-            <View style={styles.content}>
-                {/* Icon Container */}
-                <View style={styles.iconContainer}>
-                    <View style={styles.iconCircle}>
-                        <View style={styles.toolIcon}>
-                            <View style={styles.wrench} />
-                            <View style={styles.wrenchHandle} />
-                        </View>
-                    </View>
-                    {/* Animated dots */}
-                    <View style={styles.dotsContainer}>
-                        <View style={[styles.dot, styles.dot1]} />
-                        <View style={[styles.dot, styles.dot2]} />
-                        <View style={[styles.dot, styles.dot3]} />
-                    </View>
-                </View>
-
-                {/* Text Content */}
-                <View style={styles.textContainer}>
-                    <Text style={styles.title}>We'll Be Right Back</Text>
-                    <Text style={styles.subtitle}>Server is Busy</Text>
-
-                    <View style={styles.divider} />
-
-                    <Text style={styles.description}>
-                        We're currently performing scheduled maintenance to improve your experience.
-                        Our team is working hard to get everything back online as soon as possible.
-                    </Text>
-
-                    <View style={styles.infoBox}>
-                        <View style={styles.infoRow}>
-                            <View style={styles.infoDot} />
-                            <Text style={styles.infoText}>Expected Duration: 2-4 hours</Text>
-                        </View>
-                        <View style={styles.infoRow}>
-                            <View style={styles.infoDot} />
-                            <Text style={styles.infoText}>Started: Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                        </View>
-                    </View>
-
-                    <Text style={styles.footerText}>
-                        Thank you for your patience and understanding
-                    </Text>
+            {/* Full-bleed diagonal stripes */}
+            <View style={styles.stripesOverlay} pointerEvents="none">
+                <View style={styles.stripesInner}>
+                    {Array.from({ length: 60 }).map((_, i) => (
+                        <View key={i} style={styles.stripe} />
+                    ))}
                 </View>
             </View>
 
-            {/* Bottom Wave */}
-            <View style={styles.waveContainer}>
-                <View style={styles.wave} />
-            </View>
+            <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+
+                {/* Badge */}
+                <View style={styles.badge}>
+                    <Animated.View style={[styles.badgeDot, { opacity: pulseAnim }]} />
+                    <Text style={styles.badgeText}>SYSTEM NOTICE</Text>
+                </View>
+
+                {/* Warning card */}
+                <View style={styles.warningCard}>
+                    <Text style={styles.warningIcon}>⚠</Text>
+                    <Text style={styles.warningText}>Server is currently unavailable</Text>
+                </View>
+
+                {/* Headline */}
+                <View style={styles.headlineBlock}>
+                    <Text style={styles.headlineTop}>WE'LL BE</Text>
+                    <Text style={styles.headlineBottom}>RIGHT BACK</Text>
+                </View>
+
+                {/* Divider */}
+                <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <View style={styles.dividerDiamond} />
+                    <View style={styles.dividerLine} />
+                </View>
+
+                {/* Description */}
+                <Text style={styles.description}>
+                    We're currently performing scheduled maintenance to improve your experience.
+                    Our team is working hard to get everything back online as soon as possible.
+                </Text>
+
+                {/* Info block */}
+                <View style={styles.infoBlock}>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoDot} />
+                        <Text style={styles.infoText}>Expected duration: 2–4 hours</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoDot} />
+                        <Text style={styles.infoText}>Started: Today at {startTime}</Text>
+                    </View>
+                </View>
+
+                {/* Status cards */}
+                <View style={styles.cards}>
+                    <View style={[styles.card, { backgroundColor: '#dc2626' }]}>
+                        <Text style={[styles.cardLabel, { color: 'rgba(255,255,255,0.6)' }]}>STATUS</Text>
+                        <Text style={[styles.cardValue, { color: '#ffffff' }]}>BUSY{dots}</Text>
+                    </View>
+                    <View style={[styles.card, { backgroundColor: '#fbbf24' }]}>
+                        <Text style={[styles.cardLabel, { color: '#92400e' }]}>DOWNTIME</Text>
+                        <Text style={[styles.cardValue, { color: '#1c1917' }]}>2–4 HRS</Text>
+                    </View>
+                    <View style={[styles.card, { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#e5e7eb' }]}>
+                        <Text style={[styles.cardLabel, { color: '#9f1239' }]}>SUPPORT</Text>
+                        <Text style={[styles.cardValue, { color: '#dc2626' }]}>CONTACT US</Text>
+                    </View>
+                </View>
+
+                <Text style={styles.footerText}>Thank you for your patience and understanding</Text>
+            </Animated.View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    root: {
         flex: 1,
-        backgroundColor: '#F54927',
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
     },
-    gradient: {
+    stripesOverlay: {
         position: 'absolute',
+        top: 0,
         left: 0,
         right: 0,
-        top: 0,
         bottom: 0,
+        overflow: 'hidden',
     },
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: width > 768 ? 60 : 24,
-        paddingVertical: 40,
-    },
-    iconContainer: {
-        marginBottom: height > 700 ? 50 : 30,
-        alignItems: 'center',
-    },
-    iconCircle: {
-        width: width > 768 ? 160 : 120,
-        height: width > 768 ? 160 : 120,
-        borderRadius: width > 768 ? 80 : 60,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 3,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    toolIcon: {
-        width: width > 768 ? 70 : 50,
-        height: width > 768 ? 70 : 50,
-        position: 'relative',
-    },
-    wrench: {
-        width: width > 768 ? 40 : 30,
-        height: width > 768 ? 40 : 30,
-        borderWidth: 5,
-        borderColor: '#FFFFFF',
-        borderRadius: 8,
-        transform: [{ rotate: '45deg' }],
+    stripesInner: {
         position: 'absolute',
-        top: 0,
-        left: width > 768 ? 15 : 10,
+        // Extend well beyond screen in all directions so rotated stripes cover edges
+        top: -500,
+        left: -500,
+        right: -500,
+        bottom: -500,
+        flexDirection: 'column',
+        transform: [{ rotate: '-35deg' }],
     },
-    wrenchHandle: {
-        width: width > 768 ? 12 : 8,
-        height: width > 768 ? 50 : 40,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 6,
-        position: 'absolute',
-        bottom: -10,
-        left: width > 768 ? 29 : 21,
-        transform: [{ rotate: '45deg' }],
+    stripe: {
+        height: 28,
+        marginBottom: 28,
+        backgroundColor: 'rgba(220,38,38,0.045)',
     },
-    dotsContainer: {
-        flexDirection: 'row',
-        marginTop: 20,
-        gap: 8,
-    },
-    dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    },
-    textContainer: {
+    container: {
         alignItems: 'center',
-        maxWidth: width > 768 ? 600 : width - 48,
-    },
-    title: {
-        fontSize: width > 768 ? 42 : 32,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        textAlign: 'center',
-        marginBottom: 12,
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        fontSize: width > 768 ? 20 : 16,
-        fontWeight: '600',
-        color: 'rgba(255, 255, 255, 0.95)',
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    divider: {
-        width: 60,
-        height: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        borderRadius: 2,
-        marginBottom: 24,
-    },
-    description: {
-        fontSize: width > 768 ? 16 : 14,
-        color: 'rgba(255, 255, 255, 0.9)',
-        textAlign: 'center',
-        lineHeight: width > 768 ? 26 : 22,
-        marginBottom: 32,
-        paddingHorizontal: width > 768 ? 0 : 12,
-    },
-    infoBox: {
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        borderRadius: 16,
-        padding: width > 768 ? 24 : 20,
-        marginBottom: 32,
+        paddingHorizontal: isTablet ? 60 : 24,
+        paddingVertical: 48,
+        maxWidth: isTablet ? 600 : width,
         width: '100%',
-        maxWidth: width > 768 ? 400 : '100%',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        gap: 22,
+    },
+
+    // Badge
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#fef9c3',
+        borderWidth: 2,
+        borderColor: '#fbbf24',
+        borderRadius: 4,
+        paddingHorizontal: 16,
+        paddingVertical: 5,
+    },
+    badgeDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: '#dc2626',
+    },
+    badgeText: {
+        fontFamily: 'monospace',
+        fontSize: 10,
+        fontWeight: '500',
+        letterSpacing: 2,
+        color: '#92400e',
+    },
+
+    // Warning card
+    warningCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#fbbf24',
+        borderWidth: 2,
+        borderColor: '#f59e0b',
+        borderRadius: 6,
+        paddingHorizontal: 20,
+        paddingVertical: 11,
+        width: '100%',
+        maxWidth: 420,
+    },
+    warningIcon: {
+        fontSize: 14,
+        color: '#1c1917',
+    },
+    warningText: {
+        fontFamily: 'monospace',
+        fontSize: 11,
+        fontWeight: '500',
+        letterSpacing: 1,
+        color: '#1c1917',
+    },
+
+    // Headline
+    headlineBlock: {
+        alignItems: 'center',
+    },
+    headlineTop: {
+        fontSize: isTablet ? 96 : 64,
+        fontWeight: '900',
+        letterSpacing: 6,
+        color: '#111827',
+        lineHeight: isTablet ? 84 : 56,
+        textAlign: 'center',
+    },
+    headlineBottom: {
+        fontSize: isTablet ? 96 : 64,
+        fontWeight: '900',
+        letterSpacing: 6,
+        color: '#dc2626',
+        lineHeight: isTablet ? 84 : 56,
+        textAlign: 'center',
+    },
+
+    // Divider
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        width: '100%',
+        maxWidth: 380,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 2,
+        backgroundColor: '#dc2626',
+        opacity: 0.4,
+    },
+    dividerDiamond: {
+        width: 8,
+        height: 8,
+        backgroundColor: '#fbbf24',
+        borderWidth: 2,
+        borderColor: '#dc2626',
+        transform: [{ rotate: '45deg' }],
+    },
+
+    // Description
+    description: {
+        fontSize: 13,
+        color: '#6b7280',
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 380,
+    },
+
+    // Info block
+    infoBlock: {
+        width: '100%',
+        maxWidth: 420,
+        backgroundColor: '#f9fafb',
+        borderWidth: 2,
+        borderColor: '#e5e7eb',
+        borderRadius: 8,
+        paddingHorizontal: 22,
+        paddingVertical: 18,
+        gap: 10,
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        gap: 10,
     },
     infoDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#FFFFFF',
-        marginRight: 12,
+        backgroundColor: '#dc2626',
     },
     infoText: {
-        fontSize: width > 768 ? 15 : 14,
-        color: '#FFFFFF',
+        fontFamily: 'monospace',
+        fontSize: 11,
+        fontWeight: '500',
+        color: '#374151',
+    },
+
+    // Cards
+    cards: {
+        flexDirection: 'row',
+        gap: 10,
+        width: '100%',
+        maxWidth: 420,
+    },
+    card: {
+        flex: 1,
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    cardLabel: {
+        fontFamily: 'monospace',
+        fontSize: 9,
+        letterSpacing: 2,
+        fontWeight: '500',
+        marginBottom: 7,
+    },
+    cardValue: {
+        fontFamily: 'monospace',
+        fontSize: 11,
         fontWeight: '500',
     },
+
     footerText: {
-        fontSize: width > 768 ? 14 : 12,
-        color: 'rgba(255, 255, 255, 0.8)',
-        textAlign: 'center',
+        fontSize: 11,
+        color: '#9ca3af',
         fontStyle: 'italic',
-    },
-    waveContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 100,
-        overflow: 'hidden',
-    },
-    wave: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderTopLeftRadius: 100,
-        borderTopRightRadius: 100,
+        textAlign: 'center',
     },
 });

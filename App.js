@@ -18,14 +18,21 @@ import { initPusher } from "./src/lib/Websockets";
 import { PATH_URL } from "./src/config";
 import { CheckServerMaintenance } from "./src/lib/CheckServerMaintenance";
 
+import "./global.css";
+import { HeroUINativeProvider } from "heroui-native";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PromoProvider } from "./src/context/PromoContext";
+
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [serverUp, setServerUp] = useState(true);
   const [maintenance, setMaintenance] = useState(false);
   const [hasBarcode, setHasBarcode] = useState(null);
 
+  // start sa notification
   useNotifications();
 
+  // pag check sa barcode sa local storage kung offline
   useEffect(() => {
     let mounted = true;
 
@@ -49,6 +56,7 @@ export default function App() {
     };
   }, []);
 
+  // check ang internet / data connection
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       const online = !!(state.isConnected && state.isInternetReachable);
@@ -58,6 +66,7 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // check sa server/backend kung naga dagan ba or wala
   useEffect(() => {
     let intervalId;
     let mounted = true;
@@ -78,6 +87,8 @@ export default function App() {
 
         const data = await response.json();
 
+        console.log("Server health:", data);
+
         if (mounted) {
           const isUp = data?.status === "UP";
           setServerUp(isUp);
@@ -95,6 +106,7 @@ export default function App() {
             intervalId = setInterval(checkServerHealth, 30000);
           }
         }
+        console.error("Server health check failed:", error.getMessage());
       }
     };
 
@@ -106,6 +118,7 @@ export default function App() {
     };
   }, []);
 
+  // check kung maintenance ba or wala
   useEffect(() => {
     let mounted = true;
 
@@ -113,6 +126,8 @@ export default function App() {
       try {
         const result = await CheckServerMaintenance();
         const isMaintenance = result?.result?.[0]?.value === "true";
+
+        // console.log("Is maintenance:", result);
 
         if (mounted) {
           setMaintenance(isMaintenance);
@@ -129,6 +144,7 @@ export default function App() {
     };
   }, []);
 
+  // diri sa baba ↓ kay mga screen nga i render kung offline, maintenance or online
   let ScreenToRender = <Navigation />;
 
   if (!isConnected) {
@@ -158,16 +174,22 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <StatusBar hidden />
-        <AuthProvider>
-          <NotificationProvider>
-            <PointsDetailsProvider>
-              {ScreenToRender}
-            </PointsDetailsProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <HeroUINativeProvider>
+          <ThemeProvider>
+            <StatusBar hidden />
+            <AuthProvider>
+              <NotificationProvider>
+                <PointsDetailsProvider>
+                  <PromoProvider>
+                    {ScreenToRender}
+                  </PromoProvider>
+                </PointsDetailsProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </HeroUINativeProvider>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }
