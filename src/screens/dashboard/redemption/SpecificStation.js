@@ -144,7 +144,7 @@ const StationCard = ({ station, isSelected, onSelect }) => {
   );
 };
 
-export default function SpecificStation({ visible, onClose, onConfirm, onClear, productId = "" }) {
+export default function SpecificStation({ visible, onClose, onConfirm, onClear, productId = "", clearStationAction }) {
   const { userInfo, userDetails, userLocation } = useContext(AuthContext);
   const [stationLists, setStationLists] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
@@ -270,10 +270,13 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
   const handleClear = () => {
     if (onClear) {
       onClear();
+      setSearchQuery('');
+      // setSelectedStation(null);
+      if (clearStationAction == true) {
+        setSelectedStation(null);
+      }
+      onClose();
     }
-    setSearchQuery('');
-    setSelectedStation(null);
-    onClose();
   };
 
   const handleClose = () => {
@@ -289,18 +292,18 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
           const stationSelected = JSON.parse(cachedStationSelected);
           setSelectedStation(stationSelected);
         } else {
-          // No cached station, just stop loading
           setSelectedStation(null);
-          setLoading(false);
         }
       } catch (error) {
         console.error("Error loading cached station:", error);
-        setLoading(false);
+        setSelectedStation(null);
       }
     };
 
-    loadCachedStation();
-  }, []);
+    if (visible) {
+      loadCachedStation();
+    }
+  }, [visible]);
 
   return (
     <Modal

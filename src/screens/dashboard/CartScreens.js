@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useContext, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,6 @@ import {
     Dimensions,
     FlatList,
     Platform,
-    Alert,
     Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,13 +23,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import QrRedemption from './redemption/QrRedemption';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { clearAllCartItems, removeCartItem } from '../../lib/CartCountHelper';
-import Loader from '../../components/Loader';
-import LoadingPage from '../../components/LoadingState';
 import { useRedemption } from '../../hooks/RedemptionHooks';
+import { Dialog, SkeletonGroup, useToast } from 'heroui-native';
 
 const { width, height } = Dimensions.get('window');
 
-// Responsive breakpoints
 const isSmallDevice = width < 375;
 const isMediumDevice = width >= 375 && width < 768;
 const isTablet = width >= 768 && width < 1024;
@@ -43,56 +40,13 @@ const getResponsiveValue = (small, medium, tablet, large) => {
     return large;
 };
 
-// Snackbar Component
-const Snackbar = ({ visible, text, type = 'success', onHide }) => {
-    const translateY = useRef(new Animated.Value(100)).current;
-
-    useEffect(() => {
-        if (visible) {
-            Animated.sequence([
-                Animated.spring(translateY, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 50,
-                    friction: 8,
-                }),
-                Animated.delay(2500),
-                Animated.timing(translateY, {
-                    toValue: 100,
-                    duration: 100,
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                if (onHide) onHide();
-            });
-        }
-    }, [visible]);
-
-    if (!visible) return null;
-
-    const backgroundColor = type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#F59E0B';
-    const icon = type === 'success' ? 'checkmark-circle' : type === 'error' ? 'close-circle' : 'alert-circle';
-
-    return (
-        <Animated.View
-            style={[
-                styles.snackbar,
-                { backgroundColor, transform: [{ translateY }] }
-            ]}
-        >
-            <Ionicons name={icon} size={20} color="#fff" />
-            <Text style={styles.snackbarText}>{text}</Text>
-        </Animated.View>
-    );
-};
-
 // Cart Item Component
 const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
     const handleIncrease = () => {
         if (item.quantity < item.maxQuantity) {
             onQuantityChange(item.stationInventoryId, item.quantity + 1, item.inventoryId);
         } else {
-            Alert.alert('Stock Limit', `Only ${item.maxQuantity} items available in stock.`);
+            onQuantityChange(item.stationInventoryId, item.quantity, item.inventoryId, 'stock_limit');
         }
     };
 
@@ -221,14 +175,21 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
 export default function CartScreens({ navigation, route }) {
     const { userInfo, userDetails } = useContext(AuthContext);
     const { rewards, refreshPoints, redemptionCount, setRedemptionCount, getRedemptionCount } = useContext(PointsDetailContext);
+    const { toast } = useToast();
     const station = route?.params?.station;
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [snackbar, setSnackbar] = useState({ visible: false, message: '', type: 'success' });
     const [showQR, setShowQR] = useState(false);
     const [transaction, setTransaction] = useState(null);
-    const userPoints = rewards?.points || 0;
     const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
+
+    // ── Single unified dialog state ────────────────────────────────
+    const [activeDialog, setActiveDialog] = useState({ type: null, payload: {} });
+
+    const closeDialog = () => setActiveDialog({ type: null, payload: {} });
+    const openDialog = (type, payload = {}) => setActiveDialog({ type, payload });
+
+    const userPoints = rewards?.points || 0;
 
     const totalPoints = useMemo(() => {
         return cartItems.reduce((sum, item) => sum + (item.points * item.quantity), 0);
@@ -241,40 +202,61 @@ export default function CartScreens({ navigation, route }) {
     const canAfford = userPoints >= totalPoints;
     const pointsRemaining = userPoints - totalPoints;
 
-    // Show snackbar helper
-    const showSnackbar = (message, type = 'success') => {
-        // setSnackbar({ visible: true, message, type });
+    // ── Dialog config map ──────────────────────────────────────────
+    const dialogConfig = {
+        remove: {
+            title: 'Remove Item',
+            description: `Are you sure you want to remove "${activeDialog.payload?.itemName}" from your cart?`,
+            buttons: [
+                { label: 'Cancel', style: 'cancel', onPress: closeDialog },
+                { label: 'Remove', style: 'destructive', onPress: confirmRemoveItem },
+            ],
+        },
+        clear: {
+            title: 'Clear Cart',
+            description: 'Are you sure you want to remove all items from your cart? This cannot be undone.',
+            buttons: [
+                { label: 'Cancel', style: 'cancel', onPress: closeDialog },
+                { label: 'Clear All', style: 'destructive', onPress: confirmClearCart },
+            ],
+        },
+        checkout: {
+            title: 'Confirm Redemption',
+            description: `Redeem ${totalItems} item${totalItems !== 1 ? 's' : ''} for ${totalPoints.toLocaleString()} points?\n\nYou will have ${(userPoints - totalPoints).toLocaleString()} points remaining after this redemption.`,
+            buttons: [
+                { label: 'Cancel', style: 'cancel', onPress: closeDialog },
+                { label: 'Redeem', style: 'confirm', onPress: confirmCheckout },
+            ],
+        },
+        stock_limit: {
+            title: 'Stock Limit Reached',
+            description: `Only ${activeDialog.payload?.maxQuantity} ${activeDialog.payload?.maxQuantity === 1 ? 'item is' : 'items are'} available in stock for this product.`,
+            buttons: [
+                { label: 'Got it', style: 'confirm', onPress: closeDialog },
+            ],
+        },
     };
 
-    const hideSnackbar = () => {
-        setSnackbar({ visible: false, message: '', type: 'success' });
-    };
+    const currentDialog = dialogConfig[activeDialog.type] ?? null;
 
+    // ── Data fetching ──────────────────────────────────────────────
     const transformCartData = (apiData) => {
         if (!apiData || !Array.isArray(apiData)) return [];
 
         return apiData.map(item => {
             const cart = item.cart;
-
-            // Use cart.points as the original/default price
             const originalPoints = cart.points || 0;
-
-            // Check if it's actually a valid promo (not just flag, but has actual promo data)
             const hasValidPromo = cart.weekly_promo?.promo_points !== null &&
                 cart.weekly_promo?.promo_points !== undefined &&
                 cart.weekly_promo?.promo_descriptions !== null;
-
-            // Use promo_points as the discounted price if valid promo exists, otherwise use cart.points
-            const currentPoints = hasValidPromo
-                ? cart.weekly_promo.promo_points
-                : originalPoints;
+            const currentPoints = hasValidPromo ? cart.weekly_promo.promo_points : originalPoints;
 
             return {
                 id: cart.id,
                 name: cart.inventory?.name || 'Unknown Item',
                 description: cart.inventory?.description || '',
-                points: currentPoints, // Discounted price if promo, otherwise cart.points
-                originalPoints: originalPoints, // cart.points (NOT station_inventory.points)
+                points: currentPoints,
+                originalPoints,
                 quantity: cart.quantity || 1,
                 maxQuantity: parseFloat(cart.station_inventory?.quantity || 0),
                 totalPoints: currentPoints * (cart.quantity || 1),
@@ -311,22 +293,27 @@ export default function CartScreens({ navigation, route }) {
             const { statusCode, data } = res;
 
             if (statusCode === 201 && data?.data) {
-                const transformedData = transformCartData(data.data);
-                setCartItems(transformedData);
+                setCartItems(transformCartData(data.data));
             } else {
                 setCartItems([]);
             }
         } catch (error) {
             console.error('Error fetching cart:', error);
-            showSnackbar('Failed to load cart items', 'error');
+            toast.show({ variant: 'danger', label: 'Failed!', description: 'Failed to load cart items', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
             setCartItems([]);
         } finally {
             setLoading(false);
         }
     };
 
-    // Update the handleQuantityChange function
-    const handleQuantityChange = async (itemId, newQuantity, inventoryId) => {
+    // ── Quantity change ────────────────────────────────────────────
+    const handleQuantityChange = async (itemId, newQuantity, inventoryId, flag) => {
+        if (flag === 'stock_limit') {
+            const item = cartItems.find(i => i.stationInventoryId === itemId);
+            openDialog('stock_limit', { maxQuantity: item?.maxQuantity ?? 0 });
+            return;
+        }
+
         try {
             const response = await fetch(`${BASE_URL}customer/adjust-quantity`, {
                 method: "POST",
@@ -338,8 +325,8 @@ export default function CartScreens({ navigation, route }) {
                 body: JSON.stringify({
                     bar_code: userDetails.bar_code,
                     station_inventories_id: itemId,
-                    quantity_change: newQuantity
-                })
+                    quantity_change: newQuantity,
+                }),
             });
 
             const res = await processResponse(response);
@@ -348,7 +335,6 @@ export default function CartScreens({ navigation, route }) {
             if (statusCode === 200) {
                 const getCarts = await AsyncStorage.getItem("carts");
                 let carts = getCarts ? JSON.parse(getCarts) : [];
-
                 const existingIndex = carts.findIndex(item => item.id === inventoryId);
 
                 if (existingIndex !== -1) {
@@ -357,205 +343,165 @@ export default function CartScreens({ navigation, route }) {
                     } else {
                         carts.splice(existingIndex, 1);
                     }
-
                     await AsyncStorage.setItem("carts", JSON.stringify(carts));
                 }
 
-                // Update local state first
                 setCartItems(prev =>
                     prev.map(item =>
                         item.stationInventoryId === itemId ? { ...item, quantity: newQuantity } : item
                     )
                 );
-
-                // Then trigger the update for other components
                 setCartUpdateTrigger(prev => prev + 1);
-
-                showSnackbar(`${data.data.message}`, 'success');
             } else {
-                showSnackbar(`${data.data.message}`, 'failure');
+                toast.show({ variant: 'danger', label: "Something went wrong!", description: data?.data?.message || 'Failed to update quantity' });
             }
         } catch (error) {
             console.error('Error updating quantity:', error);
-            showSnackbar(`${error}`, 'error');
+            toast.show({ variant: 'danger', label: 'Failed to update quantity', description: 'An error occurred while updating the quantity.', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
         }
     };
 
-    // Update handleRemoveItem:
-    const handleRemoveItem = async (itemId, itemName, inventoryId) => {
-        Alert.alert(
-            'Remove Item',
-            'Are you sure you want to remove this item from your cart?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const response = await fetch(`${BASE_URL}customer/remove-cart`, {
-                                method: "DELETE",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    Accept: "application/json",
-                                    Authorization: `Bearer ${userInfo.token}`,
-                                },
-                                body: JSON.stringify({
-                                    bar_code: userDetails.bar_code,
-                                    station_inventories_id: itemId
-                                })
-                            });
-
-                            const res = await processResponse(response);
-                            const { statusCode } = res;
-
-                            if (statusCode === 200) {
-                                // Remove from carts
-                                const getCarts = await AsyncStorage.getItem("carts");
-                                let carts = getCarts ? JSON.parse(getCarts) : [];
-                                carts = carts.filter(item => item.id !== inventoryId);
-                                await AsyncStorage.setItem("carts", JSON.stringify(carts));
-
-                                // Remove from unique cart items
-                                const newCount = await removeCartItem(inventoryId);
-
-                                // Update local state
-                                setCartItems(prev => prev.filter(item => item.stationInventoryId !== itemId));
-                                setCartUpdateTrigger(prev => prev + 1);
-
-                                showSnackbar(`${itemName} removed from cart`, 'success');
-                            } else {
-                                showSnackbar('Failed to remove item', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Error removing item:', error);
-                            showSnackbar('Failed to remove item', 'error');
-                        }
-                    },
-                },
-            ]
-        );
+    // ── Remove item ────────────────────────────────────────────────
+    const handleRemoveItem = (itemId, itemName, inventoryId) => {
+        openDialog('remove', { itemId, itemName, inventoryId });
     };
 
-    // Update handleClearCart:
-    const handleClearCart = () => {
-        Alert.alert(
-            'Clear Cart',
-            'Are you sure you want to remove all items from your cart?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Clear All',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
-                                method: "DELETE",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    Accept: "application/json",
-                                    Authorization: `Bearer ${userInfo.token}`,
-                                },
-                                body: JSON.stringify({
-                                    bar_code: userDetails.bar_code,
-                                })
-                            });
+    async function confirmRemoveItem() {
+        const { itemId, itemName, inventoryId } = activeDialog.payload;
+        closeDialog();
 
-                            const res = await processResponse(response);
-                            const { statusCode } = res;
-
-                            if (statusCode === 200) {
-                                // Clear localStorage
-                                await AsyncStorage.removeItem('carts');
-                                await clearAllCartItems();
-
-                                // Update state
-                                setCartItems([]);
-                                showSnackbar('Cart cleared', 'success');
-                            } else {
-                                showSnackbar('Failed to clear cart', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Error clearing cart:', error);
-                            showSnackbar('Failed to clear cart', 'error');
-                        }
-                    },
+        try {
+            const response = await fetch(`${BASE_URL}customer/remove-cart`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    Authorization: `Bearer ${userInfo.token}`,
                 },
-            ]
-        );
-    };
+                body: JSON.stringify({
+                    bar_code: userDetails.bar_code,
+                    station_inventories_id: itemId,
+                }),
+            });
 
-    // Update handleCheckout to clear cart items on success:
+            const res = await processResponse(response);
+            const { statusCode } = res;
+
+            if (statusCode === 200) {
+                const getCarts = await AsyncStorage.getItem("carts");
+                let carts = getCarts ? JSON.parse(getCarts) : [];
+                carts = carts.filter(item => item.id !== inventoryId);
+                await AsyncStorage.setItem("carts", JSON.stringify(carts));
+                await removeCartItem(inventoryId);
+
+                setCartItems(prev => prev.filter(item => item.stationInventoryId !== itemId));
+                setCartUpdateTrigger(prev => prev + 1);
+                toast.show({ variant: 'success', label: 'Item removed', description: `${itemName} removed from cart`, icon: <Ionicons name="checkmark-circle" size={24} color="green" />, duration: 3000 });
+            } else {
+                toast.show({ variant: 'danger', label: 'Failed to remove item', description: 'Failed to remove the item from the cart.', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+            }
+        } catch (error) {
+            console.error('Error removing item:', error);
+            toast.show({ variant: 'danger', label: 'Failed to remove item', description: 'An error occurred while removing the item.', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+        }
+    }
+
+    // ── Clear cart ─────────────────────────────────────────────────
+    const handleClearCart = () => openDialog('clear');
+
+    async function confirmClearCart() {
+        closeDialog();
+
+        try {
+            const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+                body: JSON.stringify({ bar_code: userDetails.bar_code }),
+            });
+
+            const res = await processResponse(response);
+            const { statusCode } = res;
+
+            if (statusCode === 200) {
+                await AsyncStorage.removeItem('carts');
+                await clearAllCartItems();
+                setCartItems([]);
+                toast.show({ variant: 'success', label: 'Cart cleared', description: 'All items have been removed from your cart.', icon: <Ionicons name="checkmark-circle" size={24} color="green" />, duration: 3000 });
+            } else {
+                toast.show({ variant: 'danger', label: 'Failed to clear cart', description: 'Failed to remove all items from your cart.', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+            }
+        } catch (error) {
+            console.error('Error clearing cart:', error);
+            toast.show({ variant: 'danger', label: 'Failed to clear cart', description: 'An error occurred while clearing the cart.', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+        }
+    }
+
+    // ── Checkout ───────────────────────────────────────────────────
     const handleCheckout = () => {
         if (!canAfford) {
-            Alert.alert(
-                'Insufficient Points',
-                `You need ${(totalPoints - userPoints).toLocaleString()} more points to complete this redemption.`,
-                [{ text: 'OK' }]
-            );
+            toast.show({
+                variant: 'danger',
+                label: 'Insufficient Points',
+                description: `You need ${(totalPoints - userPoints).toLocaleString()} more points to complete this redemption.`,
+                icon: <Ionicons name="close-circle" size={24} color="red" />,
+                duration: 3000
+            });
             return;
         }
-
-        Alert.alert(
-            'Confirm Redemption',
-            `Redeem ${totalItems} item(s) for ${totalPoints.toLocaleString()} points?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Redeem',
-                    onPress: async () => {
-                        const stored_station = await AsyncStorage.getItem("stationSelected");
-                        const parsed_station = stored_station ? JSON.parse(stored_station) : null;
-
-                        try {
-                            const now = new Date();
-                            const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
-                            const randomPart = Math.floor(10000 + Math.random() * 90000);
-                            const referenceNumber = `${datePart}-${randomPart}`;
-
-                            const response = await fetch(`${BASE_URL}customer/checkout`, {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    Accept: "application/json",
-                                    Authorization: `Bearer ${userInfo.token}`,
-                                },
-                                body: JSON.stringify({
-                                    reference_number: referenceNumber,
-                                    bar_code: userDetails.bar_code,
-                                    quantity: cartItems.quantity,
-                                    total_points: totalPoints,
-                                    station_id: station ? station.id : parsed_station.id
-                                })
-                            });
-
-                            const res = await processResponse(response);
-                            const { statusCode, data } = res;
-
-                            if (statusCode === 201) {
-                                // Clear all cart data
-                                await AsyncStorage.removeItem('carts');
-                                await clearAllCartItems();
-
-                                setCartItems([]);
-                                showSnackbar(`${data.message}`, 'success');
-                                setTransaction(referenceNumber);
-                                refreshPoints?.();
-                                setShowQR(true);
-                                getRedemptionCount();
-                            } else {
-                                showSnackbar(`${data.message}`, 'error');
-                                console.log('Error redeeming items:', data.message);
-                            }
-                        } catch (error) {
-                            console.error('Error redeeming items:', error);
-                            showSnackbar('Failed to redeem items', 'error');
-                        }
-                    },
-                },
-            ]
-        );
+        openDialog('checkout');
     };
+
+    async function confirmCheckout() {
+        closeDialog();
+
+        const stored_station = await AsyncStorage.getItem("stationSelected");
+        const parsed_station = stored_station ? JSON.parse(stored_station) : null;
+
+        try {
+            const now = new Date();
+            const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
+            const randomPart = Math.floor(10000 + Math.random() * 90000);
+            const referenceNumber = `${datePart}-${randomPart}`;
+
+            const response = await fetch(`${BASE_URL}customer/checkout`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+                body: JSON.stringify({
+                    reference_number: referenceNumber,
+                    bar_code: userDetails.bar_code,
+                    quantity: cartItems.quantity,
+                    total_points: totalPoints,
+                    station_id: station ? station.id : parsed_station?.id,
+                }),
+            });
+
+            const res = await processResponse(response);
+            const { statusCode, data } = res;
+
+            if (statusCode === 201) {
+                await AsyncStorage.removeItem('carts');
+                await clearAllCartItems();
+                setCartItems([]);
+                setTransaction(referenceNumber);
+                refreshPoints?.();
+                setShowQR(true);
+                getRedemptionCount();
+            } else {
+                toast.show({ variant: 'danger', label: 'Redemption failed', description: data.message, icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+            }
+        } catch (error) {
+            console.error('Error redeeming items:', error);
+            toast.show({ variant: 'danger', label: 'Failed to redeem items', icon: <Ionicons name="close-circle" size={24} color="red" />, duration: 3000 });
+        }
+    }
 
     const renderCartItem = ({ item }) => (
         <CartItem
@@ -572,202 +518,275 @@ export default function CartScreens({ navigation, route }) {
         getCartItems();
     }, []);
 
-    if (loading) {
-        return <LoadingPage />
-    }
-
     return (
         <SafeAreaProvider>
             <View style={styles.container}>
-                {/* Header */}
-                {/* <ImageBackground
-                    resizeMode="stretch"
-                    source={require('../../../assets/mygas-header.jpeg')}
-                    style={styles.header}
+
+                <Dialog
+                    isOpen={!!activeDialog.type}
+                    onOpenChange={(open) => !open && closeDialog()}
                 >
-                    <LinearGradient
-                        colors={['rgba(249, 250, 141, 0.95)', 'rgba(249, 250, 141, 0.7)', 'transparent']}
-                        start={{ x: 0.5, y: 0 }}
-                        end={{ x: 0.5, y: 1 }}
-                        style={styles.headerGradient}
-                    />
-                    <Image
-                        source={require('../../../assets/mygas_logo.png')}
-                        style={styles.logo}
-                    />
-                    <Navbar
-                        onProfilePress={() => console.log('Profile tapped')}
-                        onNotifPress={() => console.log('Notifications tapped')}
-                    />
-                </ImageBackground> */}
+                    <Dialog.Portal>
+                        <Dialog.Overlay />
+                        <Dialog.Content>
+                            <Dialog.Title>{currentDialog?.title}</Dialog.Title>
+                            <Dialog.Description>{currentDialog?.description}</Dialog.Description>
+                            <View style={styles.dialogFooter}>
+                                {currentDialog?.buttons.map((btn, i) => (
+                                    <TouchableOpacity
+                                        key={i}
+                                        style={btn.style === 'cancel' ? styles.dialogCancelButton : btn.style === 'destructive' ? styles.dialogDestructiveButton : styles.dialogConfirmButton}
+                                        onPress={btn.onPress}
+                                    >
+                                        <Text style={btn.style === 'cancel' ? styles.dialogCancelText : styles.dialogActionText}>
+                                            {btn.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </Dialog.Content>
+                    </Dialog.Portal>
+                </Dialog>
+
                 <Navbar
                     onProfilePress={() => console.log('Profile tapped')}
                     onNotifPress={() => console.log('Notifications tapped')}
                 />
+
                 <ScrollView
                     style={styles.scrollContainer}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.contentContainer}>
-                        {/* Page Header */}
-                        <View style={styles.pageHeader}>
-                            <View style={styles.pageHeaderContent}>
-                                <Text style={styles.pageTitle}>My Cart</Text>
-                                <Text style={styles.pageSubtitle}>
-                                    {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
-                                </Text>
-                            </View>
-                            {cartItems.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.clearButton}
-                                    onPress={handleClearCart}
-                                    activeOpacity={0.7}
+                        {loading ? (
+                            <>
+                                {/* Page Header skeleton */}
+                                <SkeletonGroup
+                                    isLoading={true}
+                                    isSkeletonOnly
+                                    style={styles.pageHeader}
                                 >
-                                    <Text style={styles.clearButtonText}>Clear</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                                    <View style={{ flex: 1, gap: 6 }}>
+                                        <SkeletonGroup.Item style={{ height: 30, width: '45%', borderRadius: 8 }} />
+                                        <SkeletonGroup.Item style={{ height: 16, width: '20%', borderRadius: 6 }} />
+                                    </View>
+                                </SkeletonGroup>
 
-                        {/* Points Card and My Redemption Button */}
-                        <View style={styles.pointsSection}>
-                            <View style={styles.pointsCard}>
-                                <LinearGradient
-                                    colors={['#FEF3C7', '#FDE68A']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.pointsGradient}
+                                {/* Points card + redemption button skeleton */}
+                                <SkeletonGroup
+                                    isLoading={true}
+                                    isSkeletonOnly
+                                    style={styles.pointsSection}
                                 >
-                                    <View style={styles.pointsRow}>
-                                        <View>
-                                            <Text style={styles.pointsLabel}>Available Points</Text>
-                                            <View style={styles.pointsValueContainer}>
-                                                <Image
-                                                    source={require('../../../assets/my.png')}
-                                                    style={styles.pointsIcon}
-                                                />
-                                                <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                                    <SkeletonGroup.Item style={{ flex: 1, height: 90, borderRadius: 20 }} />
+                                    <SkeletonGroup.Item style={{ width: 110, height: 90, borderRadius: 20 }} />
+                                </SkeletonGroup>
+
+                                {/* Cart item skeletons × 3 */}
+                                {[0, 1, 2].map((i) => (
+                                    <SkeletonGroup
+                                        key={i}
+                                        isLoading={true}
+                                        isSkeletonOnly
+                                        style={[styles.cartItem, { marginBottom: 16 }]}
+                                    >
+                                        {/* Thumbnail */}
+                                        <SkeletonGroup.Item style={{ width: 90, height: 90, borderRadius: 14 }} />
+
+                                        <View style={{ flex: 1, marginLeft: 14, gap: 10 }}>
+                                            {/* Name */}
+                                            <SkeletonGroup.Item style={{ height: 16, width: '80%', borderRadius: 6 }} />
+                                            {/* Description */}
+                                            <SkeletonGroup.Item style={{ height: 12, width: '55%', borderRadius: 6 }} />
+                                            {/* Points + quantity row */}
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                <SkeletonGroup.Item style={{ height: 20, width: 70, borderRadius: 6 }} />
+                                                <SkeletonGroup.Item style={{ height: 32, width: 96, borderRadius: 10 }} />
+                                            </View>
+                                            {/* Subtotal row */}
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                <SkeletonGroup.Item style={{ height: 12, width: 56, borderRadius: 6 }} />
+                                                <SkeletonGroup.Item style={{ height: 18, width: 80, borderRadius: 6 }} />
                                             </View>
                                         </View>
-                                        <View style={styles.pointsIconContainer}>
-                                            <Ionicons name="wallet" size={28} color="#F59E0B" />
-                                        </View>
-                                    </View>
-                                </LinearGradient>
-                            </View>
+                                    </SkeletonGroup>
+                                ))}
 
-                            <View style={styles.myRedemptionButtonWrapper}>
-                                {redemptionCount > 0 && (
-                                    <View style={styles.redemptionBadgeContainer}>
-                                        <LinearGradient
-                                            colors={["#FBBF24", "#F59E0B"]}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                            style={styles.redemptionBadge}
-                                        >
-                                            <Text style={styles.redemptionBadgeText}>
-                                                {redemptionCount > 99 ? '99+' : redemptionCount}
-                                            </Text>
-                                        </LinearGradient>
-                                    </View>
-                                )}
-                                <TouchableOpacity
-                                    style={styles.redemptionButton}
-                                    onPress={() => navigation.navigate("RedemptionTransactionScreens")}
-                                    activeOpacity={0.7}
+                                {/* Summary card skeleton */}
+                                <SkeletonGroup
+                                    isLoading={true}
+                                    isSkeletonOnly
+                                    style={styles.summaryCard}
                                 >
-                                    <LinearGradient
-                                        colors={['#EF4444', '#DC2626']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.redemptionButtonGradient}
-                                    >
-                                        <Ionicons name="receipt-outline" size={20} color="#fff" />
-                                        <Text style={styles.redemptionButtonText}>My Redemption</Text>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* Cart Items or Empty State */}
-                        {cartItems.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <View style={styles.emptyIconContainer}>
-                                    <Ionicons name="cart-outline" size={64} color="#D1D5DB" />
-                                </View>
-                                <Text style={styles.emptyTitle}>Your cart is empty</Text>
-                                <Text style={styles.emptySubtitle}>
-                                    Add some rewards to get started!
-                                </Text>
-                                <TouchableOpacity
-                                    style={styles.shopButton}
-                                    onPress={() => navigation.goBack()}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text style={styles.shopButtonText}>Browse Rewards</Text>
-                                    <Ionicons name="arrow-forward" size={18} color="#fff" />
-                                </TouchableOpacity>
-                            </View>
+                                    <SkeletonGroup.Item style={{ height: 22, width: '50%', borderRadius: 8, marginBottom: 20 }} />
+                                    <SkeletonGroup.Item style={{ height: 16, width: '100%', borderRadius: 6, marginBottom: 14 }} />
+                                    <SkeletonGroup.Item style={{ height: 1, width: '100%', borderRadius: 1, marginBottom: 14 }} />
+                                    <SkeletonGroup.Item style={{ height: 16, width: '100%', borderRadius: 6, marginBottom: 14 }} />
+                                    <SkeletonGroup.Item style={{ height: 16, width: '75%', borderRadius: 6 }} />
+                                </SkeletonGroup>
+                            </>
                         ) : (
                             <>
-                                <FlatList
-                                    data={cartItems}
-                                    renderItem={renderCartItem}
-                                    keyExtractor={keyExtractor}
-                                    scrollEnabled={false}
-                                    contentContainerStyle={styles.cartList}
-                                />
-
-                                {/* Summary Card */}
-                                <View style={styles.summaryCard}>
-                                    <Text style={styles.summaryTitle}>Order Summary</Text>
-
-                                    <View style={styles.summaryRow}>
-                                        <Text style={styles.summaryLabel}>Total Items</Text>
-                                        <Text style={styles.summaryValue}>{totalItems}</Text>
+                                {/* Page Header */}
+                                <View style={styles.pageHeader}>
+                                    <View style={styles.pageHeaderContent}>
+                                        <Text style={styles.pageTitle}>My Cart</Text>
+                                        <Text style={styles.pageSubtitle}>
+                                            {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+                                        </Text>
                                     </View>
-
-                                    <View style={styles.summaryDivider} />
-
-                                    <View style={styles.summaryRow}>
-                                        <Text style={styles.summaryLabel}>Total Points</Text>
-                                        <View style={styles.summaryPointsValue}>
-                                            <Text style={styles.summaryPoints}>{totalPoints.toLocaleString()}</Text>
-                                            <Text style={styles.pointsLabel}>pts</Text>
-                                        </View>
-                                    </View>
-
-                                    <View style={styles.summaryRow}>
-                                        <Text style={styles.summaryLabel}>Points After</Text>
-                                        <View style={styles.summaryPointsValue}>
-                                            <Text style={[styles.summaryPoints, !canAfford && styles.insufficientPoints]}>
-                                                {pointsRemaining.toLocaleString()}
-                                            </Text>
-                                            <Text style={styles.pointsLabel}>pts</Text>
-                                        </View>
-                                    </View>
-
-                                    {!canAfford && (
-                                        <View style={styles.warningBanner}>
-                                            <Ionicons name="alert-circle" size={16} color="#DC2626" />
-                                            <Text style={styles.warningText}>
-                                                You need {Math.abs(pointsRemaining).toLocaleString()} more points
-                                            </Text>
-                                        </View>
+                                    {cartItems.length > 0 && (
+                                        <TouchableOpacity
+                                            style={styles.clearButton}
+                                            onPress={handleClearCart}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={styles.clearButtonText}>Clear</Text>
+                                        </TouchableOpacity>
                                     )}
                                 </View>
+
+                                {/* Points Card and My Redemption Button */}
+                                <View style={styles.pointsSection}>
+                                    <View style={styles.pointsCard}>
+                                        <LinearGradient
+                                            colors={['#FEF3C7', '#FDE68A']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.pointsGradient}
+                                        >
+                                            <View style={styles.pointsRow}>
+                                                <View>
+                                                    <Text style={styles.pointsLabel}>Available Points</Text>
+                                                    <View style={styles.pointsValueContainer}>
+                                                        <Image
+                                                            source={require('../../../assets/my.png')}
+                                                            style={styles.pointsIcon}
+                                                        />
+                                                        <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                                                    </View>
+                                                </View>
+                                                <View style={styles.pointsIconContainer}>
+                                                    <Ionicons name="wallet" size={28} color="#F59E0B" />
+                                                </View>
+                                            </View>
+                                        </LinearGradient>
+                                    </View>
+
+                                    <View style={styles.myRedemptionButtonWrapper}>
+                                        {redemptionCount > 0 && (
+                                            <View style={styles.redemptionBadgeContainer}>
+                                                <LinearGradient
+                                                    colors={["#FBBF24", "#F59E0B"]}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 1 }}
+                                                    style={styles.redemptionBadge}
+                                                >
+                                                    <Text style={styles.redemptionBadgeText}>
+                                                        {redemptionCount > 99 ? '99+' : redemptionCount}
+                                                    </Text>
+                                                </LinearGradient>
+                                            </View>
+                                        )}
+                                        <TouchableOpacity
+                                            style={styles.redemptionButton}
+                                            onPress={() => navigation.navigate("RedemptionTransactionScreens")}
+                                            activeOpacity={0.7}
+                                        >
+                                            <LinearGradient
+                                                colors={['#EF4444', '#DC2626']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={styles.redemptionButtonGradient}
+                                            >
+                                                <Ionicons name="receipt-outline" size={20} color="#fff" />
+                                                <Text style={styles.redemptionButtonText}>My Redemption</Text>
+                                            </LinearGradient>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                {/* Cart Items or Empty State */}
+                                {cartItems.length === 0 ? (
+                                    <View style={styles.emptyState}>
+                                        <View style={styles.emptyIconContainer}>
+                                            <Ionicons name="cart-outline" size={64} color="#D1D5DB" />
+                                        </View>
+                                        <Text style={styles.emptyTitle}>Your cart is empty</Text>
+                                        <Text style={styles.emptySubtitle}>
+                                            Add some rewards to get started!
+                                        </Text>
+                                        <TouchableOpacity
+                                            style={styles.shopButton}
+                                            onPress={() => navigation.goBack()}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={styles.shopButtonText}>Browse Rewards</Text>
+                                            <Ionicons name="arrow-forward" size={18} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <>
+                                        <FlatList
+                                            data={cartItems}
+                                            renderItem={renderCartItem}
+                                            keyExtractor={keyExtractor}
+                                            scrollEnabled={false}
+                                            contentContainerStyle={styles.cartList}
+                                        />
+
+                                        {/* Summary Card */}
+                                        <View style={styles.summaryCard}>
+                                            <Text style={styles.summaryTitle}>Order Summary</Text>
+
+                                            <View style={styles.summaryRow}>
+                                                <Text style={styles.summaryLabel}>Total Items</Text>
+                                                <Text style={styles.summaryValue}>{totalItems}</Text>
+                                            </View>
+
+                                            <View style={styles.summaryDivider} />
+
+                                            <View style={styles.summaryRow}>
+                                                <Text style={styles.summaryLabel}>Total Points</Text>
+                                                <View style={styles.summaryPointsValue}>
+                                                    <Text style={styles.summaryPoints}>{totalPoints.toLocaleString()}</Text>
+                                                    <Text style={styles.pointsLabel}>pts</Text>
+                                                </View>
+                                            </View>
+
+                                            <View style={styles.summaryRow}>
+                                                <Text style={styles.summaryLabel}>Points After</Text>
+                                                <View style={styles.summaryPointsValue}>
+                                                    <Text style={[styles.summaryPoints, !canAfford && styles.insufficientPoints]}>
+                                                        {pointsRemaining.toLocaleString()}
+                                                    </Text>
+                                                    <Text style={styles.pointsLabel}>pts</Text>
+                                                </View>
+                                            </View>
+
+                                            {!canAfford && (
+                                                <View style={styles.warningBanner}>
+                                                    <Ionicons name="alert-circle" size={16} color="#DC2626" />
+                                                    <Text style={styles.warningText}>
+                                                        You need {Math.abs(pointsRemaining).toLocaleString()} more points
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </>
+                                )}
                             </>
                         )}
                     </View>
                 </ScrollView>
 
-                {/* Checkout Button */}
-                {cartItems.length > 0 && (
+                {/* Checkout Button — hidden while loading */}
+                {!loading && cartItems.length > 0 && (
                     <View style={styles.checkoutContainer}>
                         <TouchableOpacity
                             style={[styles.checkoutButton, !canAfford && styles.checkoutButtonDisabled]}
                             onPress={handleCheckout}
-                            disabled={!canAfford}
                             activeOpacity={0.8}
                         >
                             <LinearGradient
@@ -797,14 +816,6 @@ export default function CartScreens({ navigation, route }) {
                     </View>
                 )}
 
-                {/* Snackbar */}
-                <Snackbar
-                    visible={snackbar.visible}
-                    text={snackbar.message}
-                    type={snackbar.type}
-                    onHide={hideSnackbar}
-                />
-
                 <QrRedemption
                     visible={showQR}
                     onClose={() => setShowQR(false)}
@@ -830,34 +841,10 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '600',
     },
-    header: {
-        height: getResponsiveValue(140, 160, 190, 210),
-        width: '100%',
-    },
-    headerGradient: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-    },
-    logo: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [
-            { translateX: getResponsiveValue(-35, -45, -55, -65) },
-            { translateY: getResponsiveValue(-35, -45, -55, -65) },
-        ],
-        width: getResponsiveValue(65, 75, 90, 110),
-        height: getResponsiveValue(65, 75, 90, 110),
-        resizeMode: 'contain',
-        zIndex: 2,
-    },
     scrollContainer: {
         flex: 1,
         marginTop: -25,
-        paddingBottom: 100
+        paddingBottom: 100,
     },
     scrollContent: {
         flexGrow: 1,
@@ -906,7 +893,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: getResponsiveValue(12, 14, 16, 18),
         marginBottom: getResponsiveValue(24, 28, 32, 36),
-        alignItems: 'stretch', // Ensure both items stretch to same height
+        alignItems: 'stretch',
     },
     pointsCard: {
         flex: 1,
@@ -919,9 +906,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
             },
-            android: {
-                elevation: 4,
-            },
+            android: { elevation: 4 },
         }),
     },
     myRedemptionButtonWrapper: {
@@ -939,17 +924,15 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.3,
                 shadowRadius: 12,
             },
-            android: {
-                elevation: 4,
-            },
+            android: { elevation: 4 },
         }),
     },
     redemptionButtonGradient: {
-        flex: 1, // Changed from fixed padding to flex: 1
+        flex: 1,
         paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
         alignItems: 'center',
         justifyContent: 'center',
-        gap: getResponsiveValue(8, 10, 12, 14), // Reduced gap for better spacing
+        gap: getResponsiveValue(8, 10, 12, 14),
     },
     redemptionButtonText: {
         fontSize: getResponsiveValue(11, 12, 13, 14),
@@ -980,9 +963,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.3,
                 shadowRadius: 4,
             },
-            android: {
-                elevation: 6,
-            },
+            android: { elevation: 6 },
         }),
     },
     redemptionBadgeText: {
@@ -993,9 +974,9 @@ const styles = StyleSheet.create({
         letterSpacing: -0.3,
     },
     pointsGradient: {
-        flex: 1, // Changed from fixed padding
+        flex: 1,
         padding: getResponsiveValue(20, 24, 28, 32),
-        justifyContent: 'center', // Center content vertically
+        justifyContent: 'center',
     },
     pointsRow: {
         flexDirection: 'row',
@@ -1075,9 +1056,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.3,
                 shadowRadius: 8,
             },
-            android: {
-                elevation: 4,
-            },
+            android: { elevation: 4 },
         }),
     },
     shopButtonText: {
@@ -1103,9 +1082,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.08,
                 shadowRadius: 8,
             },
-            android: {
-                elevation: 3,
-            },
+            android: { elevation: 3 },
         }),
     },
     cartItemImageContainer: {
@@ -1137,9 +1114,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.4,
                 shadowRadius: 4,
             },
-            android: {
-                elevation: 4,
-            },
+            android: { elevation: 4 },
         }),
     },
     cartItemContent: {
@@ -1320,9 +1295,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
             },
-            android: {
-                elevation: 4,
-            },
+            android: { elevation: 4 },
         }),
     },
     summaryTitle: {
@@ -1397,9 +1370,7 @@ const styles = StyleSheet.create({
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
             },
-            android: {
-                elevation: 8,
-            },
+            android: { elevation: 8 },
         }),
     },
     checkoutButton: {
@@ -1450,33 +1421,39 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    snackbar: {
-        position: 'absolute',
-        bottom: getResponsiveValue(100, 120, 140, 160),
-        left: getResponsiveValue(16, 20, 28, 36),
-        right: getResponsiveValue(16, 20, 28, 36),
+    // ── Dialog styles ─────────────────────────────────────────────
+    dialogFooter: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
-        paddingVertical: getResponsiveValue(14, 16, 18, 20),
-        borderRadius: getResponsiveValue(12, 14, 16, 18),
-        gap: 10,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
+        justifyContent: 'flex-end',
+        gap: 12,
+        marginTop: 20,
     },
-    snackbarText: {
-        fontSize: getResponsiveValue(14, 15, 16, 17),
-        color: '#fff',
+    dialogCancelButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: '#F3F4F6',
+    },
+    dialogCancelText: {
+        fontSize: 14,
         fontWeight: '600',
-        flex: 1,
+        color: '#374151',
+    },
+    dialogDestructiveButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: '#EF4444',
+    },
+    dialogConfirmButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: '#EF4444',
+    },
+    dialogActionText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#fff',
     },
 });

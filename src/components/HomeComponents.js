@@ -1,83 +1,142 @@
-import { useEffect, useRef } from "react";
-import { View, StyleSheet, Dimensions, Animated } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
+import { SkeletonGroup } from "heroui-native";
 
 const { width } = Dimensions.get("window");
 
-// ─── Base Skeleton Box ────────────────────────────────────────────────────────
-export const SkeletonBox = ({ width: w, height, style }) => {
-    const animatedValue = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(animatedValue, { toValue: 1, duration: 1000, useNativeDriver: true }),
-                Animated.timing(animatedValue, { toValue: 0, duration: 1000, useNativeDriver: true }),
-            ])
-        ).start();
-    }, []);
-
-    const opacity = animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
-
-    return (
-        <Animated.View
-            style={[{ width: w, height, backgroundColor: "#E1E9EE", borderRadius: 8, opacity }, style]}
-        />
-    );
-};
-
-// ─── Skeleton Cards ───────────────────────────────────────────────────────────
+// ─── Greeting Card Skeleton ───────────────────────────────────────────────────
 export const GreetingCardSkeleton = () => (
     <View style={styles.greetingCard}>
-        <View style={{ flex: 1 }}>
-            <SkeletonBox width={80} height={14} style={{ marginBottom: 8 }} />
-            <SkeletonBox width={200} height={22} style={{ marginBottom: 8 }} />
-            <SkeletonBox width={120} height={13} />
-        </View>
-        <SkeletonBox width={56} height={56} style={{ borderRadius: 28 }} />
+        <SkeletonGroup
+            isLoading
+            variant="shimmer"
+            animation={{ shimmer: { duration: 1600, highlightColor: "rgba(255,255,255,0.55)" } }}
+            className="flex-1 gap-2"
+        >
+            <SkeletonGroup.Item className="h-3.5 w-20 rounded-md" />
+            <SkeletonGroup.Item className="h-6 w-52 rounded-md" />
+            <SkeletonGroup.Item className="h-3 w-28 rounded-md" />
+        </SkeletonGroup>
+
+        <SkeletonGroup
+            isLoading
+            variant="shimmer"
+            animation={{ shimmer: { duration: 1600, highlightColor: "rgba(255,255,255,0.55)" } }}
+        >
+            <SkeletonGroup.Item className="h-14 w-14 rounded-full" />
+        </SkeletonGroup>
     </View>
 );
 
+// ─── Points Card Skeleton ─────────────────────────────────────────────────────
 export const PointsCardSkeleton = () => (
     <View style={styles.pointsCardWrapper}>
-        <View style={[styles.pointsCard, { backgroundColor: "#E1E9EE", borderRadius: 20 }]}>
-            <View style={[styles.cardContent, { justifyContent: "space-between" }]}>
-                <View style={styles.pointsSection}>
-                    <View style={styles.pointsDisplay}>
-                        <SkeletonBox width={120} height={42} style={{ marginRight: 8 }} />
-                        <SkeletonBox width={60} height={30} style={{ borderRadius: 12 }} />
-                    </View>
-                    <View style={styles.cardDetails}>
-                        <SkeletonBox width={140} height={11} style={{ marginBottom: 8 }} />
-                        <SkeletonBox width={120} height={11} />
-                    </View>
+        <View style={styles.pointsCard}>
+            <SkeletonGroup
+                isLoading
+                variant="shimmer"
+                animation={{ shimmer: { duration: 1800, highlightColor: "rgba(255,255,255,0.3)" } }}
+                className="flex-1 p-6 justify-between"
+            >
+                {/* Top-left logo placeholder */}
+                <SkeletonGroup.Item className="h-5 w-24 rounded-md" />
+
+                {/* Points amount + badge row */}
+                <View style={styles.pointsDisplay}>
+                    <SkeletonGroup.Item className="h-11 w-32 rounded-lg" />
+                    <View style={{ width: 10 }} />
+                    <SkeletonGroup.Item className="h-8 w-16 rounded-xl" />
                 </View>
-                <SkeletonBox width={180} height={14} />
-            </View>
+
+                {/* Sub-label lines */}
+                <View style={{ gap: 6 }}>
+                    <SkeletonGroup.Item className="h-3 w-40 rounded-md" />
+                    <SkeletonGroup.Item className="h-3 w-32 rounded-md" />
+                </View>
+
+                {/* Bottom expiry line */}
+                <SkeletonGroup.Item className="h-3.5 w-48 rounded-md" />
+            </SkeletonGroup>
         </View>
     </View>
 );
 
+// ─── Stats Card Skeleton ──────────────────────────────────────────────────────
 export const StatsCardSkeleton = () => (
     <View style={styles.statsContainer}>
         {[1, 2, 3].map((item) => (
             <View key={item} style={styles.statCard}>
-                <SkeletonBox width={48} height={48} style={{ borderRadius: 24, marginBottom: 8 }} />
-                <SkeletonBox width={40} height={24} style={{ marginBottom: 4 }} />
-                <SkeletonBox width={60} height={12} />
+                <SkeletonGroup
+                    isLoading
+                    variant="shimmer"
+                    animation={{ shimmer: { duration: 1600, highlightColor: "rgba(255,255,255,0.55)" } }}
+                    className="items-center gap-2"
+                >
+                    <SkeletonGroup.Item className="h-12 w-12 rounded-full" />
+                    <SkeletonGroup.Item className="h-6 w-10 rounded-md" />
+                    <SkeletonGroup.Item className="h-3 w-16 rounded-md" />
+                </SkeletonGroup>
             </View>
         ))}
     </View>
 );
 
+// ─── Reward Card Skeleton ─────────────────────────────────────────────────────
 export const RewardCardSkeleton = () => (
     <View style={[styles.rewardCard, { marginLeft: 20 }]}>
-        <SkeletonBox width={280} height={160} />
-        <View style={styles.rewardContent}>
-            <SkeletonBox width={200} height={18} style={{ marginBottom: 8 }} />
-            <SkeletonBox width={260} height={13} style={{ marginBottom: 4 }} />
-            <SkeletonBox width={240} height={13} style={{ marginBottom: 12 }} />
-            <SkeletonBox width={100} height={13} />
-        </View>
+        <SkeletonGroup
+            isLoading
+            variant="shimmer"
+            animation={{ shimmer: { duration: 1800, highlightColor: "rgba(255,255,255,0.5)" } }}
+            className="gap-2"
+        >
+            {/* Thumbnail */}
+            <SkeletonGroup.Item className="h-40 w-full rounded-t-2xl" />
+
+            {/* Content block */}
+            <View style={styles.rewardContent}>
+                <SkeletonGroup.Item className="h-5 w-52 rounded-md mb-2" />
+                <SkeletonGroup.Item className="h-3 w-64 rounded-md mb-1" />
+                <SkeletonGroup.Item className="h-3 w-60 rounded-md mb-3" />
+                <SkeletonGroup.Item className="h-3 w-28 rounded-md" />
+            </View>
+        </SkeletonGroup>
+    </View>
+);
+
+// ─── Section Header Skeleton ──────────────────────────────────────────────────
+export const SectionHeaderSkeleton = () => (
+    <View style={styles.sectionHeader}>
+        <SkeletonGroup
+            isLoading
+            variant="shimmer"
+            animation={{ shimmer: { duration: 1600, highlightColor: "rgba(255,255,255,0.55)" } }}
+            className="gap-1 flex-1"
+        >
+            <SkeletonGroup.Item className="h-5 w-32 rounded-md" />
+            <SkeletonGroup.Item className="h-3 w-44 rounded-md" />
+        </SkeletonGroup>
+
+        <SkeletonGroup isLoading variant="shimmer">
+            <SkeletonGroup.Item className="h-9 w-20 rounded-full" />
+        </SkeletonGroup>
+    </View>
+);
+
+// ─── Promo Banner Skeleton ────────────────────────────────────────────────────
+export const PromoBannerSkeleton = () => (
+    <View style={styles.promoBannerSkeleton}>
+        <SkeletonGroup
+            isLoading
+            variant="shimmer"
+            animation={{ shimmer: { duration: 1800, highlightColor: "rgba(255,255,255,0.45)" } }}
+            className="flex-row items-center gap-4 p-5"
+        >
+            <SkeletonGroup.Item className="h-10 w-10 rounded-full" />
+            <View style={{ flex: 1, gap: 6 }}>
+                <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
+                <SkeletonGroup.Item className="h-3 w-52 rounded-md" />
+            </View>
+        </SkeletonGroup>
     </View>
 );
 
@@ -96,6 +155,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
+        gap: 12,
     },
     pointsCardWrapper: {
         alignItems: "center",
@@ -103,42 +163,33 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     pointsCard: {
-        width: width - 15,
+        width: width - 40,
         aspectRatio: 1.58,
+        backgroundColor: "#E1E9EE",
+        borderRadius: 20,
+        overflow: "hidden",
         elevation: 8,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
     },
-    cardContent: {
-        flex: 1,
-        padding: 24,
-        justifyContent: "space-between",
-    },
-    pointsSection: {
-        marginTop: 70,
-    },
     pointsDisplay: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 12,
-    },
-    cardDetails: {
-        marginTop: 8,
     },
     statsContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
         paddingHorizontal: 20,
         marginBottom: 24,
+        gap: 8,
     },
     statCard: {
         flex: 1,
         backgroundColor: "#FFF",
         padding: 16,
         borderRadius: 16,
-        marginHorizontal: 4,
         alignItems: "center",
         elevation: 2,
         shadowColor: "#000",
@@ -158,6 +209,22 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     rewardContent: {
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    sectionHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    promoBannerSkeleton: {
+        marginHorizontal: 20,
+        marginTop: 8,
+        marginBottom: 24,
+        borderRadius: 20,
+        overflow: "hidden",
+        backgroundColor: "#E1E9EE",
     },
 });

@@ -115,10 +115,13 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             <Image
               source={iconName}
               style={{
-                tintColor: isFocused ? "#E63946" : "#555",
+                // tintColor: isFocused ? "#E63946" : "#555",
+                tintColor: "red",
                 width: 25,
                 height: 25,
               }}
+              tintColor={isFocused ? "#E63946" : "#555"}
+              resizeMode="contain"
             />
             <Text
               style={{ fontSize: 9, color: isFocused ? "#E63946" : "#555" }}

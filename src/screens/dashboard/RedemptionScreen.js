@@ -31,50 +31,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import Navbar from "../../components/Navbar";
 import { clearAllCartItems, getUniqueCartCount } from "../../lib/CartCountHelper";
 import { useRedemption } from "../../hooks/RedemptionHooks";
+import { formatPromoDate } from "../../service/DateFormat";
+import { getCardWidth, getColumnCount, getResponsiveValue } from "../../service/RedemptionServices";
+import { Dialog } from "heroui-native";
 
 const { width, height } = Dimensions.get("window");
 
-// Enhanced responsive breakpoints
 const isSmallDevice = width < 375;
 const isMediumDevice = width >= 375 && width < 768;
 const isTablet = width >= 768 && width < 1024;
 const isLargeTablet = width >= 1024;
 
-// Responsive helper functions
-const getResponsiveValue = (small, medium, tablet, large) => {
-  if (isSmallDevice) return small;
-  if (isMediumDevice) return medium;
-  if (isTablet) return tablet;
-  return large;
-};
-
-const getColumnCount = () => {
-  if (isSmallDevice) return 2;
-  if (isMediumDevice) return 2;
-  if (isTablet) return 3;
-  return 4;
-};
-
-const getCardWidth = () => {
-  const columns = getColumnCount();
-  const padding = getResponsiveValue(16, 20, 28, 36);
-  const spacing = getResponsiveValue(12, 16, 20, 24);
-  return (width - padding * 2 - spacing * (columns - 1)) / columns;
-};
-
-// Format date helper
-const formatPromoDate = (dateString) => {
-  if (!dateString) return "";
-  try {
-    const date = new Date(dateString);
-    const options = { month: 'short', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-  } catch (error) {
-    return "";
-  }
-};
-
-// Dynamic categories based on products
 const getCategories = (products) => {
   const categories = new Set(products.map(p => p.category).filter(Boolean));
   return ["All", ...Array.from(categories).sort()];
@@ -117,13 +84,11 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
           style={styles.productImage}
         />
 
-        {/* Gradient Overlay */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)']}
           style={styles.imageGradient}
         />
 
-        {/* Stock Badge */}
         {isLowStock && (
           <View style={[styles.stockBadge, styles.lowStockBadge]}>
             <Ionicons name="alert-circle" size={12} color="#fff" />
@@ -137,7 +102,6 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
           </View>
         )}
 
-        {/* Promo Badge */}
         {product.isWeeklyPromo && (
           <View style={styles.promoBadge}>
             <Ionicons name="flash" size={10} color="#fff" />
@@ -154,7 +118,6 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
           {product.description}
         </Text>
 
-        {/* Promo Date Display */}
         {product.isWeeklyPromo && promoDateText && (
           <View style={styles.promoDateContainer}>
             <Ionicons name="calendar-outline" size={12} color="#8B5CF6" />
@@ -162,7 +125,6 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
           </View>
         )}
 
-        {/* Promo Description */}
         {product.isWeeklyPromo && product.promoDescription && (
           <View style={styles.promoDescriptionContainer}>
             <Text style={styles.promoDescriptionText} numberOfLines={1}>
@@ -178,7 +140,6 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
               style={styles.miniIcon}
             />
 
-            {/* Show promo pricing if it's a weekly promo */}
             {product.isWeeklyPromo && product.originalPoints ? (
               <View style={styles.priceContainer}>
                 <Text style={styles.originalPoints}>{product.originalPoints}</Text>
@@ -190,7 +151,6 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
 
             <Text style={styles.pointsLabel}>pts</Text>
 
-            {/* Promo discount badge */}
             {product.isWeeklyPromo && product.originalPoints && product.originalPoints > product.points && (
               <View style={styles.discountBadge}>
                 <Text style={styles.discountText}>
@@ -226,12 +186,13 @@ export default function RedemptionScreen({ navigation }) {
   const [stationFilterProduct, setStationFilterProduct] = useState(null);
   const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
-  // ✅ FIX: Only keep headerOpacity animation — removed cardContainerTranslateY
-  // which was the cause of the header being cut and rounded corners disappearing on scroll
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0.8], extrapolate: "clamp" });
 
-  // Update the refreshCartCount function:
+  const [isClearStationDialogOpen, setIsClearStationDialogOpen] = useState(false);
+
+  const pendingStationRef = useRef(null);
+
   const refreshCartCount = useCallback(async () => {
     try {
       const count = await getUniqueCartCount();
@@ -242,7 +203,6 @@ export default function RedemptionScreen({ navigation }) {
     }
   }, []);
 
-  // Update incrementCartCount (this should now rarely be called):
   const incrementCartCount = async () => {
     try {
       const count = await getUniqueCartCount();
@@ -253,7 +213,6 @@ export default function RedemptionScreen({ navigation }) {
     }
   };
 
-  // Refresh cart count whenever screen comes into focus
   useFocusEffect(
     useCallback(() => {
       refreshCartCount();
@@ -261,7 +220,6 @@ export default function RedemptionScreen({ navigation }) {
     }, [refreshCartCount])
   );
 
-  // User points
   const userPoints = rewards.points || 0;
   const cardWidth = useMemo(() => getCardWidth(), []);
 
@@ -372,6 +330,38 @@ export default function RedemptionScreen({ navigation }) {
   }, []);
 
   const handleClearStation = useCallback(async () => {
+    const count = await getUniqueCartCount();
+
+    if (count > 0) {
+      // No pending station — dialog confirm will just clear
+      pendingStationRef.current = null;
+      setIsClearStationDialogOpen(true);
+    } else {
+      // No cart, safe to clear immediately
+      await AsyncStorage.removeItem("stationSelected");
+      setSelectedStation(null);
+      getAllProducts();
+    }
+  }, []);
+
+  const handleStationConfirm = useCallback(async (data) => {
+    const count = await getUniqueCartCount();
+
+    if (count > 0) {
+      // Store the new station so the dialog confirm can use it
+      pendingStationRef.current = data.station;
+      setIsClearStationDialogOpen(true);
+    } else {
+      // No cart, switch station directly
+      await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
+      setSelectedStation(data.station);
+      getAllProducts(data.station);
+    }
+  }, []);
+
+  const handleConfirmClearStation = useCallback(async () => {
+    setIsClearStationDialogOpen(false);
+
     try {
       const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
         method: "DELETE",
@@ -380,44 +370,39 @@ export default function RedemptionScreen({ navigation }) {
           Accept: "application/json",
           Authorization: `Bearer ${userInfo.token}`,
         },
-        body: JSON.stringify({
-          bar_code: userDetails.bar_code,
-        })
+        body: JSON.stringify({ bar_code: userDetails.bar_code }),
       });
 
       const res = await processResponse(response);
       const { statusCode } = res;
 
-      if (statusCode === 200) {
-        Alert.alert(
-          'Notice',
-          'Are you sure you want to change station? All carts that have been saved will be cleared out',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Proceed',
-              style: 'destructive',
-              onPress: async () => {
-                await AsyncStorage.removeItem('carts');
-                await clearAllCartItems();
-                setCartCount(0);
-                await AsyncStorage.removeItem("stationSelected");
-                setSelectedStation(null);
-                setLoading(false);
-                getAllProducts();
-              }
-            }
-          ]
-        );
+      // Always clear local cart regardless of API result
+      await AsyncStorage.removeItem("carts");
+      await clearAllCartItems();
+      setCartCount(0);
+
+      if (pendingStationRef.current) {
+        // Switching to a new station
+        await AsyncStorage.setItem("stationSelected", JSON.stringify(pendingStationRef.current));
+        setSelectedStation(pendingStationRef.current);
+        getAllProducts(pendingStationRef.current);
+        pendingStationRef.current = null;
       } else {
+        // Just clearing the station
         await AsyncStorage.removeItem("stationSelected");
         setSelectedStation(null);
-        setLoading(false);
         getAllProducts();
       }
     } catch (error) {
-      console.error("Error clearing station:", error);
+      console.error("Error confirming station change:", error);
+      // Still attempt to reset locally on error
+      pendingStationRef.current = null;
     }
+  }, [userInfo.token, userDetails.bar_code]);
+
+  const handleCancelClearStation = useCallback(() => {
+    setIsClearStationDialogOpen(false);
+    pendingStationRef.current = null;
   }, []);
 
   const hasActiveFilters = useMemo(() => {
@@ -425,52 +410,6 @@ export default function RedemptionScreen({ navigation }) {
       filters.stockStatus !== "all" ||
       filters.promoOnly;
   }, [filters]);
-
-  const handleStationConfirm = useCallback(async (data) => {
-    try {
-      const response = await fetch(`${BASE_URL}customer/remove-all-cart`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-        body: JSON.stringify({
-          bar_code: userDetails.bar_code,
-        })
-      });
-
-      const res = await processResponse(response);
-      const { statusCode } = res;
-      if (statusCode === 200 || statusCode === 201) {
-        Alert.alert(
-          'Notice',
-          'Are you sure you want to change station? All carts that have been saved will be cleared out',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Proceed',
-              style: 'destructive',
-              onPress: async () => {
-                await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
-                setSelectedStation(data.station);
-                getAllProducts(data.station);
-                await AsyncStorage.removeItem('carts');
-                await clearAllCartItems();
-                setCartCount(0);
-              }
-            }
-          ]
-        );
-      } else {
-        await AsyncStorage.setItem("stationSelected", JSON.stringify(data.station));
-        setSelectedStation(data.station);
-        getAllProducts(data.station);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
 
   const renderProductItem = useCallback(({ item }) => (
     <ProductCard
@@ -483,7 +422,6 @@ export default function RedemptionScreen({ navigation }) {
 
   const keyExtractor = useCallback((item) => item.id.toString(), []);
 
-  // Load cached station on mount
   useEffect(() => {
     const loadCachedStation = async () => {
       try {
@@ -509,6 +447,39 @@ export default function RedemptionScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+
+      {/* Single confirmation dialog for both clear-station and change-station flows */}
+      <Dialog isOpen={isClearStationDialogOpen} onOpenChange={setIsClearStationDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay />
+          <Dialog.Content>
+            {/* <Dialog.Close onPress={handleCancelClearStation} /> */}
+            <Dialog.Title>
+              {pendingStationRef.current ? "Change Station?" : "Clear Station?"}
+            </Dialog.Title>
+            <Dialog.Description>
+              {pendingStationRef.current
+                ? `Switching to "${pendingStationRef.current.station_name}" will clear all items in your cart. Do you want to proceed?`
+                : "Clearing your station will also remove all items in your cart. Do you want to proceed?"}
+            </Dialog.Description>
+            <View style={styles.dialogFooter}>
+              <TouchableOpacity
+                style={styles.dialogCancelButton}
+                onPress={handleCancelClearStation}
+              >
+                <Text style={styles.dialogCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dialogConfirmButton}
+                onPress={handleConfirmClearStation}
+              >
+                <Text style={styles.dialogConfirmText}>Proceed</Text>
+              </TouchableOpacity>
+            </View>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
       <View style={styles.cardContainer}>
         <Animated.ScrollView
           style={{ flex: 1, width: "100%" }}
@@ -979,6 +950,7 @@ export default function RedemptionScreen({ navigation }) {
         cartUpdateTrigger={cartUpdateTrigger}
       />
 
+      {/* clearStationAction prop removed — no longer needed */}
       <SpecificStation
         visible={showStationModal}
         onClose={handleStationModalClose}
@@ -995,23 +967,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
-
-  // ✅ FIX: Removed marginTop: -30 overlap trick and translateY animation.
-  // The card now fills the full screen from top. The header (ImageBackground)
-  // above it handles the visual overlap. overflow: "hidden" ensures rounded
-  // corners are always respected regardless of scroll position.
   cardContainer: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "#F8F9FA",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    overflow: "hidden", // ✅ KEY FIX: clips content to rounded corners on scroll
+    overflow: "hidden",
     position: "relative",
     zIndex: 1,
-    marginTop: -30, // keeps the overlap with the header image
+    marginTop: -30,
   },
-
   header: {
     height: getResponsiveValue(140, 160, 190, 210),
     width: "100%",
@@ -1044,17 +1010,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: getResponsiveValue(40, 50, 60, 70),
   },
-
-  // ✅ FIX: Removed borderTopLeftRadius and borderTopRightRadius from contentContainer.
-  // The cardContainer already handles the rounded corners with overflow: hidden.
-  // Having radius on both caused visual doubling and the inner radius would show
-  // a straight edge on scroll since it was separate from the clipping boundary.
   contentContainer: {
     backgroundColor: "#F9FAFB",
     paddingHorizontal: getResponsiveValue(16, 20, 28, 36),
     paddingTop: getResponsiveValue(24, 28, 32, 36),
   },
-
   pointsCardContainer: {
     flexDirection: "row",
     gap: getResponsiveValue(12, 14, 16, 18),
@@ -1072,9 +1032,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 8,
       },
-      android: {
-        elevation: 3,
-      },
+      android: { elevation: 3 },
     }),
   },
   myRedemptionButtonWrapper: {
@@ -1092,9 +1050,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 8,
       },
-      android: {
-        elevation: 3,
-      },
+      android: { elevation: 3 },
     }),
   },
   myRedemptionGradient: {
@@ -1134,9 +1090,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4,
       },
-      android: {
-        elevation: 6,
-      },
+      android: { elevation: 6 },
     }),
   },
   redemptionBadgeText: {
@@ -1199,9 +1153,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.06,
         shadowRadius: 8,
       },
-      android: {
-        elevation: 2,
-      },
+      android: { elevation: 2 },
     }),
   },
   stationSelectionGradient: {
@@ -1323,9 +1275,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
       },
-      android: {
-        elevation: 2,
-      },
+      android: { elevation: 2 },
     }),
   },
   searchInput: {
@@ -1351,9 +1301,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
       },
-      android: {
-        elevation: 2,
-      },
+      android: { elevation: 2 },
     }),
   },
   filterButtonActive: {
@@ -1505,9 +1453,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 8,
       },
-      android: {
-        elevation: 3,
-      },
+      android: { elevation: 3 },
     }),
   },
   productCardDisabled: {
@@ -1695,9 +1641,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 12,
       },
-      android: {
-        elevation: 8,
-      },
+      android: { elevation: 8 },
     }),
   },
   modalHeader: {
@@ -1853,9 +1797,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 6,
       },
-      android: {
-        elevation: 4,
-      },
+      android: { elevation: 4 },
     }),
   },
   lowPointsGradient: {
@@ -1872,5 +1814,33 @@ const styles = StyleSheet.create({
     color: "#991B1B",
     fontWeight: "700",
     flex: 1,
+  },
+  dialogFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 20,
+  },
+  dialogCancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#F3F4F6",
+  },
+  dialogCancelText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  dialogConfirmButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#EF4444",
+  },
+  dialogConfirmText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
   },
 });

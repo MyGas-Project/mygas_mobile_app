@@ -1,6 +1,3 @@
-// ============================================
-// Updated NotificationProvider
-// ============================================
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { subscribeToChannel, unsubscribeChannel } from "../lib/Websockets";
 import { AuthContext } from "./AuthContext";
@@ -11,7 +8,7 @@ export function NotificationProvider({ children }) {
     const [notifCount, setNotifCount] = useState(0);
     const { userDetails } = useContext(AuthContext);
     const isSubscribed = useRef(false); // Track subscription status
-
+    
     useEffect(() => {
         if (!userDetails || isSubscribed.current) return;
 

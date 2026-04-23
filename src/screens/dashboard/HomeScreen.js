@@ -22,8 +22,9 @@ import {
   GreetingCardSkeleton,
   PointsCardSkeleton,
   RewardCardSkeleton,
-  SkeletonBox,
+  SectionHeaderSkeleton,
   StatsCardSkeleton,
+  PromoBannerSkeleton,
 } from "../../components/HomeComponents";
 import { useHomeData } from "../../hooks/HomeHooks";
 import PointsCard from "../../components/PointsCard";
@@ -55,7 +56,6 @@ export default function HomeScreen({ navigation }) {
 
   const giftRotateDeg = giftRotate.interpolate({ inputRange: [-6, 6], outputRange: ["-6deg", "6deg"] });
   const clockDeg = clockRotate.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
-  const headerOpacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0.8], extrapolate: "clamp" });
   const cardContainerTranslateY = scrollY.interpolate({ inputRange: [-50, 0, 50], outputRange: [20, 0, -20], extrapolate: "clamp" });
 
   useEffect(() => {
@@ -127,26 +127,6 @@ export default function HomeScreen({ navigation }) {
       />
 
       <View style={{ position: "relative", flex: 1, backgroundColor: "#F8F9FA" }}>
-        {/* Header */}
-        {/* <Animated.View style={{ opacity: headerOpacity }}>
-          <ImageBackground
-            resizeMode="stretch"
-            source={require("../../../assets/mygas-header.jpeg")}
-            style={styles.top_bar}
-          >
-            <LinearGradient
-              colors={["rgba(249, 250, 141, 0.9)", "transparent"]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1.4 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <Image source={require("../../../assets/mygas_logo.png")} style={styles.logo} />
-            <View style={{ position: "absolute", right: 0, top: 0 }}>
-              <Navbar hideBack />
-            </View>
-          </ImageBackground>
-        </Animated.View> */}
-
         {/* Content */}
         <Animated.View style={[styles.cardContainer, { transform: [{ translateY: cardContainerTranslateY }] }]}>
           <Animated.ScrollView
@@ -170,32 +150,31 @@ export default function HomeScreen({ navigation }) {
           >
             {isLoading ? (
               <>
+                {/* Greeting */}
                 <GreetingCardSkeleton />
+
+                {/* Points card */}
                 <PointsCardSkeleton />
+
+                {/* Stats row */}
                 <StatsCardSkeleton />
+
+                {/* Rewards section */}
                 <View style={styles.sectionContainer}>
-                  <View style={styles.sectionHeader}>
-                    <View>
-                      <SkeletonBox width={120} height={20} style={{ marginBottom: 4 }} />
-                      <SkeletonBox width={160} height={13} />
-                    </View>
-                    <SkeletonBox width={80} height={36} style={{ borderRadius: 20 }} />
-                  </View>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
+                  <SectionHeaderSkeleton />
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 20 }}
+                  >
                     <RewardCardSkeleton />
                     <View style={{ width: 16 }} />
                     <RewardCardSkeleton />
                   </ScrollView>
                 </View>
-                <View style={[styles.promoBannerSkeleton, { backgroundColor: "#E1E9EE" }]}>
-                  <View style={{ padding: 20, flexDirection: "row", alignItems: "center" }}>
-                    <SkeletonBox width={40} height={40} style={{ borderRadius: 20 }} />
-                    <View style={{ flex: 1, marginLeft: 16 }}>
-                      <SkeletonBox width={140} height={18} style={{ marginBottom: 6 }} />
-                      <SkeletonBox width={200} height={13} />
-                    </View>
-                  </View>
-                </View>
+
+                {/* Promo banner */}
+                <PromoBannerSkeleton />
               </>
             ) : (
               <>
@@ -219,7 +198,7 @@ export default function HomeScreen({ navigation }) {
                   clockDeg={clockDeg}
                 />
 
-                <PromoBanner />
+                  <PromoBanner />
 
                 {userInfo?.is_guest == 1 ? (
                   <GuestRewardsComponent />
@@ -250,19 +229,5 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  promoBannerSkeleton: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 24,
-    borderRadius: 20,
-    overflow: "hidden",
   },
 });

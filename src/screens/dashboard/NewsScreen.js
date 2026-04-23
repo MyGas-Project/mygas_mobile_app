@@ -89,7 +89,7 @@ export default function NewsScreen({ navigation }) {
       image: blog.image_path
         ? { uri: blog.image_path }
         : require("../../../assets/lubes-engine.jpg"), // Fallback image
-      tag: tag,
+      tag: blog.category_name,
       color: color,
       date: formatDate(blog.created_at),
       author: blog.author,
