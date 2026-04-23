@@ -141,6 +141,19 @@ export const ProfileHome = ({
         </View>
       </View>
 
+      {/* ── Institution ── */}
+      {userDetails?.institution_name && (
+        <View style={styles.institutionCard}>
+          <View style={styles.institutionIcon}>
+            <Ionicons name="business-outline" size={wp(5)} color="#EF4444" />
+          </View>
+          <View style={styles.institutionInfo}>
+            <Text style={styles.institutionLabel}>Institution</Text>
+            <Text style={styles.institutionName}>{userDetails.institution_name}</Text>
+          </View>
+        </View>
+      )}
+
       {/* ── Quick Access Menu ── */}
       <View style={styles.menuSection}>
         <Text style={styles.menuSectionLabel}>QUICK ACCESS</Text>
@@ -446,6 +459,42 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#F3F4F6",
     marginLeft: wp(4.5) + wp(10) + wp(3.5),
+  },
+
+  // ── Institution ────────────────────────────────────────
+  institutionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: wp(4),
+    paddingVertical: hp(1.8),
+    paddingHorizontal: wp(4.5),
+    gap: wp(3.5),
+    shadowColor: '#0F1117',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  institutionIcon: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(3),
+    backgroundColor: '#FFF5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  institutionInfo: { flex: 1 },
+  institutionLabel: {
+    fontSize: isTablet ? wp(2.2) : wp(2.8),
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  institutionName: {
+    fontSize: isTablet ? wp(2.8) : wp(3.8),
+    fontWeight: '700',
+    color: '#111827',
+    marginTop: hp(0.2),
   },
 
   // ── Logout ─────────────────────────────────────────────

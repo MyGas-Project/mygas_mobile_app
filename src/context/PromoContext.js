@@ -23,7 +23,7 @@ export const PromoProvider = ({ children }) => {
 
     return (
         <PromoContext.Provider value={{}}>
-            <PromoModal promoVisibility={promoVisibility} setPromoVisibility={setPromoVisibility} />
+            {/* <PromoModal promoVisibility={promoVisibility} setPromoVisibility={setPromoVisibility} /> */}
             {children}
         </PromoContext.Provider>
     );

@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React from "react";
 import { AuthContext } from "../context/AuthContext";
 import { updatePassword, updateUserDetails } from "../service/profileService";
+import { PATH_URL } from "../config";
 
 export const useProfile = () => {
   const { userInfo, userDetails, getUserDetails } = useContext(AuthContext);

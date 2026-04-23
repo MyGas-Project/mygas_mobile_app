@@ -262,7 +262,7 @@ export default function RedemptionScreen({ navigation }) {
         setProducts(transformedProducts);
       } else {
         setProducts([]);
-        console.error("Failed to fetch products:", data);
+        // console.error("Failed to fetch products:", data);
       }
     } catch (error) {
       console.error("getAllProducts error:", error);
@@ -595,9 +595,17 @@ export default function RedemptionScreen({ navigation }) {
                         <Text style={styles.selectedStationName} numberOfLines={1}>
                           {selectedStation.station_name}
                         </Text>
-                        <View style={styles.selectedStationBadge}>
-                          <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                          <Text style={styles.selectedStationBadgeText}>Selected</Text>
+                        <View style={styles.selectedStationBadgesRow}>
+                          <View style={styles.selectedStationBadge}>
+                            <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                            <Text style={styles.selectedStationBadgeText}>Selected</Text>
+                          </View>
+                          {selectedStation.is_caravan === 1 && (
+                            <View style={styles.selectedCaravanBadge}>
+                              <Ionicons name="car" size={12} color="#F59E0B" />
+                              <Text style={styles.selectedCaravanBadgeText}>Caravan</Text>
+                            </View>
+                          )}
                         </View>
                       </View>
                     ) : (
@@ -1187,28 +1195,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   selectedStationInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
+    flexDirection: "column",   // stack name on top, badges below
+    alignItems: "flex-start",
+    gap: 4,
   },
   selectedStationName: {
     fontSize: getResponsiveValue(15, 16, 17, 18),
     fontWeight: "700",
     color: "#111827",
-    flex: 1,
+    width: "100%",             // take full width so it doesn't wrap early
+  },
+  selectedStationBadgesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   selectedStationBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3,
     backgroundColor: "#ECFDF5",
-    paddingHorizontal: getResponsiveValue(8, 9, 10, 11),
-    paddingVertical: getResponsiveValue(3, 4, 5, 6),
-    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   selectedStationBadgeText: {
-    fontSize: getResponsiveValue(10, 11, 12, 13),
+    fontSize: 10,
     color: "#059669",
     fontWeight: "700",
     textTransform: "uppercase",
@@ -1842,5 +1854,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#fff",
+  },
+  selectedCaravanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  selectedCaravanBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F59E0B',
   },
 });

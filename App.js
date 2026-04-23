@@ -172,6 +172,8 @@ export default function App() {
     ScreenToRender = <ServerMaintenance />;
   }
 
+  // AsyncStorage.clear();
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>

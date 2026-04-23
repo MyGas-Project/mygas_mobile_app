@@ -512,7 +512,7 @@ const Step2 = ({ navigation, route }) => {
 
 const Step3 = ({ navigation, route }) => {
   const { styles, currentTheme, mainTheme } = useTheme();
-  const [code, setCode] = useState(null);
+  const [code, setCode] = useState("");
   const inputs = useRef([]);
   const { data, batch1form } = route?.params || {};
   const { verifyCode } = useContext(AuthContext);
@@ -537,14 +537,28 @@ const Step3 = ({ navigation, route }) => {
   };
 
   const handleVerify = async () => {
-    setLoadingState(true);
-    const res = await verifyCode(data.data, code.join(""));
+    if (!code || code.length < 6) {
+      Alert.alert("Incomplete Code", "Please enter all 6 digits.");
+      return;
+    }
 
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      navigation.navigate("Step4", { res: res, data: data.data });
-    } else {
+    setLoadingState(true);
+    try {
+      const codeString = typeof code === "string" ? code : code.join("");
+      console.log("Submitting code:", codeString);
+      const res = await verifyCode(data.data, codeString);
+      console.log("Verification result:", res);
+
+      if (res?.statusCode == 200 || res?.statusCode == 201) {
+        navigation.navigate("Step4", { res: res, data: data.data });
+      } else {
+        setLoadingState(false);
+        Alert.alert("Invalid Code", res?.data?.message || "Verification failed");
+      }
+    } catch (err) {
+      console.log("handleVerify error:", err);
       setLoadingState(false);
-      Alert.alert("Invalid Code", "Verification failed");
+      Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
 

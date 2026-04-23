@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "545976025212",
+    "project_id": "mygas-dev-mode",
+    "storage_bucket": "mygas-dev-mode.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:545976025212:android:e11339c6525244921b49f9",
+        "android_client_info": {
+          "package_name": "com.mediaone.mygas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaxZ1dxYCxa4H3Ub_Ai1gZwt4GemcybJ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

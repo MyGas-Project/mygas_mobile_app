@@ -60,13 +60,14 @@ export const AuthProvider = ({ children }) => {
         .then(processResponse)
         .then((res) => {
           const { statusCode, data } = res;
+          console.log("verifyCode response: ", res);
           return res;
         })
         .catch((err) => {
           console.log("registerStep1 error: ", err);
         });
     } catch (error) {
-      console.log("registerStep1 error: ", err);
+      console.log("registerStep1 error: ", error);
     }
   };
 

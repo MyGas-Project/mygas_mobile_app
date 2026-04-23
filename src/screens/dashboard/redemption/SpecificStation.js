@@ -36,7 +36,7 @@ const getResponsiveValue = (small, medium, tablet, large) => {
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
 
-  const R = 6371; // Radius of the Earth in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a =
@@ -56,6 +56,7 @@ const StationCard = ({ station, isSelected, onSelect }) => {
     <TouchableOpacity
       style={[
         styles.stationCard,
+        station.is_caravan === 1 && styles.stationCardCaravan,
         isSelected && styles.stationCardSelected,
         !isAvailable && styles.stationCardDisabled,
       ]}
@@ -68,6 +69,14 @@ const StationCard = ({ station, isSelected, onSelect }) => {
         <View style={styles.nearestBadge}>
           <Ionicons name="location" size={12} color="#fff" />
           <Text style={styles.nearestBadgeText}>NEAREST</Text>
+        </View>
+      )}
+
+      {/* Caravan Badge */}
+      {station.is_caravan === 1 && (
+        <View style={styles.caravanBadge}>
+          <Ionicons name="car" size={12} color="#fff" />
+          <Text style={styles.caravanBadgeText}>CARAVAN</Text>
         </View>
       )}
 
@@ -106,26 +115,26 @@ const StationCard = ({ station, isSelected, onSelect }) => {
         styles.stationAddress,
         !isAvailable && styles.stationAddressDisabled,
       ]} numberOfLines={2}>
-        {station.station_address}
+        {station.is_caravan === 1 ? station.description : station.station_address}
       </Text>
 
       {/* Stock Status */}
       <View style={styles.stockContainer}>
-        <View style={[
-          styles.stockBadge,
-          isAvailable ? styles.stockBadgeAvailable : styles.stockBadgeOut,
-        ]}>
-          <Ionicons
-            name={isAvailable ? "checkmark-circle" : "close-circle"}
-            size={14}
-            color="#fff"
-          />
-          <Text style={styles.stockBadgeText}>
-            {isAvailable ? "Station Open" : "Station Closed"}
-          </Text>
-        </View>
+          <View style={[
+            styles.stockBadge,
+            isAvailable ? styles.stockBadgeAvailable : styles.stockBadgeOut,
+          ]}>
+            <Ionicons
+              name={isAvailable ? "checkmark-circle" : "close-circle"}
+              size={14}
+              color="#fff"
+            />
+            <Text style={styles.stockBadgeText}>
+              {isAvailable ? "Station Open" : "Station Closed"}
+            </Text>
+          </View>
 
-        {!hasCoordinates && (
+        {!hasCoordinates && station.is_caravan !== 1 && (
           <View style={styles.noLocationBadge}>
             <Ionicons name="alert-circle" size={12} color="#F97316" />
             <Text style={styles.noLocationText}>No location</Text>
@@ -206,20 +215,21 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
     }
 
     if (sortBy === 'distance') {
-      // Sort by distance, put stations without distance at the end
-      return stations.sort((a, b) => {
+      stations.sort((a, b) => {
         if (a.distance === null && b.distance === null) return 0;
         if (a.distance === null) return 1;
         if (b.distance === null) return -1;
         return a.distance - b.distance;
       });
     } else if (sortBy === 'name') {
-      return stations.sort((a, b) =>
+      stations.sort((a, b) =>
         a.station_name.localeCompare(b.station_name)
       );
     }
 
-    return stations;
+    // Pin caravan stations to the top
+    return stations.sort((a, b) => (b.is_caravan === 1 ? 1 : 0) - (a.is_caravan === 1 ? 1 : 0));
+
   }, [processedStations, sortBy, searchQuery]);
 
   const availableStationsCount = useMemo(() => {
@@ -249,7 +259,6 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
       getStationLists();
     }
 
-    // Cleanup on unmount
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -271,7 +280,6 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
     if (onClear) {
       onClear();
       setSearchQuery('');
-      // setSelectedStation(null);
       if (clearStationAction == true) {
         setSelectedStation(null);
       }
@@ -942,5 +950,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.5,
+  },
+  caravanBadge: {
+    position: 'absolute',
+    top: getResponsiveValue(12, 14, 16, 18),
+    right: getResponsiveValue(12, 14, 16, 18),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
+    paddingVertical: getResponsiveValue(4, 5, 6, 7),
+    borderRadius: getResponsiveValue(6, 7, 8, 9),
+  },
+  caravanBadgeText: {
+    color: '#fff',
+    fontSize: getResponsiveValue(9, 10, 11, 12),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  stationCardCaravan: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#F59E0B',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#F59E0B',
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
 });
