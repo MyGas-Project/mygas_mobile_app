@@ -30,6 +30,10 @@ export default function ScanScreen() {
     extrapolate: "clamp",
   });
 
+  const qrValue = `${userDetails?.bar_code || "000000000000"}|is_mobile:1`;
+
+  console.log("QR Value:", qrValue);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <Navbar
@@ -107,7 +111,7 @@ export default function ScanScreen() {
             <View style={custom_styles.codeCard}>
               <View style={custom_styles.qrWrapper}>
                 <QRCode
-                  value={userDetails?.bar_code || "000000000000"}
+                  value={qrValue}
                   size={width * 0.5}
                   backgroundColor="white"
                 />
