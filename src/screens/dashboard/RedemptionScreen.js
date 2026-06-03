@@ -186,6 +186,11 @@ export default function RedemptionScreen({ navigation }) {
   const [stationFilterProduct, setStationFilterProduct] = useState(null);
   const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0.8], extrapolate: "clamp" });
 
@@ -223,11 +228,11 @@ export default function RedemptionScreen({ navigation }) {
   const userPoints = rewards.points || 0;
   const cardWidth = useMemo(() => getCardWidth(), []);
 
-  const getAllProducts = async (station) => {
+  const getAllProducts = async (station, page = 1) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${BASE_URL}customer/get-products?station_id=${station?.id}`,
+        `${BASE_URL}customer/get-products?station_id=${station?.id}&page=${page}&limit=10`,
         {
           method: "GET",
           headers: {
@@ -237,9 +242,11 @@ export default function RedemptionScreen({ navigation }) {
           },
         }
       );
-
+      console.log("getAllProducts response status:", response);
       const res = await processResponse(response);
       const { statusCode, data } = res;
+      console.log("Parsed response:", JSON.stringify(data, null, 2));
+
       if (statusCode === 200) {
         const transformedProducts = data.data.inventories.map((item) => ({
           id: item.inventory_id,
@@ -260,9 +267,17 @@ export default function RedemptionScreen({ navigation }) {
         }));
 
         setProducts(transformedProducts);
+
+        // Save pagination info from backend
+        const pagination = data.data.pagination;
+        setCurrentPage(pagination.page);
+        setTotalPages(pagination.totalPages);
+        setTotalProducts(pagination.total);
       } else {
         setProducts([]);
-        // console.error("Failed to fetch products:", data);
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalProducts(0);
       }
     } catch (error) {
       console.error("getAllProducts error:", error);
@@ -633,7 +648,7 @@ export default function RedemptionScreen({ navigation }) {
                 </View>
                 <View style={styles.productCountBadge}>
                   <Text style={styles.productCountText}>
-                    {filteredProducts.length} items
+                    {totalProducts} items
                   </Text>
                 </View>
               </View>
@@ -788,15 +803,52 @@ export default function RedemptionScreen({ navigation }) {
                   </Text>
                 </View>
               ) : (
-                <FlatList
-                  data={filteredProducts}
-                  renderItem={renderProductItem}
-                  keyExtractor={keyExtractor}
-                  numColumns={getColumnCount()}
-                  scrollEnabled={false}
-                  columnWrapperStyle={styles.productRow}
-                  contentContainerStyle={styles.productsGrid}
-                />
+                <View>
+                  <FlatList
+                    data={filteredProducts}
+                    renderItem={renderProductItem}
+                    keyExtractor={keyExtractor}
+                    numColumns={getColumnCount()}
+                    scrollEnabled={false}
+                    columnWrapperStyle={styles.productRow}
+                    contentContainerStyle={styles.productsGrid}
+                  />
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <View style={styles.paginationContainer}>
+                      <TouchableOpacity
+                        style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+                        onPress={() => getAllProducts(selectedStation, currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <Ionicons
+                          name="chevron-back"
+                          size={20}
+                          color={currentPage === 1 ? "#D1D5DB" : "#EF4444"}
+                        />
+                      </TouchableOpacity>
+
+                      <View style={styles.paginationInfo}>
+                        <Text style={styles.paginationText}>
+                          Page <Text style={styles.paginationCurrent}>{currentPage}</Text> of <Text style={styles.paginationCurrent}>{totalPages}</Text>
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+                        onPress={() => getAllProducts(selectedStation, currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        <Ionicons
+                          name="chevron-forward"
+                          size={20}
+                          color={currentPage === totalPages ? "#D1D5DB" : "#EF4444"}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               )}
             </View>
           </View>
@@ -1870,5 +1922,56 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#F59E0B',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: getResponsiveValue(16, 18, 20, 22),
+    gap: getResponsiveValue(12, 16, 20, 24),
+  },
+  paginationButton: {
+    width: getResponsiveValue(40, 44, 48, 52),
+    height: getResponsiveValue(40, 44, 48, 52),
+    borderRadius: getResponsiveValue(20, 22, 24, 26),
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  paginationButtonDisabled: {
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    ...Platform.select({
+      ios: { shadowOpacity: 0 },
+      android: { elevation: 0 },
+    }),
+  },
+  paginationInfo: {
+    paddingHorizontal: getResponsiveValue(16, 18, 20, 22),
+    paddingVertical: getResponsiveValue(8, 9, 10, 11),
+    backgroundColor: '#FEF2F2',
+    borderRadius: getResponsiveValue(20, 22, 24, 26),
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  paginationText: {
+    fontSize: getResponsiveValue(13, 14, 15, 16),
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  paginationCurrent: {
+    color: '#EF4444',
+    fontWeight: '800',
   },
 });
