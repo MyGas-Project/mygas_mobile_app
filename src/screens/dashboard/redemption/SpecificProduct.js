@@ -617,8 +617,8 @@ const styles = StyleSheet.create({
         borderRadius: getResponsiveValue(12, 14, 16, 18),
         gap: getResponsiveValue(12, 14, 16, 18),
         marginBottom: getResponsiveValue(20, 24, 28, 32),
-        borderLeftWidth: 4,
-        borderLeftColor: '#F97316',
+        // borderLeftWidth: 4,
+        // borderLeftColor: '#F97316',
     },
     stationWarningContent: {
         flex: 1,

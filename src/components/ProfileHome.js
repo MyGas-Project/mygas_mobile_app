@@ -58,7 +58,7 @@ export const ProfileHome = ({
 
       {/* ── Hero Profile Card ── */}
       <View style={styles.heroCard}>
-        <View style={styles.heroAccent} />
+        {/* <View style={styles.heroAccent} /> */}
         <View style={styles.heroContent}>
           <View style={styles.avatarWrapper}>
             <Avatar size="lg" style={styles.avatar}>
@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFBEB",
     borderRadius: wp(4),
-    borderLeftWidth: 4,
-    borderLeftColor: "#F59E0B",
+    // borderLeftWidth: 4,
+    // borderLeftColor: "#F59E0B",
     paddingVertical: hp(1.8),
     paddingRight: wp(3),
     paddingLeft: wp(3.5),

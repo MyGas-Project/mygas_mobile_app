@@ -282,9 +282,11 @@ const custom_styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginTop: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: "#FFD700",
+    borderWidth: 4,
+    borderColor: "#FFD700",
+    borderRadius: 20,
   },
+
   infoText: {
     fontSize: Math.min(width * 0.035, 14),
     color: "#666",

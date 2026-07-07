@@ -85,7 +85,7 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
         />
 
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.3)']}
+          colors={['transparent', 'rgba(0,0,0,0.1)']}
           style={styles.imageGradient}
         />
 
@@ -103,36 +103,27 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
         )}
 
         {product.isWeeklyPromo && (
-          <View style={styles.promoBadge}>
-            <Ionicons name="flash" size={10} color="#fff" />
-            <Text style={styles.promoBadgeText}>PROMO</Text>
+          <View style={styles.promoBadgeRibbon}>
+            <View style={styles.promoBadgeInner}>
+              <Text style={styles.promoBadgeText}>PROMO</Text>
+            </View>
           </View>
         )}
       </View>
 
       <View style={styles.productContent}>
+
+        {/* 3. Product Name */}
         <Text style={styles.productName} numberOfLines={2}>
           {product.name}
         </Text>
+
+        {/* 4. Product Weight */}
         <Text style={styles.productDescription} numberOfLines={2}>
-          {product.description}
+          {product.weight}
         </Text>
 
-        {product.isWeeklyPromo && promoDateText && (
-          <View style={styles.promoDateContainer}>
-            <Ionicons name="calendar-outline" size={12} color="#8B5CF6" />
-            <Text style={styles.promoDateText}>{promoDateText}</Text>
-          </View>
-        )}
-
-        {product.isWeeklyPromo && product.promoDescription && (
-          <View style={styles.promoDescriptionContainer}>
-            <Text style={styles.promoDescriptionText} numberOfLines={1}>
-              {product.promoDescription}
-            </Text>
-          </View>
-        )}
-
+        {/* 2. Points Required */}
         <View style={styles.productFooter}>
           <View style={styles.pointsContainer}>
             <Image
@@ -151,15 +142,30 @@ const ProductCard = React.memo(({ product, userPoints, onProductPress, cardWidth
 
             <Text style={styles.pointsLabel}>pts</Text>
 
-            {product.isWeeklyPromo && product.originalPoints && product.originalPoints > product.points && (
+            {/* {product.isWeeklyPromo && product.originalPoints && product.originalPoints > product.points && (
               <View style={styles.discountBadge}>
                 <Text style={styles.discountText}>
                   -{Math.round(((product.originalPoints - product.points) / product.originalPoints) * 100)}%
                 </Text>
               </View>
-            )}
+            )} */}
           </View>
         </View>
+
+        {/* {product.isWeeklyPromo && promoDateText && (
+          <View style={styles.promoDateContainer}>
+            <Ionicons name="calendar-outline" size={12} color="#8B5CF6" />
+            <Text style={styles.promoDateText}>{promoDateText}</Text>
+          </View>
+        )}
+
+        {product.isWeeklyPromo && product.promoDescription && (
+          <View style={styles.promoDescriptionContainer}>
+            <Text style={styles.promoDescriptionText} numberOfLines={1}>
+              {product.promoDescription}
+            </Text>
+          </View>
+        )} */}
       </View>
     </TouchableOpacity>
   );
@@ -252,10 +258,11 @@ export default function RedemptionScreen({ navigation }) {
           id: item.inventory_id,
           name: item.name,
           description: item.description || "No description available",
+          weight: item.weight || "N/A",
           points: item.promo_points || item.points || 0,
           originalPoints: item.promo_points ? item.points : null,
           image: item.image_path,
-          category: "Products",
+          category: item.inventory_type || "Uncategorized",
           quantity: parseFloat(item.total_quantity) || 0,
           isWeeklyPromo: item.is_weekly_promo === 1 && item.promo_points !== null,
           promoDescription: item.promo_descriptions,
@@ -516,8 +523,24 @@ export default function RedemptionScreen({ navigation }) {
                   end={{ x: 1, y: 0 }}
                   style={styles.lowPointsGradient}
                 >
-                  <Ionicons name="warning" size={18} color="#DC2626" />
-                  <Text style={styles.lowPointsText}>You have low points</Text>
+                  <View style={styles.lowPointsHeader}>
+                    <Ionicons name="warning" size={18} color="#DC2626" />
+                    <Text style={styles.lowPointsText}>
+                      You're only a few liters away from earning more rewards!
+                    </Text>
+                  </View>
+                  <View style={styles.lowPointsBulletRow}>
+                    <Text style={styles.lowPointsBulletDot}>{"\u2022"}</Text>
+                    <Text style={styles.lowPointsBulletText}>
+                      Earn more points with your next fuel purchase.
+                    </Text>
+                  </View>
+                  <View style={styles.lowPointsBulletRow}>
+                    <Text style={styles.lowPointsBulletDot}>{"\u2022"}</Text>
+                    <Text style={styles.lowPointsBulletText}>
+                      Fuel up today to start redeeming rewards.
+                    </Text>
+                  </View>
                 </LinearGradient>
               </View>
             )}
@@ -531,14 +554,23 @@ export default function RedemptionScreen({ navigation }) {
                   style={styles.pointsGradient}
                 >
                   <View style={styles.pointsContent}>
-                    <View>
-                      <Text style={styles.pointsTitle}>Available Points</Text>
+                    <View style={styles.pointsTextContainer}>
+                      {/* <Text style={styles.pointsTitle}>Available Points</Text> */}
+                      <Text style={styles.pointsTitle}>You Have</Text>
                       <View style={styles.pointsValueContainer}>
-                        <Image
+                        {/* <Image
                           source={require("../../../assets/my.png")}
                           style={styles.pointsIcon}
-                        />
-                        <Text style={styles.pointsValue}>{userPoints.toLocaleString()}</Text>
+                        /> */}
+                        <Text
+                          style={styles.pointsValue}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.6}
+                        >
+                          {userPoints.toLocaleString()}
+                        </Text>
+                        <Text style={styles.pointsTitle}>Pts</Text>
                       </View>
                     </View>
                     <View style={styles.pointsIconContainer}>
@@ -1167,8 +1199,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
     gap: getResponsiveValue(8, 10, 12, 14),
+  },
+  pointsTextContainer: {
+    flex: 1,
+    minWidth: 0,
   },
   pointsTitle: {
     fontSize: getResponsiveValue(11, 12, 13, 14),
@@ -1184,12 +1220,12 @@ const styles = StyleSheet.create({
     gap: getResponsiveValue(6, 8, 10, 12),
   },
   pointsIcon: {
-    width: getResponsiveValue(18, 20, 24, 28),
-    height: getResponsiveValue(18, 20, 24, 28),
+    width: getResponsiveValue(23, 25, 29, 33),
+    height: getResponsiveValue(23, 25, 29, 33),
     resizeMode: "contain",
   },
   pointsValue: {
-    fontSize: getResponsiveValue(22, 24, 28, 32),
+    fontSize: getResponsiveValue(27, 29, 33, 37),
     fontWeight: "800",
     color: "#92400E",
     letterSpacing: -0.5,
@@ -1201,6 +1237,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   stationSelectionCard: {
     borderRadius: getResponsiveValue(16, 18, 20, 22),
@@ -1425,7 +1462,7 @@ const styles = StyleSheet.create({
     paddingVertical: getResponsiveValue(10, 12, 14, 16),
     borderRadius: getResponsiveValue(12, 14, 16, 18),
     backgroundColor: "#fff",
-    marginRight: getResponsiveValue(10, 12, 14, 16),
+    // marginRight: getResponsiveValue(10, 12, 14, 16),
     borderWidth: 2,
     borderColor: "#E5E7EB",
     flexDirection: "row",
@@ -1517,7 +1554,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 8,
       },
-      android: { elevation: 3 },
+      android: { elevation: 2 },
     }),
   },
   productCardDisabled: {
@@ -1525,21 +1562,22 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: "relative",
+    // padding: getResponsiveValue(10, 14, 18, 22),
     width: "100%",
     height: getResponsiveValue(120, 140, 160, 180),
   },
   productImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
-    backgroundColor: "#F9FAFB",
+    resizeMode: "contain",
+    // backgroundColor: "#F9FAFB",
   },
   imageGradient: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: "50%",
+    height: "100%",
   },
   stockBadge: {
     position: "absolute",
@@ -1565,40 +1603,51 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
-  promoBadge: {
+  promoBadgeRibbon: {
     position: "absolute",
-    top: getResponsiveValue(8, 10, 12, 14),
-    left: getResponsiveValue(8, 10, 12, 14),
+    top: 0,
+    left: 0,
+    width: getResponsiveValue(72, 80, 88, 96),
+    height: getResponsiveValue(72, 80, 88, 96),
+    overflow: "hidden",
+    zIndex: 10,
+  },
+  promoBadgeInner: {
+    position: "absolute",
+    top: getResponsiveValue(14, 16, 18, 20),
+    left: getResponsiveValue(-24, -26, -28, -30),
+    width: getResponsiveValue(90, 100, 110, 120),
+    backgroundColor: "#8B5CF6",
+    paddingVertical: getResponsiveValue(4, 5, 6, 7),
+    transform: [{ rotate: "-45deg" }],
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#8B5CF6",
-    paddingHorizontal: getResponsiveValue(8, 10, 12, 14),
-    paddingVertical: getResponsiveValue(4, 5, 6, 7),
-    borderRadius: getResponsiveValue(6, 7, 8, 9),
+    justifyContent: "center",
     gap: 3,
   },
   promoBadgeText: {
     color: "#fff",
-    fontSize: getResponsiveValue(9, 10, 11, 12),
-    fontWeight: "700",
+    fontSize: getResponsiveValue(8, 9, 10, 11),
+    fontWeight: "800",
     letterSpacing: 0.5,
   },
   productContent: {
     padding: getResponsiveValue(12, 14, 16, 18),
   },
   productName: {
-    fontSize: getResponsiveValue(14, 15, 16, 17),
-    fontWeight: "700",
+    fontSize: getResponsiveValue(15, 16, 17, 18),
+    fontWeight: "800",
     color: "#111827",
     marginBottom: getResponsiveValue(6, 7, 8, 9),
     minHeight: getResponsiveValue(36, 40, 44, 48),
     lineHeight: getResponsiveValue(18, 20, 22, 24),
+    textTransform: "uppercase",
   },
   productDescription: {
     fontSize: getResponsiveValue(11, 12, 13, 14),
     color: "#6B7280",
-    marginBottom: getResponsiveValue(8, 10, 12, 14),
-    minHeight: getResponsiveValue(32, 36, 40, 44),
+    marginBottom: getResponsiveValue(6, 7, 8, 9),
+    // minHeight: getResponsiveValue(32, 36, 40, 44),
     lineHeight: getResponsiveValue(16, 18, 20, 22),
   },
   promoDateContainer: {
@@ -1636,10 +1685,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: getResponsiveValue(12, 14, 16, 18),
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    // paddingBottom: getResponsiveValue(12, 14, 16, 18),
+    // borderBottomWidth: 1,
+    // borderBottomColor: "#F3F4F6",
     gap: getResponsiveValue(12, 14, 16, 18),
+    marginBottom: getResponsiveValue(6, 8, 10, 12),
   },
   pointsContainer: {
     flexDirection: "row",
@@ -1649,8 +1699,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   miniIcon: {
-    width: getResponsiveValue(18, 20, 22, 24),
-    height: getResponsiveValue(18, 20, 22, 24),
+    width: getResponsiveValue(20, 22, 24, 26),
+    height: getResponsiveValue(20, 22, 24, 26),
     resizeMode: "contain",
   },
   priceContainer: {
@@ -1659,14 +1709,14 @@ const styles = StyleSheet.create({
     gap: getResponsiveValue(6, 7, 8, 9),
   },
   originalPoints: {
-    fontSize: getResponsiveValue(13, 15, 17, 19),
+    fontSize: getResponsiveValue(14, 16, 18, 20),
     fontWeight: "600",
     color: "#9CA3AF",
     textDecorationLine: "line-through",
     textDecorationStyle: "solid",
   },
   productPoints: {
-    fontSize: getResponsiveValue(17, 19, 21, 23),
+    fontSize: getResponsiveValue(23, 25, 27, 29),
     fontWeight: "800",
     color: "#F59E0B",
   },
@@ -1675,19 +1725,19 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontWeight: "600",
   },
-  discountBadge: {
-    backgroundColor: "#DC2626",
-    paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
-    paddingVertical: getResponsiveValue(2, 3, 4, 5),
-    borderRadius: getResponsiveValue(4, 5, 6, 7),
-    marginLeft: getResponsiveValue(4, 5, 6, 7),
-  },
-  discountText: {
-    color: "#fff",
-    fontSize: getResponsiveValue(9, 10, 11, 12),
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
+  // discountBadge: {
+  //   backgroundColor: "#DC2626",
+  //   paddingHorizontal: getResponsiveValue(6, 7, 8, 9),
+  //   paddingVertical: getResponsiveValue(2, 3, 4, 5),
+  //   borderRadius: getResponsiveValue(4, 5, 6, 7),
+  //   marginLeft: getResponsiveValue(4, 5, 6, 7),
+  // },
+  // discountText: {
+  //   color: "#fff",
+  //   fontSize: getResponsiveValue(9, 10, 11, 12),
+  //   fontWeight: "700",
+  //   letterSpacing: 0.3,
+  // },
   modalOverlay: {
     flex: 1,
     backgroundColor: "transparent",
@@ -1865,18 +1915,38 @@ const styles = StyleSheet.create({
     }),
   },
   lowPointsGradient: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
     paddingHorizontal: getResponsiveValue(14, 16, 18, 20),
     paddingVertical: getResponsiveValue(10, 12, 14, 16),
+    gap: getResponsiveValue(6, 7, 8, 9),
+    // borderLeftWidth: 4,
+    // borderLeftColor: "#DC2626",
+  },
+  lowPointsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: getResponsiveValue(10, 12, 14, 16),
-    borderLeftWidth: 4,
-    borderLeftColor: "#DC2626",
   },
   lowPointsText: {
     fontSize: getResponsiveValue(13, 14, 15, 16),
     color: "#991B1B",
     fontWeight: "700",
+    flex: 1,
+  },
+  lowPointsBulletRow: {
+    flexDirection: "row",
+    paddingLeft: getResponsiveValue(28, 30, 32, 34),
+    gap: getResponsiveValue(6, 7, 8, 9),
+  },
+  lowPointsBulletDot: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#B91C1C",
+    fontWeight: "700",
+  },
+  lowPointsBulletText: {
+    fontSize: getResponsiveValue(12, 13, 14, 15),
+    color: "#B91C1C",
+    fontWeight: "500",
     flex: 1,
   },
   dialogFooter: {
