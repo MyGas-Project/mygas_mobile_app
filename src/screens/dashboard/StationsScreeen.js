@@ -209,7 +209,9 @@ export default function StationsScreen({ navigation }) {
   const getStationLists = async (value = "") => {
     try {
       setStationsLoading(true);
-      const result = await GetStationsLists(userInfo.token, value);
+      const result = await GetStationsLists(userInfo.token, value, "", true);
+
+      console.log("Stations fetched:", result.success ? "Success" : "Failed", result.data?.length || 0);
 
       if (result.success) {
         setStationsLists(result.data);

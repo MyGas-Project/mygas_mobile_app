@@ -65,7 +65,7 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const fetchRewards = async () => {
-    const rez = await GetStationsLists(userInfo.token, "");
+    const rez = await GetStationsLists(userInfo.token, "", "", true);
     setStationCount(rez.data.length);
     const res = await fetch(`${BASE_URL}customer/get-rewards`, {
       method: "GET",
@@ -198,7 +198,7 @@ export default function HomeScreen({ navigation }) {
                   clockDeg={clockDeg}
                 />
 
-                  <PromoBanner />
+                <PromoBanner />
 
                 {userInfo?.is_guest == 1 ? (
                   <GuestRewardsComponent />

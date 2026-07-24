@@ -1,12 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL, processResponse } from "../config";
 
-export default async function GetStationsLists(token, filter = "", product_id = "") {
+export default async function GetStationsLists(token, filter = "", product_id = "", is_list = false) {
   try {
-    const cachedData = await AsyncStorage.getItem("stations");
+    const cacheKey = is_list ? "stations_list" : "stations";
+    const cachedData = await AsyncStorage.getItem(cacheKey);
     let parsedCache = cachedData ? JSON.parse(cachedData) : [];
 
-    const response = await fetch(`${BASE_URL}customer/station-list?filter=${filter}&inventory_id=${product_id}`, {
+    const response = await fetch(`${BASE_URL}customer/station-list?filter=${filter}&inventory_id=${product_id}&is_list=${is_list}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -16,8 +17,8 @@ export default async function GetStationsLists(token, filter = "", product_id = 
 
     const res = await processResponse(response);
     const { statusCode, data } = res;
-    
-    // console.log(parsedCache.length, data.data.length);
+
+    // console.log("ALL STATIONS:", JSON.stringify(data?.data, null, 2));
 
     if (statusCode !== 200) {
       if (parsedCache.length > 0) {
@@ -39,7 +40,7 @@ export default async function GetStationsLists(token, filter = "", product_id = 
       };
     }
 
-    await AsyncStorage.setItem("stations", JSON.stringify(data.data));
+    await AsyncStorage.setItem(cacheKey, JSON.stringify(data.data));
 
     return {
       success: true,

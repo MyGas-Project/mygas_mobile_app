@@ -120,19 +120,19 @@ const StationCard = ({ station, isSelected, onSelect }) => {
 
       {/* Stock Status */}
       <View style={styles.stockContainer}>
-          <View style={[
-            styles.stockBadge,
-            isAvailable ? styles.stockBadgeAvailable : styles.stockBadgeOut,
-          ]}>
-            <Ionicons
-              name={isAvailable ? "checkmark-circle" : "close-circle"}
-              size={14}
-              color="#fff"
-            />
-            <Text style={styles.stockBadgeText}>
-              {isAvailable ? "Station Open" : "Station Closed"}
-            </Text>
-          </View>
+        <View style={[
+          styles.stockBadge,
+          isAvailable ? styles.stockBadgeAvailable : styles.stockBadgeOut,
+        ]}>
+          <Ionicons
+            name={isAvailable ? "checkmark-circle" : "close-circle"}
+            size={14}
+            color="#fff"
+          />
+          <Text style={styles.stockBadgeText}>
+            {isAvailable ? "Station Open" : "Station Closed"}
+          </Text>
+        </View>
 
         {!hasCoordinates && station.is_caravan !== 1 && (
           <View style={styles.noLocationBadge}>
@@ -239,7 +239,9 @@ export default function SpecificStation({ visible, onClose, onConfirm, onClear, 
   const getStationLists = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await GetStationsLists(userInfo.token, searchQuery, productId);
+      const result = await GetStationsLists(userInfo.token, searchQuery, productId, false);
+
+      console.log("Stations fetched:", result.success ? "Success" : "Failed", result.data?.length || 0);
 
       if (result.success) {
         setLoading(false);

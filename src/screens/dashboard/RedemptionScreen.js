@@ -248,10 +248,10 @@ export default function RedemptionScreen({ navigation }) {
           },
         }
       );
-      console.log("getAllProducts response status:", response);
+      // console.log("getAllProducts response status:", response);
       const res = await processResponse(response);
       const { statusCode, data } = res;
-      console.log("Parsed response:", JSON.stringify(data, null, 2));
+      // console.log("Get Products:", JSON.stringify(data, null, 2));
 
       if (statusCode === 200) {
         const transformedProducts = data.data.inventories.map((item) => ({

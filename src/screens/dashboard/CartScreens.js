@@ -98,7 +98,7 @@ const CartItem = React.memo(({ item, onQuantityChange, onRemove }) => {
                 </View>
 
                 <Text style={styles.cartItemDescription} numberOfLines={1}>
-                    {item.description}
+                    {item.weight}
                 </Text>
 
                 <View style={styles.cartItemFooter}>
@@ -255,6 +255,7 @@ export default function CartScreens({ navigation, route }) {
                 id: cart.id,
                 name: cart.inventory?.name || 'Unknown Item',
                 description: cart.inventory?.description || '',
+                weight: cart.inventory?.weight || '',
                 points: currentPoints,
                 originalPoints,
                 quantity: cart.quantity || 1,
@@ -267,7 +268,7 @@ export default function CartScreens({ navigation, route }) {
                     endDate: cart.weekly_promo.promo_end_date,
                     promoPoints: cart.weekly_promo.promo_points,
                 } : null,
-                image: cart.inventory?.image || null,
+                image: cart.inventory?.image_path || null,
                 inventoryId: cart.inventory?.id,
                 stationInventoryId: cart.station_inventory?.id,
             };
@@ -291,6 +292,7 @@ export default function CartScreens({ navigation, route }) {
 
             const res = await processResponse(response);
             const { statusCode, data } = res;
+            // console.log('Get Cart:', JSON.stringify(data, null, 2));
 
             if (statusCode === 201 && data?.data) {
                 setCartItems(transformCartData(data.data));
@@ -1089,8 +1091,8 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     cartItemImage: {
-        width: getResponsiveValue(80, 90, 100, 110),
-        height: getResponsiveValue(80, 90, 100, 110),
+        width: getResponsiveValue(90, 100, 110, 120),
+        height: getResponsiveValue(90, 100, 110, 120),
         borderRadius: getResponsiveValue(12, 14, 16, 18),
         backgroundColor: '#F9FAFB',
         resizeMode: 'cover',
