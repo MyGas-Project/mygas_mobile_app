@@ -490,8 +490,8 @@ const styles = StyleSheet.create({
     },
     highlightBox: {
         backgroundColor: "#FFF9E6",
-        borderLeftWidth: 4,
-        borderLeftColor: "#E0B820",
+        // borderLeftWidth: 4,
+        // borderLeftColor: "#E0B820",
         padding: scale(16),
         borderRadius: scale(12)
     },

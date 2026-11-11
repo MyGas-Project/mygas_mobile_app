@@ -610,8 +610,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(139, 44, 46, 0.6)',
         borderRadius: 10,
         padding: 12,
-        borderLeftWidth: 3,
-        borderLeftColor: '#FFFFFF',
+
     },
     infoHeader: {
         flexDirection: 'row',
