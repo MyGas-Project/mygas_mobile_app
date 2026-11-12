@@ -15,6 +15,7 @@ import StationsScreeen from "../screens/dashboard/StationsScreeen";
 import ActivityScreen from "../screens/dashboard/ActivityScreen";
 import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 import NewsScreen from "../screens/dashboard/NewsScreen";
+import PromoCampaignsScreen from "../screens/dashboard/PromoCampaignScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import RewardDetails from "../screens/dashboard/RewardDetails";
@@ -246,6 +247,15 @@ const BottomTabNavigator = () => {
         name="RewardDetails"
         component={RewardDetails}
         options={{ tabBarButton: () => null, unmountOnBlur: true }}
+      />
+      <Tab.Screen
+        name="PromoCampaigns"
+        component={PromoCampaignsScreen}
+        options={{
+          tabBarButton: () => null,
+          unmountOnBlur: true,
+          header: () => <Navbar />,
+        }}
       />
       {/* <Tab.Screen
         name="Profile"

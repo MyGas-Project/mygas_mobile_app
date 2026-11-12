@@ -53,6 +53,7 @@ export default function HomeScreen({ navigation }) {
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
+  const [campaigns, setCampaigns] = useState([]);
 
   const giftRotateDeg = giftRotate.interpolate({ inputRange: [-6, 6], outputRange: ["-6deg", "6deg"] });
   const clockDeg = clockRotate.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
@@ -89,12 +90,37 @@ export default function HomeScreen({ navigation }) {
   const loadAllData = async () => {
     setIsLoading(true);
     try {
-      await Promise.all([fetchRewards(), refreshPoints?.()]);
+      await Promise.all([fetchRewards(), refreshPoints?.(), getAvailableCampaigns()]);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setTimeout(() => setIsLoading(false), 800);
     }
+  };
+
+  const getAvailableCampaigns = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}customer/get-available-campaigns`, {
+        method: "GET",
+        headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${userInfo?.token}` },
+      }).then(processResponse);
+      setCampaigns(
+        res.statusCode === 200 && res.data?.success && Array.isArray(res.data.data)
+          ? res.data.data
+          : []
+      );
+    } catch (error) {
+      console.error("getAvailableCampaigns error:", error);
+      setCampaigns([]);
+    }
+  };
+
+  const handleClaimCampaign = (campaign) => {
+    navigation.navigate("PromoCampaigns", { campaigns, highlightId: campaign.id });
+  };
+
+  const handleViewAllCampaigns = () => {
+    navigation.navigate("PromoCampaigns", { campaigns });
   };
 
   const onRefresh = async () => {
@@ -198,7 +224,11 @@ export default function HomeScreen({ navigation }) {
                   clockDeg={clockDeg}
                 />
 
-                <PromoBanner />
+                  <PromoBanner
+                    campaigns={campaigns}
+                    onClaim={handleClaimCampaign}
+                    onViewAll={handleViewAllCampaigns}
+                  />
 
                 {userInfo?.is_guest == 1 ? (
                   <GuestRewardsComponent />
