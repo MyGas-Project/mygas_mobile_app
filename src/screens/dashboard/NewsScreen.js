@@ -280,7 +280,7 @@ export default function NewsScreen({ navigation }) {
           </View>
 
           {/* Featured Stats */}
-          <View style={custom_styles.statsRow}>
+          {/* <View style={custom_styles.statsRow}>
             <View style={custom_styles.statItem}>
               <View style={[custom_styles.statIcon, { backgroundColor: '#FFE5E5' }]}>
                 <Ionicons name="newspaper-outline" size={20} color="#FF6B6B" />
@@ -304,7 +304,7 @@ export default function NewsScreen({ navigation }) {
               <Text style={custom_styles.statValue}>Save</Text>
               <Text style={custom_styles.statLabel}>Favorites</Text>
             </View>
-          </View>
+          </View> */}
 
           {/* News Cards */}
           <View style={custom_styles.newsContainer}>
