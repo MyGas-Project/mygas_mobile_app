@@ -56,6 +56,8 @@ export default function PromoCampaignScreen({ navigation, route }) {
                 },
             }).then(processResponse);
 
+            // console.log("Campaigns: ", JSON.stringify(res.data.data, null, 2));
+
             if (res.statusCode === 200 && res.data?.success && Array.isArray(res.data.data)) {
                 setCampaigns(res.data.data);
             }
@@ -88,6 +90,12 @@ export default function PromoCampaignScreen({ navigation, route }) {
 
     const handleClaim = async (campaign) => {
         if (claimingId !== null) return;
+
+        if (campaign.reward_type === "spin_the_wheel") {
+            navigation.navigate("SpinTheWheel", { campaign });
+            return;
+        }
+
         setClaimingId(campaign.id);
         try {
             // TODO: call the claim API here, then refresh:
@@ -306,7 +314,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFF",
         borderRadius: scale(15),
         borderWidth: 2,
-        borderColor: "#F6EFD2", // same width as the highlight border, so cards don't shift
+        borderColor: "#F6EFD2",
         shadowColor: "#8A6D00",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.12,

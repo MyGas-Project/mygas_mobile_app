@@ -16,6 +16,7 @@ import ActivityScreen from "../screens/dashboard/ActivityScreen";
 import RedemptionScreen from "../screens/dashboard/RedemptionScreen";
 import NewsScreen from "../screens/dashboard/NewsScreen";
 import PromoCampaignsScreen from "../screens/dashboard/PromoCampaignScreen";
+import SpinTheWheelScreen from "../screens/dashboard/SpinTheWheelScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
 import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import RewardDetails from "../screens/dashboard/RewardDetails";
@@ -251,6 +252,15 @@ const BottomTabNavigator = () => {
       <Tab.Screen
         name="PromoCampaigns"
         component={PromoCampaignsScreen}
+        options={{
+          tabBarButton: () => null,
+          unmountOnBlur: true,
+          header: () => <Navbar />,
+        }}
+      />
+      <Tab.Screen
+        name="SpinTheWheel"
+        component={SpinTheWheelScreen}
         options={{
           tabBarButton: () => null,
           unmountOnBlur: true,
